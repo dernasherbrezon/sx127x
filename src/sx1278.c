@@ -65,7 +65,7 @@ typedef enum {
 
 struct sx1278_t {
   spi_device_handle_t spi;
-  sx1278_implicit_header *header;
+  sx1278_implicit_header_t *header;
   uint8_t version;
 
   // FIXME better use tasks and queues
@@ -200,14 +200,9 @@ esp_err_t sx1278_create(spi_host_device_t host, int cs, sx1278 **result) {
     sx1278_destroy(device);
     return code;
   }
-  if (device->version != SX1276_VERSION) {
+  if (device->version != SX1278_VERSION) {
     sx1278_destroy(device);
     return ESP_ERR_INVALID_VERSION;
-  }
-  code = sx1278_read_register(REG_OP_MODE, device, &device->opmode);
-  if (code != ESP_OK) {
-    sx1278_destroy(device);
-    return code;
   }
   *result = device;
   return ESP_OK;
