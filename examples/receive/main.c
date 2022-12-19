@@ -31,7 +31,8 @@ void setup() {
   ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
   ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G1, device));
   ESP_ERROR_CHECK(sx1278_set_lna_boost_hf(SX1278_LNA_BOOST_HF_ON, device));
-  ESP_ERROR_CHECK(sx1278_set_modem_config_1(SX1278_BW_125000, SX1278_CR_4_6, device));
+  ESP_ERROR_CHECK(sx1278_set_bandwidth(SX1278_BW_125000, device));
+  ESP_ERROR_CHECK(sx1278_set_implicit_header(NULL, device));
   ESP_ERROR_CHECK(sx1278_set_modem_config_2(SX1278_SF_9, device));
   ESP_ERROR_CHECK(sx1278_set_syncword(18, device));
   ESP_ERROR_CHECK(sx1278_set_preamble_length(8, device));
@@ -68,6 +69,10 @@ void loop() {
     printf("%x", data[i]);
   }
   printf("\n");
+  
+  int16_t rssi;
+  ESP_ERROR_CHECK(sx1278_get_rssi(device, &rssi));
+  printf("rssi: %d\n", rssi);
 
   ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
   sx1278_destroy(device);

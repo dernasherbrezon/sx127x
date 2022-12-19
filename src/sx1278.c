@@ -58,6 +58,10 @@
 #define SX1278_IRQ_FLAG_FHSSCHANGECHANNEL 0b00000010
 #define SX1278_IRQ_FLAG_CAD_DETECTED 0b00000001
 
+#define RF_MID_BAND_THRESHOLD 525E6
+#define RSSI_OFFSET_HF_PORT 157
+#define RSSI_OFFSET_LF_PORT 164
+
 typedef enum {
   SX1278_HEADER_MODE_EXPLICIT = 0b00000000,
   SX1278_HEADER_MODE_IMPLICIT = 0b00000001
@@ -67,6 +71,7 @@ struct sx1278_t {
   spi_device_handle_t spi;
   sx1278_implicit_header_t *header;
   uint8_t version;
+  uint64_t frequency;
 
   // FIXME better use tasks and queues
   // see xQueueSendFromISR or similar
@@ -216,7 +221,12 @@ esp_err_t sx1278_set_opmod(sx1278_mode_t opmod, sx1278 *device) {
 esp_err_t sx1278_set_frequency(uint64_t frequency, sx1278 *device) {
   uint64_t adjusted = (frequency << 19) / SX1278_OSCILLATOR_FREQUENCY;
   uint8_t data[] = {(uint8_t)(adjusted >> 16), (uint8_t)(adjusted >> 8), (uint8_t)(adjusted >> 0)};
-  return sx1278_write_register(REG_FRF_MSB, data, 3, device);
+  esp_err_t result = sx1278_write_register(REG_FRF_MSB, data, 3, device);
+  if (result != ESP_OK) {
+    return result;
+  }
+  device->frequency = frequency;
+  return ESP_OK;
 }
 
 esp_err_t sx1278_reset_fifo(sx1278 *device) {
@@ -240,15 +250,8 @@ esp_err_t sx1278_set_lna_boost_hf(sx1278_lna_boost_hf_t value, sx1278 *device) {
   return sx1278_append_register(REG_LNA, value, device);
 }
 
-esp_err_t sx1278_set_modem_config_1(sx1278_bw_t bandwidth, sx1278_cr_t coding_rate, sx1278 *device) {
-  uint8_t value = bandwidth | coding_rate;
-  if (device->header == NULL) {
-    value = value | SX1278_HEADER_MODE_EXPLICIT;
-  } else {
-    value = value | SX1278_HEADER_MODE_IMPLICIT;
-  }
-  uint8_t data[] = {value};
-  esp_err_t code = sx1278_write_register(REG_MODEM_CONFIG_1, data, 1, device);
+esp_err_t sx1278_set_bandwidth(sx1278_bw_t bandwidth, sx1278 *device) {
+  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, bandwidth, device);
   if (code != ESP_OK) {
     return code;
   }
@@ -256,6 +259,9 @@ esp_err_t sx1278_set_modem_config_1(sx1278_bw_t bandwidth, sx1278_cr_t coding_ra
 }
 
 esp_err_t sx1278_set_modem_config_2(sx1278_sf_t spreading_factor, sx1278 *device) {
+  if (spreading_factor == SX1278_SF_6 && device->header == NULL) {
+    return ESP_ERR_INVALID_ARG;
+  }
   uint8_t detection_optimize;
   uint8_t detection_threshold;
   if (spreading_factor == SX1278_SF_6) {
@@ -298,7 +304,7 @@ esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *d
   if (header == NULL) {
     return sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_EXPLICIT, device);
   } else {
-    esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_IMPLICIT, device);
+    esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_IMPLICIT | device->header->coding_rate, device);
     if (code != ESP_OK) {
       return code;
     }
@@ -383,6 +389,16 @@ esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_lengt
   *packet = device->packet;
   *packet_length = length;
   return ESP_OK;
+}
+
+esp_err_t sx1278_get_rssi(sx1278 *device, int16_t *rssi) {
+  uint8_t value;
+  esp_err_t code = sx1278_read_register(REG_PKT_RSSI_VALUE, device, &value);
+  if (device->frequency < RF_MID_BAND_THRESHOLD) {
+    return value - RSSI_OFFSET_LF_PORT;
+  } else {
+    return value - RSSI_OFFSET_HF_PORT;
+  }
 }
 
 void sx1278_destroy(sx1278 *device) {

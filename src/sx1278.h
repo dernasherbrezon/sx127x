@@ -78,6 +78,7 @@ typedef enum {
 typedef struct {
   uint8_t length;
   sx1278_crc_payload_t crc;
+  sx1278_cr_t coding_rate;
 } sx1278_implicit_header_t;
 
 typedef struct sx1278_t sx1278;
@@ -88,7 +89,7 @@ esp_err_t sx1278_set_frequency(uint64_t frequency, sx1278 *device);
 esp_err_t sx1278_reset_fifo(sx1278 *device);
 esp_err_t sx1278_set_lna_gain(sx1278_gain_t gain, sx1278 *device);
 esp_err_t sx1278_set_lna_boost_hf(sx1278_lna_boost_hf_t value, sx1278 *device);
-esp_err_t sx1278_set_modem_config_1(sx1278_bw_t bandwidth, sx1278_cr_t coding_rate, sx1278 *device);
+esp_err_t sx1278_set_bandwidth(sx1278_bw_t bandwidth, sx1278 *device);
 esp_err_t sx1278_set_modem_config_2(sx1278_sf_t spreading_factor, sx1278 *device);
 esp_err_t sx1278_set_low_datarate_optimization(sx1278_low_datarate_optimization_t value, sx1278 *device);
 esp_err_t sx1278_set_syncword(uint8_t value, sx1278 *device);
@@ -96,6 +97,7 @@ esp_err_t sx1278_set_preamble_length(uint16_t value, sx1278 *device);
 esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *device);
 void sx1278_handle_interrupt(void *arg);
 esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_length);
+esp_err_t sx1278_get_rssi(sx1278 *device, int16_t *rssi);
 
 void sx1278_destroy(sx1278 *device);
 
