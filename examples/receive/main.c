@@ -68,4 +68,8 @@ void loop() {
     printf("%x", data[i]);
   }
   printf("\n");
+
+  ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
+  sx1278_destroy(device);
+  device = NULL;
 }
