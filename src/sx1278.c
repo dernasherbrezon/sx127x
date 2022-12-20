@@ -46,6 +46,7 @@
 #define SX1278_LORA_MODE_LORA 0b10000000
 
 #define SX1278_OSCILLATOR_FREQUENCY 32000000
+#define SX1278_FREQ_ERROR_FACTOR ((1 << 24) / SX1278_OSCILLATOR_FREQUENCY)
 #define SX1278_REG_MODEM_CONFIG_3_AGC_ON 0b00000100
 #define SX1278_REG_MODEM_CONFIG_3_AGC_OFF 0b00000000
 
@@ -79,24 +80,43 @@ struct sx1278_t {
   uint8_t packet[256];
 };
 
-esp_err_t sx1278_read_register(int reg, sx1278 *device, uint8_t *result) {
+esp_err_t sx1278_read_registers(int reg, sx1278 *device, size_t data_length, uint32_t *result) {
+  if (data_length > 4) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  *result = 0;
   spi_transaction_t t = {
       .addr = reg & 0x7F,
       .rx_buffer = NULL,
       .tx_buffer = NULL,
-      .rxlength = 1 * 8,
-      .length = 1 * 8,
+      .rxlength = data_length * 8,
+      .length = data_length * 8,
       .flags = SPI_TRANS_USE_RXDATA};
   esp_err_t code = spi_device_polling_transmit(device->spi, &t);
   if (code != ESP_OK) {
-    *result = 0;
     return code;
   }
-  *result = t.rx_data[0];
+  for (int i = 0; i < data_length; i++) {
+    *result = ((*result) << 8);
+    *result = (*result) + t.rx_data[i];
+  }
+  return ESP_OK;
+}
+
+esp_err_t sx1278_read_register(int reg, sx1278 *device, uint8_t *result) {
+  uint32_t value;
+  esp_err_t code = sx1278_read_registers(reg, device, 1, &value);
+  if (code != ESP_OK) {
+    return code;
+  }
+  *result = (uint8_t)value;
   return ESP_OK;
 }
 
 esp_err_t sx1278_write_register(int reg, uint8_t *data, size_t data_length, sx1278 *device) {
+  if (data_length > 4) {
+    return ESP_ERR_INVALID_ARG;
+  }
   spi_transaction_t t = {
       .addr = reg | 0x80,
       .rx_buffer = NULL,
@@ -124,47 +144,57 @@ esp_err_t sx1278_set_low_datarate_optimization(sx1278_low_datarate_optimization_
   return sx1278_append_register(REG_MODEM_CONFIG_3, value, device);
 }
 
-esp_err_t sx1278_reload_low_datarate_optimization(sx1278 *device) {
+esp_err_t sx1278_get_bandwidth(sx1278 *device, uint32_t *bandwidth) {
   uint8_t config = 0;
   esp_err_t code = sx1278_read_register(REG_MODEM_CONFIG_1, device, &config);
   if (code != ESP_OK) {
     return code;
   }
   config = (config >> 4);
-  long bandwidth = 0;
   switch (config) {
     case 0b0000:
-      bandwidth = 7800;
+      *bandwidth = 7800;
       break;
     case 0b0001:
-      bandwidth = 10400;
+      *bandwidth = 10400;
       break;
     case 0b0010:
-      bandwidth = 15600;
+      *bandwidth = 15600;
       break;
     case 0b0011:
-      bandwidth = 20800;
+      *bandwidth = 20800;
       break;
     case 0b0100:
-      bandwidth = 31250;
+      *bandwidth = 31250;
       break;
     case 0b0101:
-      bandwidth = 41700;
+      *bandwidth = 41700;
       break;
     case 0b0110:
-      bandwidth = 62500;
+      *bandwidth = 62500;
       break;
     case 0b0111:
-      bandwidth = 125000;
+      *bandwidth = 125000;
       break;
     case 0b1000:
-      bandwidth = 250000;
+      *bandwidth = 250000;
       break;
     case 0b1001:
-      bandwidth = 500000;
+      *bandwidth = 500000;
       break;
+    default:
+      return ESP_ERR_INVALID_ARG;
   }
-  config = 0;
+  return ESP_OK;
+}
+
+esp_err_t sx1278_reload_low_datarate_optimization(sx1278 *device) {
+  uint32_t bandwidth;
+  esp_err_t code = sx1278_get_bandwidth(device, &bandwidth);
+  if (code != ESP_OK) {
+    return code;
+  }
+  uint8_t config = 0;
   code = sx1278_read_register(REG_MODEM_CONFIG_2, device, &config);
   if (code != ESP_OK) {
     return code;
@@ -391,14 +421,56 @@ esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_lengt
   return ESP_OK;
 }
 
-esp_err_t sx1278_get_rssi(sx1278 *device, int16_t *rssi) {
+esp_err_t sx1278_get_packet_rssi(sx1278 *device, int16_t *rssi) {
   uint8_t value;
   esp_err_t code = sx1278_read_register(REG_PKT_RSSI_VALUE, device, &value);
-  if (device->frequency < RF_MID_BAND_THRESHOLD) {
-    return value - RSSI_OFFSET_LF_PORT;
-  } else {
-    return value - RSSI_OFFSET_HF_PORT;
+  if (code != ESP_OK) {
+    return code;
   }
+  if (device->frequency < RF_MID_BAND_THRESHOLD) {
+    *rssi = value - RSSI_OFFSET_LF_PORT;
+  } else {
+    *rssi = value - RSSI_OFFSET_HF_PORT;
+  }
+  // section 5.5.5.
+  float snr;
+  code = sx1278_get_packet_snr(device, &snr);
+  // if snr failed then rssi is not precise
+  if (code == ESP_OK && snr < 0) {
+    *rssi = *rssi + snr;
+  }
+  return ESP_OK;
+}
+
+esp_err_t sx1278_get_packet_snr(sx1278 *device, float *snr) {
+  uint8_t value;
+  esp_err_t code = sx1278_read_register(REG_PKT_SNR_VALUE, device, &value);
+  if (code != ESP_OK) {
+    return code;
+  }
+  *snr = ((int8_t)value) * 0.25;
+  return ESP_OK;
+}
+
+esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *result) {
+  uint32_t frequency_error;
+  esp_err_t code = sx1278_read_registers(REG_FREQ_ERROR_MSB, device, 3, &frequency_error);
+  if (code != ESP_OK) {
+    return code;
+  }
+  uint32_t bandwidth;
+  code = sx1278_get_bandwidth(device, &bandwidth);
+  if (code != ESP_OK) {
+    return code;
+  }
+  if (frequency_error & 0x80000) {
+    frequency_error = ~frequency_error + 1;
+    *result = -1;
+  } else {
+    *result = 1;
+  }
+  *result = (*result) * frequency_error * SX1278_FREQ_ERROR_FACTOR * bandwidth / 500000.0f;
+  return ESP_OK;
 }
 
 void sx1278_destroy(sx1278 *device) {

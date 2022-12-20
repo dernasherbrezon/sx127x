@@ -69,10 +69,18 @@ void loop() {
     printf("%x", data[i]);
   }
   printf("\n");
-  
+
   int16_t rssi;
-  ESP_ERROR_CHECK(sx1278_get_rssi(device, &rssi));
+  ESP_ERROR_CHECK(sx1278_get_packet_rssi(device, &rssi));
   printf("rssi: %d\n", rssi);
+
+  float snr;
+  ESP_ERROR_CHECK(sx1278_get_packet_snr(device, &snr));
+  printf("snr: %f\n", snr);
+
+  int32_t frequency_error;
+  ESP_ERROR_CHECK(sx1278_get_frequency_error(device, &frequency_error));
+  printf("frequency_error: %d\n", frequency_error);
 
   ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
   sx1278_destroy(device);
