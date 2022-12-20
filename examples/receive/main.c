@@ -13,6 +13,7 @@
 #define DIO0 26
 
 sx1278 *device = NULL;
+int total_packets_received = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -27,7 +28,7 @@ void setup() {
   };
   ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 0));
   ESP_ERROR_CHECK(sx1278_create(HSPI_HOST, SS, &device));
-  // TODO check if sleep is ok
+
   ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
   ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G1, device));
   ESP_ERROR_CHECK(sx1278_set_lna_boost_hf(SX1278_LNA_BOOST_HF_ON, device));
@@ -82,7 +83,12 @@ void loop() {
   ESP_ERROR_CHECK(sx1278_get_frequency_error(device, &frequency_error));
   printf("frequency_error: %d\n", frequency_error);
 
-  ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
-  sx1278_destroy(device);
-  device = NULL;
+  total_packets_received++;
+
+  // terminate after receiving 3 packets
+  if (total_packets_received > 3) {
+    ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
+    sx1278_destroy(device);
+    device = NULL;
+  }
 }
