@@ -37,6 +37,7 @@
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
 #define REG_DIO_MAPPING_1 0x40
+#define REG_DIO_MAPPING_2 0x41
 #define REG_VERSION 0x42
 #define REG_PA_DAC 0x4d
 
@@ -244,7 +245,20 @@ esp_err_t sx1278_create(spi_host_device_t host, int cs, sx1278 **result) {
 }
 
 esp_err_t sx1278_set_opmod(sx1278_mode_t opmod, sx1278 *device) {
-  uint8_t data[] = {opmod | SX1278_LORA_MODE_LORA};
+  uint8_t data[] = {0};
+  // enforce DIO mappings for during RX and TX
+  if (opmod == SX1278_MODE_RX_CONT || opmod == SX1278_MODE_RX_SINGLE) {
+    esp_err_t code = sx1278_append_register(REG_DIO_MAPPING_1, SX1278_DIO0_RX_DONE, 0b00111111, device);
+    if (code != ESP_OK) {
+      return code;
+    }
+  } else if (opmod == SX1278_MODE_TX) {
+    esp_err_t code = sx1278_append_register(REG_DIO_MAPPING_1, SX1278_DIO0_TX_DONE, 0b00111111, device);
+    if (code != ESP_OK) {
+      return code;
+    }
+  }
+  data[0] = (opmod | SX1278_LORA_MODE_LORA);
   return sx1278_write_register(REG_OP_MODE, data, 1, device);
 }
 
@@ -481,6 +495,16 @@ esp_err_t sx1278_dump_registers(sx1278 *device) {
     printf("0x%.2x: 0x%.2x\n", i, value);
   }
   return ESP_OK;
+}
+
+esp_err_t sx1278_set_dio_mapping1(sx1278_dio_mapping1_t value, sx1278 *device) {
+  uint8_t data[] = {value};
+  return sx1278_write_register(REG_DIO_MAPPING_1, data, 1, device);
+}
+
+esp_err_t sx1278_set_dio_mapping2(sx1278_dio_mapping2_t value, sx1278 *device) {
+  uint8_t data[] = {value};
+  return sx1278_write_register(REG_DIO_MAPPING_2, data, 1, device);
 }
 
 void sx1278_destroy(sx1278 *device) {

@@ -81,6 +81,26 @@ typedef struct {
   sx1278_cr_t coding_rate;
 } sx1278_implicit_header_t;
 
+typedef enum {
+  SX1278_DIO0_RX_DONE = 0b00000000,
+  SX1278_DIO0_TX_DONE = 0b01000000,
+  SX1278_DIO0_CAD_DONE = 0b10000000,
+  SX1278_DIO1_RXTIMEOUT = 0b00000000,
+  SX1278_DIO1_FHSS_CHANGE_CHANNEL = 0b01000000,
+  SX1278_DIO1_CAD_DETECTED = 0b10000000,
+  SX1278_DIO2_FHSS_CHANGE_CHANNEL = 0b00000000,
+  SX1278_DIO3_CAD_DONE = 0b00000000,
+  SX1278_DIO3_VALID_HEADER = 0b01000000,
+  SX1278_DIO3_PAYLOAD_CRC_ERROR = 0b10000000,
+} sx1278_dio_mapping1_t;
+
+typedef enum {
+  SX1278_DIO4_CAD_DETECTED  = 0b00000000,
+  SX1278_DIO4_PLL_LOCK  = 0b01000000,
+  SX1278_DIO5_MODE_READY = 0b00000000,
+  SX1278_DIO5_CLK_OUT = 0b01000000
+} sx1278_dio_mapping2_t;
+
 typedef struct sx1278_t sx1278;
 
 esp_err_t sx1278_create(spi_host_device_t host, int cs, sx1278 **result);
@@ -96,6 +116,8 @@ esp_err_t sx1278_set_low_datarate_optimization(sx1278_low_datarate_optimization_
 esp_err_t sx1278_set_syncword(uint8_t value, sx1278 *device);
 esp_err_t sx1278_set_preamble_length(uint16_t value, sx1278 *device);
 esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *device);
+esp_err_t sx1278_set_dio_mapping1(sx1278_dio_mapping1_t value, sx1278 *device);
+esp_err_t sx1278_set_dio_mapping2(sx1278_dio_mapping2_t value, sx1278 *device);
 void sx1278_handle_interrupt(void *arg);
 esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_length);
 esp_err_t sx1278_get_packet_rssi(sx1278 *device, int16_t *rssi);
