@@ -101,6 +101,7 @@ esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_lengt
 esp_err_t sx1278_get_packet_rssi(sx1278 *device, int16_t *rssi);
 esp_err_t sx1278_get_packet_snr(sx1278 *device, float *snr);
 esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *frequency_error);
+esp_err_t sx1278_dump_registers(sx1278 *device);
 
 void sx1278_destroy(sx1278 *device);
 

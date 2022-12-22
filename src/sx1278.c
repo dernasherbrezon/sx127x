@@ -81,7 +81,7 @@ struct sx1278_t {
 };
 
 esp_err_t sx1278_read_registers(int reg, sx1278 *device, size_t data_length, uint32_t *result) {
-  if (data_length > 4) {
+  if (data_length == 0 || data_length > 4) {
     return ESP_ERR_INVALID_ARG;
   }
   *result = 0;
@@ -114,7 +114,7 @@ esp_err_t sx1278_read_register(int reg, sx1278 *device, uint8_t *result) {
 }
 
 esp_err_t sx1278_write_register(int reg, uint8_t *data, size_t data_length, sx1278 *device) {
-  if (data_length > 4) {
+  if (data_length == 0 || data_length > 4) {
     return ESP_ERR_INVALID_ARG;
   }
   spi_transaction_t t = {
@@ -130,18 +130,18 @@ esp_err_t sx1278_write_register(int reg, uint8_t *data, size_t data_length, sx12
   return spi_device_polling_transmit(device->spi, &t);
 }
 
-esp_err_t sx1278_append_register(int reg, uint8_t value, sx1278 *device) {
+esp_err_t sx1278_append_register(int reg, uint8_t value, uint8_t mask, sx1278 *device) {
   uint8_t previous = 0;
   esp_err_t code = sx1278_read_register(reg, device, &previous);
   if (code != ESP_OK) {
     return code;
   }
-  uint8_t data[] = {previous | value};
+  uint8_t data[] = {(previous & mask) | value};
   return sx1278_write_register(reg, data, 1, device);
 }
 
 esp_err_t sx1278_set_low_datarate_optimization(sx1278_low_datarate_optimization_t value, sx1278 *device) {
-  return sx1278_append_register(REG_MODEM_CONFIG_3, value, device);
+  return sx1278_append_register(REG_MODEM_CONFIG_3, value, 0b11110111, device);
 }
 
 esp_err_t sx1278_get_bandwidth(sx1278 *device, uint32_t *bandwidth) {
@@ -267,21 +267,21 @@ esp_err_t sx1278_reset_fifo(sx1278 *device) {
 
 esp_err_t sx1278_set_lna_gain(sx1278_gain_t gain, sx1278 *device) {
   if (gain == SX1278_LNA_GAIN_AUTO) {
-    return sx1278_append_register(REG_MODEM_CONFIG_3, SX1278_REG_MODEM_CONFIG_3_AGC_ON, device);
+    return sx1278_append_register(REG_MODEM_CONFIG_3, SX1278_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, device);
   }
-  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_3, SX1278_REG_MODEM_CONFIG_3_AGC_OFF, device);
+  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_3, SX1278_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, device);
   if (code != ESP_OK) {
     return code;
   }
-  return sx1278_append_register(REG_LNA, gain, device);
+  return sx1278_append_register(REG_LNA, gain, 0b00011111, device);
 }
 
 esp_err_t sx1278_set_lna_boost_hf(sx1278_lna_boost_hf_t value, sx1278 *device) {
-  return sx1278_append_register(REG_LNA, value, device);
+  return sx1278_append_register(REG_LNA, value, 0b11111100, device);
 }
 
 esp_err_t sx1278_set_bandwidth(sx1278_bw_t bandwidth, sx1278 *device) {
-  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, bandwidth, device);
+  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, bandwidth, 0b00001111, device);
   if (code != ESP_OK) {
     return code;
   }
@@ -312,7 +312,7 @@ esp_err_t sx1278_set_modem_config_2(sx1278_sf_t spreading_factor, sx1278 *device
   if (code != ESP_OK) {
     return code;
   }
-  code = sx1278_append_register(REG_MODEM_CONFIG_2, spreading_factor, device);
+  code = sx1278_append_register(REG_MODEM_CONFIG_2, spreading_factor, 0b00001111, device);
   if (code != ESP_OK) {
     return code;
   }
@@ -332,13 +332,13 @@ esp_err_t sx1278_set_preamble_length(uint16_t value, sx1278 *device) {
 esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *device) {
   device->header = header;
   if (header == NULL) {
-    return sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_EXPLICIT, device);
+    return sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_EXPLICIT, 0b11111110, device);
   } else {
-    esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_IMPLICIT | device->header->coding_rate, device);
+    esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, SX1278_HEADER_MODE_IMPLICIT | device->header->coding_rate, 0b11110000, device);
     if (code != ESP_OK) {
       return code;
     }
-    return sx1278_append_register(REG_MODEM_CONFIG_2, header->crc, device);
+    return sx1278_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device);
   }
 }
 
@@ -470,6 +470,16 @@ esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *result) {
     *result = 1;
   }
   *result = (*result) * frequency_error * SX1278_FREQ_ERROR_FACTOR * bandwidth / 500000.0f;
+  return ESP_OK;
+}
+
+esp_err_t sx1278_dump_registers(sx1278 *device) {
+  uint8_t length = 0x7F;
+  for (int i = 0; i < length; i++) {
+    uint8_t value;
+    sx1278_read_register(i, device, &value);
+    printf("0x%.2x: 0x%.2x\n", i, value);
+  }
   return ESP_OK;
 }
 

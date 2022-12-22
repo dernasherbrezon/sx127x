@@ -68,15 +68,17 @@ void setup() {
     sx1278_handle_interrupt(device);
     handle_packet();
   } else {
-    ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
-    ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G1, device));
+    ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
+    ESP_ERROR_CHECK(sx1278_set_frequency(437200012, device));
+    ESP_ERROR_CHECK(sx1278_reset_fifo(device));
     ESP_ERROR_CHECK(sx1278_set_lna_boost_hf(SX1278_LNA_BOOST_HF_ON, device));
+    ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
+    ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G4, device));
     ESP_ERROR_CHECK(sx1278_set_bandwidth(SX1278_BW_125000, device));
     ESP_ERROR_CHECK(sx1278_set_implicit_header(NULL, device));
     ESP_ERROR_CHECK(sx1278_set_modem_config_2(SX1278_SF_9, device));
     ESP_ERROR_CHECK(sx1278_set_syncword(18, device));
     ESP_ERROR_CHECK(sx1278_set_preamble_length(8, device));
-    ESP_ERROR_CHECK(sx1278_set_frequency(437200012, device));
     ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_RX_CONT, device));
   }
 

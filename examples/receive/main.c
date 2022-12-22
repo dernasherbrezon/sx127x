@@ -26,18 +26,28 @@ void setup() {
       .quadhd_io_num = -1,
       .max_transfer_sz = 0,
   };
-  ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 0));
-  ESP_ERROR_CHECK(sx1278_create(HSPI_HOST, SS, &device));
+  esp_err_t code = spi_bus_initialize(HSPI_HOST, &config, 0);
+  if (code != ESP_OK) {
+    Serial.println("can't init bus");
+    return;
+  }
+  code = sx1278_create(HSPI_HOST, SS, &device);
+  if (code != ESP_OK) {
+    Serial.println("can't create device");
+    return;
+  }
 
-  ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
-  ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G1, device));
+  ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
+  ESP_ERROR_CHECK(sx1278_set_frequency(437200012, device));
+  ESP_ERROR_CHECK(sx1278_reset_fifo(device));
   ESP_ERROR_CHECK(sx1278_set_lna_boost_hf(SX1278_LNA_BOOST_HF_ON, device));
+  ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_STANDBY, device));
+  ESP_ERROR_CHECK(sx1278_set_lna_gain(SX1278_LNA_GAIN_G4, device));
   ESP_ERROR_CHECK(sx1278_set_bandwidth(SX1278_BW_125000, device));
   ESP_ERROR_CHECK(sx1278_set_implicit_header(NULL, device));
   ESP_ERROR_CHECK(sx1278_set_modem_config_2(SX1278_SF_9, device));
   ESP_ERROR_CHECK(sx1278_set_syncword(18, device));
   ESP_ERROR_CHECK(sx1278_set_preamble_length(8, device));
-  ESP_ERROR_CHECK(sx1278_set_frequency(437200012, device));
 
   gpio_pad_select_gpio(DIO0);
   gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT);
