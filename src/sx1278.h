@@ -75,6 +75,11 @@ typedef enum {
   SX1278_RX_PAYLOAD_CRC_OFF = 0b00000000
 } sx1278_crc_payload_t;
 
+typedef enum {
+  SX1278_OCP_ON = 0b0010000,
+  SX1278_OCP_OFF = 0b00000000
+} sx1278_ocp_t;
+
 typedef struct {
   uint8_t length;
   sx1278_crc_payload_t crc;
@@ -101,6 +106,11 @@ typedef enum {
   SX1278_DIO5_CLK_OUT = 0b01000000
 } sx1278_dio_mapping2_t;
 
+typedef enum {
+  SX1278_PA_PIN_RFO = 0b00000000,
+  SX1278_PA_PIN_BOOST = 0b10000000
+} sx1278_pa_pin_t;
+
 typedef struct sx1278_t sx1278;
 
 esp_err_t sx1278_create(spi_host_device_t host, int cs, sx1278 **result);
@@ -124,6 +134,8 @@ esp_err_t sx1278_get_packet_rssi(sx1278 *device, int16_t *rssi);
 esp_err_t sx1278_get_packet_snr(sx1278 *device, float *snr);
 esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *frequency_error);
 esp_err_t sx1278_dump_registers(sx1278 *device);
+esp_err_t sx1278_set_pa_config(sx1278_pa_pin_t pin, int power, sx1278 *device);
+esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t value, sx1278 *device);
 
 void sx1278_destroy(sx1278 *device);
 

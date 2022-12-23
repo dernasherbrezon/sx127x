@@ -64,6 +64,12 @@
 #define RSSI_OFFSET_HF_PORT 157
 #define RSSI_OFFSET_LF_PORT 164
 
+#define SX1278_MAX_POWER 0b01110000
+#define SX1278_LOW_POWER 0b00000000
+
+#define SX1278_HIGH_POWER_ON 0b10000111
+#define SX1278_HIGH_POWER_OFF 0b10000100
+
 typedef enum {
   SX1278_HEADER_MODE_EXPLICIT = 0b00000000,
   SX1278_HEADER_MODE_IMPLICIT = 0b00000001
@@ -505,6 +511,79 @@ esp_err_t sx1278_set_dio_mapping1(sx1278_dio_mapping1_t value, sx1278 *device) {
 esp_err_t sx1278_set_dio_mapping2(sx1278_dio_mapping2_t value, sx1278 *device) {
   uint8_t data[] = {value};
   return sx1278_write_register(REG_DIO_MAPPING_2, data, 1, device);
+}
+
+esp_err_t sx1278_set_pa_config(sx1278_pa_pin_t pin, int power, sx1278 *device) {
+  if (pin == SX1278_PA_PIN_RFO && (power < -4 || power > 15)) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  if (pin == SX1278_PA_PIN_BOOST && (power < 2 || power > 20)) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  uint8_t data[] = {0};
+  if (pin == SX1278_PA_PIN_BOOST && power == 20) {
+    data[0] = SX1278_HIGH_POWER_ON;
+  } else {
+    data[0] = SX1278_HIGH_POWER_OFF;
+  }
+  esp_err_t code = sx1278_write_register(REG_PA_DAC, data, 1, device);
+  if (code != ESP_OK) {
+    return code;
+  }
+  uint8_t max_current;
+  // according to 2.5.1. Power Consumption
+  if (pin == SX1278_PA_PIN_BOOST) {
+    if (power == 20) {
+      max_current = 120;
+    } else {
+      max_current = 87;
+    }
+  } else {
+    if (power > 7) {
+      max_current = 29;
+    } else {
+      max_current = 20;
+    }
+  }
+  code = sx1278_set_ocp(SX1278_OCP_ON, max_current, device);
+  if (code != ESP_OK) {
+    return code;
+  }
+  uint8_t value;
+  if (pin == SX1278_PA_PIN_RFO) {
+    if (power < 0) {
+      value = SX1278_LOW_POWER | (power + 4);
+    } else {
+      value = SX1278_MAX_POWER | power;
+    }
+    value = value | SX1278_PA_PIN_RFO;
+  } else {
+    if (power == 20) {
+      value = SX1278_PA_PIN_BOOST | 0b00001111;
+    } else {
+      value = SX1278_PA_PIN_BOOST | (power - 2);
+    }
+  }
+  data[0] = value;
+  return sx1278_write_register(REG_PA_CONFIG, data, 1, device);
+}
+
+esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t max_current, sx1278 *device) {
+  uint8_t data[1];
+  if (onoff == SX1278_OCP_OFF) {
+    data[0] = SX1278_OCP_OFF;
+    return sx1278_write_register(REG_OCP, data, 1, device);
+  }
+  // 5.4.4. Over Current Protection
+  if (max_current <= 120) {
+    data[0] = (max_current - 45) / 5;
+  } else if (max_current <= 240) {
+    data[0] = (max_current + 30) / 10;
+  } else {
+    data[0] = 27;
+  }
+  data[0] = (data[0] | onoff);
+  return sx1278_write_register(REG_OCP, data, 1, device);
 }
 
 void sx1278_destroy(sx1278 *device) {
