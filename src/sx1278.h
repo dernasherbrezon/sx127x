@@ -86,6 +86,11 @@ typedef struct {
   sx1278_cr_t coding_rate;
 } sx1278_implicit_header_t;
 
+typedef struct {
+  sx1278_crc_payload_t crc;
+  sx1278_cr_t coding_rate;
+} sx1278_tx_header_t;
+
 typedef enum {
   SX1278_DIO0_RX_DONE = 0b00000000,
   SX1278_DIO0_TX_DONE = 0b01000000,
@@ -141,7 +146,7 @@ esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *frequency_error);
 // TX-related functions
 esp_err_t sx1278_set_pa_config(sx1278_pa_pin_t pin, int power, sx1278 *device);
 esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t milliamps, sx1278 *device);
-esp_err_t sx1278_set_tx_crc(sx1278_crc_payload_t crc, sx1278 *device);
+esp_err_t sx1278_set_tx_explcit_header(sx1278_tx_header_t *header, sx1278 *device);
 void sx1278_set_tx_callback(void (*tx_callback)(sx1278 *), sx1278 *device);
 esp_err_t sx1278_set_for_transmission(uint8_t *data, uint8_t data_length, sx1278 *device);
 

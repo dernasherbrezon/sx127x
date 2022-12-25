@@ -592,14 +592,22 @@ esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t max_current, sx1278 *device
   return sx1278_write_register(REG_OCP, data, 1, device);
 }
 
-esp_err_t sx1278_set_tx_crc(sx1278_crc_payload_t crc, sx1278 *device) {
-  return sx1278_append_register(REG_MODEM_CONFIG_2, crc, 0b11111011, device);
+esp_err_t sx1278_set_tx_explcit_header(sx1278_tx_header_t *header, sx1278 *device) {
+  if (header == NULL) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  esp_err_t code = sx1278_append_register(REG_MODEM_CONFIG_1, header->coding_rate | SX1278_HEADER_MODE_EXPLICIT, 0b11110000, device);
+  if (code != ESP_OK) {
+    return code;
+  }
+  return sx1278_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device);
 }
 
 esp_err_t sx1278_set_for_transmission(uint8_t *data, uint8_t data_length, sx1278 *device) {
   if (data_length == 0) {
     return ESP_ERR_INVALID_ARG;
   }
+  // FIXME validate max data_length
   esp_err_t code = sx1278_reset_fifo(device);
   if (code != ESP_OK) {
     return code;
