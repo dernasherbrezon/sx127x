@@ -15,10 +15,7 @@
 
 sx1278 *device = NULL;
 
-void handle_packet() {
-  if (device == NULL) {
-    return;
-  }
+void rx_callback(sx1278 *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
   esp_err_t code = sx1278_receive(device, &data, &data_length);
@@ -65,8 +62,8 @@ void setup() {
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
   if (cpu0WakeupReason == ESP_SLEEP_WAKEUP_EXT0) {
-    sx1278_handle_interrupt(device);
-    handle_packet();
+    sx1278_set_rx_callback(rx_callback, device);
+    sx1278_handle_interrupt_fromisr(device);
   } else {
     ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
     ESP_ERROR_CHECK(sx1278_set_frequency(437200012, device));

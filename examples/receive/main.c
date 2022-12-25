@@ -15,6 +15,39 @@
 sx1278 *device = NULL;
 int total_packets_received = 0;
 
+void rx_callback(sx1278 *device) {
+  uint8_t *data = NULL;
+  uint8_t data_length = 0;
+  esp_err_t code = sx1278_receive(device, &data, &data_length);
+  if (code != ESP_OK) {
+    Serial.printf("can't read %d", code);
+    return;
+  }
+  if (data_length == 0) {
+    // no message received
+    return;
+  }
+  printf("received: %d\n", data_length);
+  for (int i = 0; i < data_length; i++) {
+    printf("%x", data[i]);
+  }
+  printf("\n");
+
+  int16_t rssi;
+  ESP_ERROR_CHECK(sx1278_get_packet_rssi(device, &rssi));
+  printf("rssi: %d\n", rssi);
+
+  float snr;
+  ESP_ERROR_CHECK(sx1278_get_packet_snr(device, &snr));
+  printf("snr: %f\n", snr);
+
+  int32_t frequency_error;
+  ESP_ERROR_CHECK(sx1278_get_frequency_error(device, &frequency_error));
+  printf("frequency_error: %d\n", frequency_error);
+
+  total_packets_received++;
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("starting up");
@@ -48,6 +81,7 @@ void setup() {
   ESP_ERROR_CHECK(sx1278_set_modem_config_2(SX1278_SF_9, device));
   ESP_ERROR_CHECK(sx1278_set_syncword(18, device));
   ESP_ERROR_CHECK(sx1278_set_preamble_length(8, device));
+  sx1278_set_rx_callback(rx_callback, device);
 
   gpio_pad_select_gpio(DIO0);
   gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT);
@@ -55,50 +89,11 @@ void setup() {
   gpio_pullup_dis((gpio_num_t)DIO0);
   gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE);
   gpio_install_isr_service(0);
-  gpio_isr_handler_add((gpio_num_t)DIO0, sx1278_handle_interrupt, (void *)device);
+  gpio_isr_handler_add((gpio_num_t)DIO0, sx1278_handle_interrupt_fromisr, (void *)device);
 
   ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_RX_CONT, device));
 }
 
 void loop() {
-  if (device == NULL) {
-    return;
-  }
-  uint8_t *data = NULL;
-  uint8_t data_length = 0;
-  esp_err_t code = sx1278_receive(device, &data, &data_length);
-  if (code != ESP_OK) {
-    Serial.printf("can't read %d", code);
-    return;
-  }
-  if (data_length == 0) {
-    // no message received
-    return;
-  }
-  printf("received: %d\n", data_length);
-  for (int i = 0; i < data_length; i++) {
-    printf("%x", data[i]);
-  }
-  printf("\n");
-
-  int16_t rssi;
-  ESP_ERROR_CHECK(sx1278_get_packet_rssi(device, &rssi));
-  printf("rssi: %d\n", rssi);
-
-  float snr;
-  ESP_ERROR_CHECK(sx1278_get_packet_snr(device, &snr));
-  printf("snr: %f\n", snr);
-
-  int32_t frequency_error;
-  ESP_ERROR_CHECK(sx1278_get_frequency_error(device, &frequency_error));
-  printf("frequency_error: %d\n", frequency_error);
-
-  total_packets_received++;
-
-  // terminate after receiving 3 packets
-  if (total_packets_received > 3) {
-    ESP_ERROR_CHECK(sx1278_set_opmod(SX1278_MODE_SLEEP, device));
-    sx1278_destroy(device);
-    device = NULL;
-  }
+  delay(100000);
 }

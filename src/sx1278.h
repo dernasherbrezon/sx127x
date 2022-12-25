@@ -100,8 +100,8 @@ typedef enum {
 } sx1278_dio_mapping1_t;
 
 typedef enum {
-  SX1278_DIO4_CAD_DETECTED  = 0b00000000,
-  SX1278_DIO4_PLL_LOCK  = 0b01000000,
+  SX1278_DIO4_CAD_DETECTED = 0b00000000,
+  SX1278_DIO4_PLL_LOCK = 0b01000000,
   SX1278_DIO5_MODE_READY = 0b00000000,
   SX1278_DIO5_CLK_OUT = 0b01000000
 } sx1278_dio_mapping2_t;
@@ -117,8 +117,6 @@ esp_err_t sx1278_create(spi_host_device_t host, int cs, sx1278 **result);
 esp_err_t sx1278_set_opmod(sx1278_mode_t mode, sx1278 *device);
 esp_err_t sx1278_set_frequency(uint64_t frequency, sx1278 *device);
 esp_err_t sx1278_reset_fifo(sx1278 *device);
-esp_err_t sx1278_set_lna_gain(sx1278_gain_t gain, sx1278 *device);
-esp_err_t sx1278_set_lna_boost_hf(sx1278_lna_boost_hf_t value, sx1278 *device);
 esp_err_t sx1278_set_bandwidth(sx1278_bw_t bandwidth, sx1278 *device);
 esp_err_t sx1278_get_bandwidth(sx1278 *device, uint32_t *bandwidth);
 esp_err_t sx1278_set_modem_config_2(sx1278_sf_t spreading_factor, sx1278 *device);
@@ -128,19 +126,28 @@ esp_err_t sx1278_set_preamble_length(uint16_t value, sx1278 *device);
 esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *device);
 esp_err_t sx1278_set_dio_mapping1(sx1278_dio_mapping1_t value, sx1278 *device);
 esp_err_t sx1278_set_dio_mapping2(sx1278_dio_mapping2_t value, sx1278 *device);
-void sx1278_handle_interrupt(void *arg);
+esp_err_t sx1278_dump_registers(sx1278 *device);
+void sx1278_handle_interrupt_fromisr(void *arg);
+
+// RX-related functions
+esp_err_t sx1278_set_lna_gain(sx1278_gain_t gain, sx1278 *device);
+esp_err_t sx1278_set_lna_boost_hf(sx1278_lna_boost_hf_t value, sx1278 *device);
+void sx1278_set_rx_callback(void (*rx_callback)(sx1278 *), sx1278 *device);
 esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_length);
 esp_err_t sx1278_get_packet_rssi(sx1278 *device, int16_t *rssi);
 esp_err_t sx1278_get_packet_snr(sx1278 *device, float *snr);
 esp_err_t sx1278_get_frequency_error(sx1278 *device, int32_t *frequency_error);
-esp_err_t sx1278_dump_registers(sx1278 *device);
+
+// TX-related functions
 esp_err_t sx1278_set_pa_config(sx1278_pa_pin_t pin, int power, sx1278 *device);
-esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t value, sx1278 *device);
+esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t milliamps, sx1278 *device);
+esp_err_t sx1278_set_tx_crc(sx1278_crc_payload_t crc, sx1278 *device);
+void sx1278_set_tx_callback(void (*tx_callback)(sx1278 *), sx1278 *device);
+esp_err_t sx1278_set_for_transmission(uint8_t *data, uint8_t data_length, sx1278 *device);
 
 void sx1278_destroy(sx1278 *device);
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif

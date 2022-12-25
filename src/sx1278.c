@@ -1,5 +1,7 @@
 #include "sx1278.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -80,10 +82,8 @@ struct sx1278_t {
   sx1278_implicit_header_t *header;
   uint8_t version;
   uint64_t frequency;
-
-  // FIXME better use tasks and queues
-  // see xQueueSendFromISR or similar
-  volatile uint8_t irq_received;
+  void (*rx_callback)(sx1278 *);
+  void (*tx_callback)(sx1278 *);
   uint8_t packet[256];
 };
 
@@ -339,6 +339,10 @@ esp_err_t sx1278_set_modem_config_2(sx1278_sf_t spreading_factor, sx1278 *device
   return sx1278_reload_low_datarate_optimization(device);
 }
 
+void sx1278_set_rx_callback(void (*rx_callback)(sx1278 *), sx1278 *device) {
+  device->rx_callback = rx_callback;
+}
+
 esp_err_t sx1278_set_syncword(uint8_t value, sx1278 *device) {
   uint8_t data[] = {value};
   return sx1278_write_register(REG_SYNC_WORD, data, 1, device);
@@ -362,43 +366,41 @@ esp_err_t sx1278_set_implicit_header(sx1278_implicit_header_t *header, sx1278 *d
   }
 }
 
-void IRAM_ATTR sx1278_handle_interrupt(void *arg) {
+void sx1278_handle_interrupt(void *arg, uint32_t arg2) {
   sx1278 *device = (sx1278 *)arg;
-  device->irq_received = 1;
-}
-
-esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_length) {
-  if (!device->irq_received) {
-    *packet_length = 0;
-    *packet = NULL;
-    return ESP_OK;
-  }
-  device->irq_received = 0;
-
   uint8_t value;
   esp_err_t code = sx1278_read_register(REG_IRQ_FLAGS, device, &value);
   if (code != ESP_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return code;
+    return;
   }
   // clear the irq
   uint8_t data[] = {value};
   code = sx1278_write_register(REG_IRQ_FLAGS, data, 1, device);
   if (code != ESP_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return code;
+    return;
   }
-  if ((value & SX1278_IRQ_FLAG_RXDONE) == 0) {
-    *packet_length = 0;
-    *packet = NULL;
-    // ignore non rx-related interrupts
-    return ESP_OK;
+  if ((value & SX1278_IRQ_FLAG_RXDONE) == SX1278_IRQ_FLAG_RXDONE) {
+    if (device->rx_callback != NULL) {
+      device->rx_callback(device);
+    }
+    return;
   }
+  if ((value & SX1278_IRQ_FLAG_TXDONE) == SX1278_IRQ_FLAG_TXDONE) {
+    if (device->tx_callback != NULL) {
+      device->tx_callback(device);
+    }
+    return;
+  }
+}
+
+void IRAM_ATTR sx1278_handle_interrupt_fromisr(void *arg) {
+  xTimerPendFunctionCallFromISR(sx1278_handle_interrupt, arg, 0, pdFALSE);
+}
+
+esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_length) {
   uint8_t length;
   if (device->header == NULL) {
-    code = sx1278_read_register(REG_RX_NB_BYTES, device, &length);
+    esp_err_t code = sx1278_read_register(REG_RX_NB_BYTES, device, &length);
     if (code != ESP_OK) {
       *packet_length = 0;
       *packet = NULL;
@@ -409,13 +411,13 @@ esp_err_t sx1278_receive(sx1278 *device, uint8_t **packet, uint8_t *packet_lengt
   }
 
   uint8_t current;
-  code = sx1278_read_register(REG_FIFO_RX_CURRENT_ADDR, device, &current);
+  esp_err_t code = sx1278_read_register(REG_FIFO_RX_CURRENT_ADDR, device, &current);
   if (code != ESP_OK) {
     *packet_length = 0;
     *packet = NULL;
     return code;
   }
-  data[0] = current;
+  uint8_t data[] = {current};
   code = sx1278_write_register(REG_FIFO_ADDR_PTR, data, 1, device);
   if (code != ESP_OK) {
     *packet_length = 0;
@@ -513,6 +515,10 @@ esp_err_t sx1278_set_dio_mapping2(sx1278_dio_mapping2_t value, sx1278 *device) {
   return sx1278_write_register(REG_DIO_MAPPING_2, data, 1, device);
 }
 
+void sx1278_set_tx_callback(void (*tx_callback)(sx1278 *), sx1278 *device) {
+  device->tx_callback = tx_callback;
+}
+
 esp_err_t sx1278_set_pa_config(sx1278_pa_pin_t pin, int power, sx1278 *device) {
   if (pin == SX1278_PA_PIN_RFO && (power < -4 || power > 15)) {
     return ESP_ERR_INVALID_ARG;
@@ -584,6 +590,33 @@ esp_err_t sx1278_set_ocp(sx1278_ocp_t onoff, uint8_t max_current, sx1278 *device
   }
   data[0] = (data[0] | onoff);
   return sx1278_write_register(REG_OCP, data, 1, device);
+}
+
+esp_err_t sx1278_set_tx_crc(sx1278_crc_payload_t crc, sx1278 *device) {
+  return sx1278_append_register(REG_MODEM_CONFIG_2, crc, 0b11111011, device);
+}
+
+esp_err_t sx1278_set_for_transmission(uint8_t *data, uint8_t data_length, sx1278 *device) {
+  if (data_length == 0) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  esp_err_t code = sx1278_reset_fifo(device);
+  if (code != ESP_OK) {
+    return code;
+  }
+  uint8_t reg_data[] = {data_length};
+  code = sx1278_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device);
+  if (code != ESP_OK) {
+    return code;
+  }
+
+  spi_transaction_t t = {
+      .addr = REG_FIFO | 0x80,
+      .rx_buffer = NULL,
+      .tx_buffer = data,
+      .rxlength = data_length * 8,
+      .length = data_length * 8};
+  return spi_device_polling_transmit(device->spi, &t);
 }
 
 void sx1278_destroy(sx1278 *device) {
