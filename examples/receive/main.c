@@ -18,7 +18,7 @@ int total_packets_received = 0;
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  esp_err_t code = sx127x_receive(device, &data, &data_length);
+  esp_err_t code = sx127x_read_payload(device, &data, &data_length);
   if (code != ESP_OK) {
     Serial.printf("can't read %d", code);
     return;

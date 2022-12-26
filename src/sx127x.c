@@ -397,7 +397,7 @@ void IRAM_ATTR sx127x_handle_interrupt_fromisr(void *arg) {
   xTimerPendFunctionCallFromISR(sx127x_handle_interrupt, arg, 0, pdFALSE);
 }
 
-esp_err_t sx127x_receive(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
+esp_err_t sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
   uint8_t length;
   if (device->header == NULL) {
     esp_err_t code = sx127x_read_register(REG_RX_NB_BYTES, device, &length);

@@ -27,3 +27,7 @@ And of course this library supports all standard LoRa features:
 * ```receive``` - basic RX
 * ```receive_deepsleep``` - receive messages from deep sleep
 * ```transmit``` - basic TX
+
+# Implementation notes
+
+* Doesn't support FSK or OOK
