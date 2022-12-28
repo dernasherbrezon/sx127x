@@ -14,8 +14,28 @@
 
 sx127x *device = NULL;
 
+int current_power = 0;
+int messages_current_power = 0;
+
 void tx_callback(sx127x *device) {
   Serial.printf("transmitted\n");
+  if (current_power > 20) {
+    return;
+  }
+  ESP_ERROR_CHECK(sx127x_set_pa_config(SX127x_PA_PIN_BOOST, current_power, device));
+
+  uint8_t data[] = {0xCA, 0xFE};
+  ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, device));
+  Serial.printf("transmitting %d %d\n", current_power, messages_current_power);
+  messages_current_power++;
+  if (messages_current_power > 5) {
+    current_power++;
+    messages_current_power = 0;
+  }
+  if (current_power == 18) {
+    current_power = 20;
+  }
 }
 
 void setup() {
@@ -59,17 +79,12 @@ void setup() {
   gpio_install_isr_service(0);
   gpio_isr_handler_add((gpio_num_t)DIO0, sx127x_handle_interrupt_fromisr, (void *)device);
 
-  // 4 is OK
-  ESP_ERROR_CHECK(sx127x_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
   sx127x_tx_header_t header;
   header.crc = SX127x_RX_PAYLOAD_CRC_ON;
   header.coding_rate = SX127x_CR_4_5;
   ESP_ERROR_CHECK(sx127x_set_tx_explcit_header(&header, device));
-
-  uint8_t data[] = {0xCA, 0xFE};
-  ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, device));
-  Serial.printf("transmitting\n");
+  current_power = 2;
+  tx_callback(device);
 }
 
 void loop() {

@@ -1,0 +1,22 @@
+{
+    "name": "sx127x",
+    "version": "0.0.1",
+    "description": "Library to work with LoRa chips sx127x",
+    "keywords": "sx127x, lora, sx1278, sx1276, sx1277, sx1279",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dernasherbrezon/sx127x.git"
+    },
+    "authors": [
+        {
+            "name": "Andrey Rodionov",
+            "email": "dernasherbrezon@gmail.com",
+            "url": "https://dernasherbrezon.com",
+            "maintainer": true
+        }
+    ],
+    "license": "Apache License 2.0",
+    "homepage": "https://github.com/dernasherbrezon/sx127x",
+    "frameworks": "*",
+    "platforms": "espressif32"
+}
