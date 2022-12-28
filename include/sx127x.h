@@ -9,6 +9,8 @@ extern "C" {
 #include <esp_err.h>
 #include <stdint.h>
 
+#define MAX_PACKET_SIZE 256
+
 /*
  * This structure used to change mode
  */

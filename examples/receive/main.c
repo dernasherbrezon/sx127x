@@ -27,23 +27,22 @@ void rx_callback(sx127x *device) {
     // no message received
     return;
   }
-  printf("received: %d\n", data_length);
+  printf("received: %d ", data_length);
   for (int i = 0; i < data_length; i++) {
     printf("%x", data[i]);
   }
-  printf("\n");
 
   int16_t rssi;
   ESP_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
-  printf("rssi: %d\n", rssi);
+  printf(" rssi: %d", rssi);
 
   float snr;
   ESP_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
-  printf("snr: %f\n", snr);
+  printf(" snr: %f", snr);
 
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
-  printf("frequency_error: %d\n", frequency_error);
+  printf(" freq_error: %d\n", frequency_error);
 
   total_packets_received++;
 }

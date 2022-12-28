@@ -72,6 +72,9 @@
 #define SX127x_HIGH_POWER_ON 0b10000111
 #define SX127x_HIGH_POWER_OFF 0b10000100
 
+#define FIFO_TX_BASE_ADDR 0b00000000
+#define FIFO_RX_BASE_ADDR 0b00000000
+
 typedef enum {
   SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
   SX127x_HEADER_MODE_IMPLICIT = 0b00000001
@@ -281,7 +284,7 @@ esp_err_t sx127x_set_frequency(uint64_t frequency, sx127x *device) {
 
 esp_err_t sx127x_reset_fifo(sx127x *device) {
   // reset both RX and TX
-  uint8_t data[] = {0, 0};
+  uint8_t data[] = {FIFO_TX_BASE_ADDR, FIFO_RX_BASE_ADDR};
   return sx127x_write_register(REG_FIFO_TX_BASE_ADDR, data, 2, device);
 }
 
@@ -379,13 +382,16 @@ void sx127x_handle_interrupt(void *arg, uint32_t arg2) {
   if (code != ESP_OK) {
     return;
   }
-  if ((value & SX127x_IRQ_FLAG_RXDONE) == SX127x_IRQ_FLAG_RXDONE) {
+  if ((value & SX127x_IRQ_FLAG_PAYLOAD_CRC_ERROR) != 0) {
+    return;
+  }
+  if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
     if (device->rx_callback != NULL) {
       device->rx_callback(device);
     }
     return;
   }
-  if ((value & SX127x_IRQ_FLAG_TXDONE) == SX127x_IRQ_FLAG_TXDONE) {
+  if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
     if (device->tx_callback != NULL) {
       device->tx_callback(device);
     }
@@ -604,11 +610,12 @@ esp_err_t sx127x_set_tx_explcit_header(sx127x_tx_header_t *header, sx127x *devic
 }
 
 esp_err_t sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
+  // uint8_t can't be more than MAX_PACKET_SIZE
   if (data_length == 0) {
     return ESP_ERR_INVALID_ARG;
   }
-  // FIXME validate max data_length
-  esp_err_t code = sx127x_reset_fifo(device);
+  uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};
+  esp_err_t code = sx127x_write_register(REG_FIFO_ADDR_PTR, fifo_addr, 1, device);
   if (code != ESP_OK) {
     return code;
   }
