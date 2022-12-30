@@ -447,7 +447,7 @@ esp_err_t sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t sx127x_set_tx_explcit_header(sx127x_tx_header_t *header, sx127x *device);
+esp_err_t sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device);
 
 /**
  * @brief Set callback function for txdone interrupt.

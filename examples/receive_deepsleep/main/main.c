@@ -1,9 +1,11 @@
-#include <Arduino.h>
 #include <driver/gpio.h>
 #include <driver/rtc_io.h>
 #include <driver/spi_common.h>
 #include <driver/spi_master.h>
 #include <esp_intr_alloc.h>
+#include <esp_log.h>
+#include <esp_sleep.h>
+#include <freertos/task.h>
 #include <sx127x.h>
 
 #define SCK 5
@@ -14,41 +16,41 @@
 #define DIO0 26
 
 sx127x *device = NULL;
+static const char *TAG = "sx127x";
 
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
   esp_err_t code = sx127x_read_payload(device, &data, &data_length);
   if (code != ESP_OK) {
-    Serial.printf("can't read %d", code);
+    ESP_LOGE(TAG, "can't read %d", code);
     return;
   }
   if (data_length == 0) {
     // no message received
     return;
   }
-  printf("received: %d\n", data_length);
-  for (int i = 0; i < data_length; i++) {
-    printf("%x", data[i]);
+  uint8_t payload[514];
+  const char SYMBOLS[] = "0123456789ABCDEF";
+  for (size_t i = 0; i < data_length; i++) {
+    uint8_t cur = data[i];
+    payload[2 * i] = SYMBOLS[cur >> 4];
+    payload[2 * i + 1] = SYMBOLS[cur & 0x0F];
   }
-  printf("\n");
+  payload[data_length * 2] = '\0';
 
   int16_t rssi;
   ESP_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
-  printf("rssi: %d\n", rssi);
-
   float snr;
   ESP_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
-  printf("snr: %f\n", snr);
-
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
-  printf("frequency_error: %d\n", frequency_error);
+
+  ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %ld", data_length, payload, rssi, snr, frequency_error);
 }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("starting up");
+void app_main() {
+  ESP_LOGI(TAG, "starting up");
   spi_bus_config_t config = {
       .mosi_io_num = MOSI,
       .miso_io_num = MISO,
@@ -79,13 +81,9 @@ void setup() {
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
   }
 
-  rtc_gpio_set_direction((gpio_num_t)DIO0, RTC_GPIO_MODE_INPUT_ONLY);
-  rtc_gpio_pulldown_en((gpio_num_t)DIO0);
-  Serial.println("entering deep sleep");
-  esp_sleep_enable_ext0_wakeup((gpio_num_t)DIO0, RISING);
+  ESP_ERROR_CHECK(rtc_gpio_set_direction((gpio_num_t)DIO0, RTC_GPIO_MODE_INPUT_ONLY));
+  ESP_ERROR_CHECK(rtc_gpio_pulldown_en((gpio_num_t)DIO0));
+  ESP_LOGI(TAG, "entering deep sleep");
+  ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup((gpio_num_t)DIO0, 1));
   esp_deep_sleep_start();
-}
-
-void loop() {
-  // unreachable
 }

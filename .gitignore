@@ -52,3 +52,7 @@ Mkfile.old
 dkms.conf
 .pio
 .vscode
+build/
+sdkconfig
+sdkconfig.old
+dependencies.lock

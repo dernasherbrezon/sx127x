@@ -1,3 +1,1 @@
-cmake_minimum_required(VERSION 3.16.0)
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(sx127x)
+idf_component_register(SRCS "src/sx127x.c" INCLUDE_DIRS "include" REQUIRES "driver")
