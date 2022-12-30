@@ -12,10 +12,12 @@
 #define RST 23
 #define DIO0 26
 
+static const char *TAG = "sx127x";
+
 sx127x *device = NULL;
 
 void tx_callback(sx127x *device) {
-  Serial.printf("transmitted\n");
+  ESP_LOGI(TAG, "transmitted");
 }
 
 void setup() {
