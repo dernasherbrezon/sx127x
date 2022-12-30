@@ -75,13 +75,12 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
   sx127x_set_rx_callback(rx_callback, device);
 
-  gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT);
-  gpio_pulldown_en((gpio_num_t)DIO0);
-  gpio_pullup_dis((gpio_num_t)DIO0);
-  gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE);
-  gpio_install_isr_service(0);
-  gpio_isr_handler_add((gpio_num_t)DIO0, sx127x_handle_interrupt_fromisr, (void *)device);
-
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT));
+  ESP_ERROR_CHECK(gpio_pulldown_en((gpio_num_t)DIO0));
+  ESP_ERROR_CHECK(gpio_pullup_dis((gpio_num_t)DIO0));
+  ESP_ERROR_CHECK(gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE));
+  ESP_ERROR_CHECK(gpio_install_isr_service(0));
+  ESP_ERROR_CHECK(gpio_isr_handler_add((gpio_num_t)DIO0, sx127x_handle_interrupt_fromisr, (void *)device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);

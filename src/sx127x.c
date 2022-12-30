@@ -88,6 +88,7 @@ struct sx127x_t {
   void (*rx_callback)(sx127x *);
   void (*tx_callback)(sx127x *);
   uint8_t packet[256];
+  TaskHandle_t handle_interrupt;
 };
 
 esp_err_t sx127x_read_registers(int reg, sx127x *device, size_t data_length, uint32_t *result) {
@@ -220,6 +221,43 @@ esp_err_t sx127x_reload_low_datarate_optimization(sx127x *device) {
   return ESP_OK;
 }
 
+void sx127x_handle_interrupt(void *arg) {
+  sx127x *device = (sx127x *)arg;
+  uint8_t value;
+  esp_err_t code = sx127x_read_register(REG_IRQ_FLAGS, device, &value);
+  if (code != ESP_OK) {
+    return;
+  }
+  // clear the irq
+  uint8_t data[] = {value};
+  code = sx127x_write_register(REG_IRQ_FLAGS, data, 1, device);
+  if (code != ESP_OK) {
+    return;
+  }
+  if ((value & SX127x_IRQ_FLAG_PAYLOAD_CRC_ERROR) != 0) {
+    return;
+  }
+  if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
+    if (device->rx_callback != NULL) {
+      device->rx_callback(device);
+    }
+    return;
+  }
+  if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
+    if (device->tx_callback != NULL) {
+      device->tx_callback(device);
+    }
+    return;
+  }
+}
+
+void sx127x_handle_interrupt_task(void *arg) {
+  while (1) {
+    sx127x_handle_interrupt(arg);
+    vTaskSuspend(NULL);
+  }
+}
+
 esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result) {
   struct sx127x_t *device = malloc(sizeof(struct sx127x_t));
   if (device == NULL) {
@@ -249,6 +287,7 @@ esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result) {
     sx127x_destroy(device);
     return ESP_ERR_INVALID_VERSION;
   }
+  xTaskCreatePinnedToCore(sx127x_handle_interrupt_task, "handle interrupt", 100, device, 2, &(device->handle_interrupt), xPortGetCoreID());
   *result = device;
   return ESP_OK;
 }
@@ -369,38 +408,9 @@ esp_err_t sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *d
   }
 }
 
-void sx127x_handle_interrupt(void *arg, uint32_t arg2) {
-  sx127x *device = (sx127x *)arg;
-  uint8_t value;
-  esp_err_t code = sx127x_read_register(REG_IRQ_FLAGS, device, &value);
-  if (code != ESP_OK) {
-    return;
-  }
-  // clear the irq
-  uint8_t data[] = {value};
-  code = sx127x_write_register(REG_IRQ_FLAGS, data, 1, device);
-  if (code != ESP_OK) {
-    return;
-  }
-  if ((value & SX127x_IRQ_FLAG_PAYLOAD_CRC_ERROR) != 0) {
-    return;
-  }
-  if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
-    if (device->rx_callback != NULL) {
-      device->rx_callback(device);
-    }
-    return;
-  }
-  if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
-    if (device->tx_callback != NULL) {
-      device->tx_callback(device);
-    }
-    return;
-  }
-}
-
 void IRAM_ATTR sx127x_handle_interrupt_fromisr(void *arg) {
-  xTimerPendFunctionCallFromISR(sx127x_handle_interrupt, arg, 0, pdFALSE);
+  sx127x *device = (sx127x *)arg;
+  xTaskResumeFromISR(device->handle_interrupt);
 }
 
 esp_err_t sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
@@ -640,6 +650,9 @@ void sx127x_destroy(sx127x *device) {
   }
   if (device->spi != NULL) {
     spi_bus_remove_device(device->spi);
+  }
+  if (device->handle_interrupt != NULL) {
+    vTaskDelete(device->handle_interrupt);
   }
   free(device);
 }
