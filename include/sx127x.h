@@ -166,6 +166,7 @@ typedef struct sx127x_t sx127x;
  *
  * @param host SPI bus
  * @param cs Chip select (CS) pin to use. Sometimes called slave select (SS).
+ * @param callback_stack_depth Depth of the stack size for FREERtos tasks. sx127x will run callbacks in a separate RTOS task.
  * @param result Pointer to variable to hold the device handle
  * @return
  *         - ESP_ERR_INVALID_ARG      if parameter is invalid
@@ -174,7 +175,7 @@ typedef struct sx127x_t sx127x;
  *         - ESP_ERR_INVALID_VERSION  if device attached to SPI bus is invalid or chip is not sx127x.
  *         - ESP_OK                   on success
  */
-esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result);
+esp_err_t sx127x_create(spi_host_device_t host, int cs, uint32_t callback_stack_depth, sx127x **result);
 
 /**
  * @brief Set operating mode.

@@ -253,12 +253,12 @@ void sx127x_handle_interrupt(void *arg) {
 
 void sx127x_handle_interrupt_task(void *arg) {
   while (1) {
-    sx127x_handle_interrupt(arg);
     vTaskSuspend(NULL);
+    sx127x_handle_interrupt(arg);
   }
 }
 
-esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result) {
+esp_err_t sx127x_create(spi_host_device_t host, int cs, uint32_t callback_stack_depth, sx127x **result) {
   struct sx127x_t *device = malloc(sizeof(struct sx127x_t));
   if (device == NULL) {
     return ESP_ERR_NO_MEM;
@@ -287,7 +287,11 @@ esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result) {
     sx127x_destroy(device);
     return ESP_ERR_INVALID_VERSION;
   }
-  xTaskCreatePinnedToCore(sx127x_handle_interrupt_task, "handle interrupt", 100, device, 2, &(device->handle_interrupt), xPortGetCoreID());
+  BaseType_t task_code = xTaskCreatePinnedToCore(sx127x_handle_interrupt_task, "handle interrupt", callback_stack_depth, device, 2, &(device->handle_interrupt), xPortGetCoreID());
+  if (task_code != pdPASS) {
+    sx127x_destroy(device);
+    return ESP_ERR_INVALID_STATE;
+  }
   *result = device;
   return ESP_OK;
 }

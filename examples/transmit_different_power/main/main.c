@@ -52,7 +52,7 @@ void app_main() {
       .max_transfer_sz = 0,
   };
   ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 0));
-  ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, &device));
+  ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, 8196, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   ESP_ERROR_CHECK(sx127x_reset_fifo(device));
