@@ -602,9 +602,8 @@ esp_err_t sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *devi
   return sx127x_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device);
 }
 
-esp_err_t sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
-  // uint8_t can't be more than MAX_PACKET_SIZE
-  if (data_length == 0) {
+esp_err_t sx127x_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device) {
+  if (data_length == 0 || data_length > MAX_PACKET_SIZE) {
     return ESP_ERR_INVALID_ARG;
   }
   uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};

@@ -469,7 +469,7 @@ void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device);
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+esp_err_t sx127x_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

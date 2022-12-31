@@ -60,7 +60,7 @@ void app_main() {
       .quadhd_io_num = -1,
       .max_transfer_sz = 0,
   };
-  ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 0));
+  ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 1));
   ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, &device));
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
