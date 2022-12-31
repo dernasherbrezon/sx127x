@@ -16,6 +16,7 @@
 #define DIO0 26
 
 sx127x *device = NULL;
+int total_packets_received = 0;
 static const char *TAG = "sx127x";
 
 void rx_callback(sx127x *device) {
@@ -60,13 +61,12 @@ void app_main() {
       .max_transfer_sz = 0,
   };
   ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 0));
-  ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, 8196, &device));
+  ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, &device));
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
   if (cpu0WakeupReason == ESP_SLEEP_WAKEUP_EXT0) {
     sx127x_set_rx_callback(rx_callback, device);
-    // as it was called from interrupt routine
-    sx127x_handle_interrupt_fromisr(device);
+    sx127x_handle_interrupt(device);
   } else {
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
     ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));

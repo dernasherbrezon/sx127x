@@ -1,7 +1,5 @@
 #include "sx127x.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -88,7 +86,6 @@ struct sx127x_t {
   void (*rx_callback)(sx127x *);
   void (*tx_callback)(sx127x *);
   uint8_t packet[256];
-  TaskHandle_t handle_interrupt;
 };
 
 esp_err_t sx127x_read_registers(int reg, sx127x *device, size_t data_length, uint32_t *result) {
@@ -221,8 +218,7 @@ esp_err_t sx127x_reload_low_datarate_optimization(sx127x *device) {
   return ESP_OK;
 }
 
-void sx127x_handle_interrupt(void *arg) {
-  sx127x *device = (sx127x *)arg;
+void sx127x_handle_interrupt(sx127x *device) {
   uint8_t value;
   esp_err_t code = sx127x_read_register(REG_IRQ_FLAGS, device, &value);
   if (code != ESP_OK) {
@@ -251,14 +247,7 @@ void sx127x_handle_interrupt(void *arg) {
   }
 }
 
-void sx127x_handle_interrupt_task(void *arg) {
-  while (1) {
-    vTaskSuspend(NULL);
-    sx127x_handle_interrupt(arg);
-  }
-}
-
-esp_err_t sx127x_create(spi_host_device_t host, int cs, uint32_t callback_stack_depth, sx127x **result) {
+esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result) {
   struct sx127x_t *device = malloc(sizeof(struct sx127x_t));
   if (device == NULL) {
     return ESP_ERR_NO_MEM;
@@ -286,11 +275,6 @@ esp_err_t sx127x_create(spi_host_device_t host, int cs, uint32_t callback_stack_
   if (device->version != SX127x_VERSION) {
     sx127x_destroy(device);
     return ESP_ERR_INVALID_VERSION;
-  }
-  BaseType_t task_code = xTaskCreatePinnedToCore(sx127x_handle_interrupt_task, "handle interrupt", callback_stack_depth, device, 2, &(device->handle_interrupt), xPortGetCoreID());
-  if (task_code != pdPASS) {
-    sx127x_destroy(device);
-    return ESP_ERR_INVALID_STATE;
   }
   *result = device;
   return ESP_OK;
@@ -410,11 +394,6 @@ esp_err_t sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *d
     }
     return sx127x_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device);
   }
-}
-
-void IRAM_ATTR sx127x_handle_interrupt_fromisr(void *arg) {
-  sx127x *device = (sx127x *)arg;
-  xTaskResumeFromISR(device->handle_interrupt);
 }
 
 esp_err_t sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
@@ -654,9 +633,6 @@ void sx127x_destroy(sx127x *device) {
   }
   if (device->spi != NULL) {
     spi_bus_remove_device(device->spi);
-  }
-  if (device->handle_interrupt != NULL) {
-    vTaskDelete(device->handle_interrupt);
   }
   free(device);
 }

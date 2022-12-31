@@ -166,7 +166,6 @@ typedef struct sx127x_t sx127x;
  *
  * @param host SPI bus
  * @param cs Chip select (CS) pin to use. Sometimes called slave select (SS).
- * @param callback_stack_depth Depth of the stack size for FREERtos tasks. sx127x will run callbacks in a separate RTOS task.
  * @param result Pointer to variable to hold the device handle
  * @return
  *         - ESP_ERR_INVALID_ARG      if parameter is invalid
@@ -175,7 +174,7 @@ typedef struct sx127x_t sx127x;
  *         - ESP_ERR_INVALID_VERSION  if device attached to SPI bus is invalid or chip is not sx127x.
  *         - ESP_OK                   on success
  */
-esp_err_t sx127x_create(spi_host_device_t host, int cs, uint32_t callback_stack_depth, sx127x **result);
+esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result);
 
 /**
  * @brief Set operating mode.
@@ -326,11 +325,13 @@ esp_err_t sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device);
 esp_err_t sx127x_dump_registers(sx127x *device);
 
 /**
- * @brief Handle interrupt from DIOx pins. This function is safe to call from ISR. It will execute the actual interrupt processing function on FreeRTOS deamon thread (timer).
+ * @brief Handle interrupt from DIOx pins. 
+ * 
+ * @note This function SHOULD NOT be called from ISR. Use separate ISR-safe function
  *
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_handle_interrupt_fromisr(void *device);
+void sx127x_handle_interrupt(sx127x *device);
 
 // RX-related functions
 /**
