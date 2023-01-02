@@ -1,3 +1,5 @@
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/dernasherbrezon/library/sx127x.svg)](https://registry.platformio.org/libraries/dernasherbrezon/sx127x)
+
 # About
 
 Library to work with LoRa chips sx127x.
@@ -52,6 +54,7 @@ lib_deps = dernasherbrezon/sx127x
 * ```receive``` - basic RX
 * ```receive_deepsleep``` - receive messages from deep sleep
 * ```transmit``` - basic TX
+* ```transmit_different_power``` - TX on different power levels
 
 # Implementation notes
 
