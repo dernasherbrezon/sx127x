@@ -21,7 +21,7 @@
     "platforms": "espressif32",
     "export": {
         "exclude": [
-            "**/build/*",
+            "**/build",
             "**/sdkconfig",
             "**/sdkconfig.old",
             "**/dependencies.lock"
