@@ -485,12 +485,13 @@ esp_err_t sx127x_get_frequency_error(sx127x *device, int32_t *result) {
     return code;
   }
   if (frequency_error & 0x80000) {
-    frequency_error = ~frequency_error + 1;
+    // keep within original 2.5 bytes
+    frequency_error = ((~frequency_error) + 1) & 0xFFFFF;
     *result = -1;
   } else {
     *result = 1;
   }
-  *result = (*result) * frequency_error * SX127x_FREQ_ERROR_FACTOR * bandwidth / 500000.0f;
+  *result = (*result) * (frequency_error * SX127x_FREQ_ERROR_FACTOR * bandwidth / 500000.0f);
   return ESP_OK;
 }
 
