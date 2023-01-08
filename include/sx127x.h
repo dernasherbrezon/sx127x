@@ -308,7 +308,7 @@ esp_err_t sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *d
  *         - ESP_OK                on success
  */
 esp_err_t sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device);
-
+ 
 /**
  * @brief Map different interrupts from sx127x to different digital pins output.
  *
