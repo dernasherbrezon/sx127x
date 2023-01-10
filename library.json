@@ -1,6 +1,6 @@
 {
     "name": "sx127x",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "description": "Library to work with LoRa chips sx127x",
     "keywords": "sx127x, lora, sx1278, sx1276, sx1277, sx1279",
     "repository": {

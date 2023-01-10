@@ -5,11 +5,14 @@
 extern "C" {
 #endif
 
-#include <driver/spi_master.h>
-#include <esp_err.h>
 #include <stdint.h>
 
 #define MAX_PACKET_SIZE 256
+#define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
+#define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
+#define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
+#define SX127X_ERR_NOT_FOUND 0x105       /*!< Requested resource not found */
+#define SX127X_ERR_INVALID_VERSION 0x10A /*!< Version was invalid */
 
 /*
  * This structure used to change mode
@@ -164,17 +167,16 @@ typedef struct sx127x_t sx127x;
 /**
  * @brief Create device handle and attach to SPI bus.
  *
- * @param host SPI bus
- * @param cs Chip select (CS) pin to use. Sometimes called slave select (SS).
+ * @param spi_device spi device
  * @param result Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG      if parameter is invalid
- *         - ESP_ERR_NOT_FOUND        if host doesn't have any free CS slots
- *         - ESP_ERR_NO_MEM           if no not enough memory
- *         - ESP_ERR_INVALID_VERSION  if device attached to SPI bus is invalid or chip is not sx127x.
- *         - ESP_OK                   on success
+ *         - SX127X_ERR_INVALID_ARG      if parameter is invalid
+ *         - SX127X_ERR_NOT_FOUND        if host doesn't have any free CS slots
+ *         - SX127X_ERR_NO_MEM           if no not enough memory
+ *         - SX127X_ERR_INVALID_VERSION  if device attached to SPI bus is invalid or chip is not sx127x.
+ *         - SX127X_OK                   on success
  */
-esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result);
+int sx127x_create(void *spi_device, sx127x **result);
 
 /**
  * @brief Set operating mode.
@@ -182,10 +184,10 @@ esp_err_t sx127x_create(spi_host_device_t host, int cs, sx127x **result);
  * @param mode Sleep, standby, rx or tx. See @ref sx127x_mode_t for details.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_opmod(sx127x_mode_t mode, sx127x *device);
+int sx127x_set_opmod(sx127x_mode_t mode, sx127x *device);
 
 /**
  * @brief Set frequency for RX or TX.
@@ -193,20 +195,20 @@ esp_err_t sx127x_set_opmod(sx127x_mode_t mode, sx127x *device);
  * @param frequency Frequency in hz.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_frequency(uint64_t frequency, sx127x *device);
+int sx127x_set_frequency(uint64_t frequency, sx127x *device);
 
 /**
  * @brief Reset chip's memory pointers to 0. Both RX and TX.
  *
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_reset_fifo(sx127x *device);
+int sx127x_reset_fifo(sx127x *device);
 
 /**
  * @brief Set signal bandwidth
@@ -217,10 +219,10 @@ esp_err_t sx127x_reset_fifo(sx127x *device);
  * @param bandwidth Selected bandwidth
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
+int sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
 
 /**
  * @brief Get signal bandwidth in hz.
@@ -228,10 +230,10 @@ esp_err_t sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
  * @param device Pointer to variable to hold the device handle
  * @param bandwidth Signal bandwidth in hz. For example: 125000.
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth);
+int sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth);
 
 /**
  * @brief Set speading factor (SF rate). See section 4.1.1.2. for more details.
@@ -241,10 +243,10 @@ esp_err_t sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth);
  * @param spreading_factor SF rate
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
+int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
 
 /**
  * @brief Enable or disable low datarate optimization.
@@ -254,10 +256,10 @@ esp_err_t sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device
  * @param value Enable or disable.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device);
+int sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device);
 
 /**
  * @brief Set syncword.
@@ -266,10 +268,10 @@ esp_err_t sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_
  * @param value Syncword.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_syncword(uint8_t value, sx127x *device);
+int sx127x_set_syncword(uint8_t value, sx127x *device);
 
 /**
  * @brief Set preamble length. See 4.1.1 for more details.
@@ -277,10 +279,10 @@ esp_err_t sx127x_set_syncword(uint8_t value, sx127x *device);
  * @param value Preamble length
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_preamble_length(uint16_t value, sx127x *device);
+int sx127x_set_preamble_length(uint16_t value, sx127x *device);
 
 /**
  * @brief Set implicit header.
@@ -291,10 +293,10 @@ esp_err_t sx127x_set_preamble_length(uint16_t value, sx127x *device);
  * @param header Pre-defined packet information. If NULL, then assume explicit header in RX mode. For TX explicit mode please use sx127x_set_tx_explcit_header function.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
+int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
 /**
  * @brief Map different interrupts from sx127x to different digital pins output.
@@ -304,11 +306,11 @@ esp_err_t sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *d
  * @param value Mapping
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device);
- 
+int sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device);
+
 /**
  * @brief Map different interrupts from sx127x to different digital pins output.
  *
@@ -317,16 +319,16 @@ esp_err_t sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device);
  * @param value Mapping
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device);
+int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device);
 
-esp_err_t sx127x_dump_registers(sx127x *device);
+int sx127x_dump_registers(sx127x *device);
 
 /**
- * @brief Handle interrupt from DIOx pins. 
- * 
+ * @brief Handle interrupt from DIOx pins.
+ *
  * @note This function SHOULD NOT be called from ISR. Use separate ISR-safe function
  *
  * @param device Pointer to variable to hold the device handle
@@ -340,10 +342,10 @@ void sx127x_handle_interrupt(sx127x *device);
  * @param gain G1 is maximum, G6 is minimum.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device);
+int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device);
 
 /**
  * @brief Boost LNA current in high frequency mode (over 525Mhz).
@@ -351,10 +353,10 @@ esp_err_t sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device);
  * @param value Enable or disable
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
+int sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
 
 /**
  * @brief Set callback function for rxdone interrupt.
@@ -371,10 +373,10 @@ void sx127x_set_rx_callback(void (*rx_callback)(sx127x *), sx127x *device);
  * @param packet Output buffer
  * @param packet_length Output buffer length
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
+int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
 
 /**
  * @brief RSSI of the latest packet received (dBm)
@@ -382,10 +384,10 @@ esp_err_t sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_
  * @param device Pointer to variable to hold the device handle
  * @param rssi RSSI
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_get_packet_rssi(sx127x *device, int16_t *rssi);
+int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi);
 
 /**
  * @brief Estimation of SNR on last packet received
@@ -393,10 +395,10 @@ esp_err_t sx127x_get_packet_rssi(sx127x *device, int16_t *rssi);
  * @param device Pointer to variable to hold the device handle
  * @param snr SNR
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_get_packet_snr(sx127x *device, float *snr);
+int sx127x_get_packet_snr(sx127x *device, float *snr);
 
 /**
  * @brief Read estimated frequency error from modem.
@@ -404,10 +406,10 @@ esp_err_t sx127x_get_packet_snr(sx127x *device, float *snr);
  * @param device Pointer to variable to hold the device handle
  * @param frequency_error Output frequency error
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_get_frequency_error(sx127x *device, int32_t *frequency_error);
+int sx127x_get_frequency_error(sx127x *device, int32_t *frequency_error);
 
 // TX-related functions
 /**
@@ -423,10 +425,10 @@ esp_err_t sx127x_get_frequency_error(sx127x *device, int32_t *frequency_error);
  * @param power Output power in dbm. When using RFO pin supported range is from -4 to 15dbm. When using PA_BOOST range is from 2 to 17dbm. And also 20dbm for high power output. See section 5.4.3.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
+int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
 
 /**
  * @brief Configure overload current protection (OCP) for PA.
@@ -435,10 +437,10 @@ esp_err_t sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
  * @param milliamps Maximum current in milliamps
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
+int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
 
 /**
  * @brief Set explicit header during TX.
@@ -446,10 +448,10 @@ esp_err_t sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
  * @param header Transmitter will populate packet's header with this configuration
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device);
+int sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device);
 
 /**
  * @brief Set callback function for txdone interrupt.
@@ -466,10 +468,10 @@ void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device);
  * @param data_length Packet length. Cannot be more than 256 bytes or 0.
  * @param device Pointer to variable to hold the device handle
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-esp_err_t sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

@@ -61,7 +61,17 @@ void app_main() {
       .max_transfer_sz = 0,
   };
   ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 1));
-  ESP_ERROR_CHECK(sx127x_create(HSPI_HOST, SS, &device));
+  spi_device_interface_config_t dev_cfg = {
+      .clock_speed_hz = 8E6,
+      .spics_io_num = SS,
+      .queue_size = 16,
+      .command_bits = 0,
+      .address_bits = 8,
+      .dummy_bits = 0,
+      .mode = 0};
+  spi_device_handle_t spi_device;
+  ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
+  ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
   if (cpu0WakeupReason == ESP_SLEEP_WAKEUP_EXT0) {
