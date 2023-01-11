@@ -59,6 +59,8 @@ int setup_and_wait_for_interrupt(sx127x *device) {
     return EXIT_FAILURE;
   }
 
+  //FIXME make it low?
+
   struct gpioevent_request rq;
   rq.lineoffset = GPIO_DIO0_PIN;
   rq.eventflags = GPIOEVENT_EVENT_RISING_EDGE;
