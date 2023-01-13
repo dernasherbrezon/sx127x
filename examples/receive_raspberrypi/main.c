@@ -2,6 +2,7 @@
 #include <linux/gpio.h>
 #include <linux/spi/spidev.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sx127x.h>
 #include <sys/ioctl.h>
@@ -11,7 +12,7 @@
 
 #define SPI_DEVICE "/dev/spidev0.0"
 #define GPIO_DEVICE "/dev/gpiochip0"
-#define GPIO_DIO0_PIN 17
+#define GPIO_DIO0_PIN 27
 #define GPIO_POLL_TIMEOUT -1
 
 #define LINUX_ERROR_CHECK(x) do {                                         \
@@ -71,9 +72,13 @@ int setup_and_wait_for_interrupt(sx127x *device) {
 
     //FIXME make it low?
 
+    char label[] = "lora_raspberry";
+
     struct gpioevent_request rq;
     rq.lineoffset = GPIO_DIO0_PIN;
     rq.eventflags = GPIOEVENT_EVENT_RISING_EDGE;
+    memcpy(rq.consumer_label, label, sizeof(label));
+    rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
 
     int code = ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
     close(fd);
