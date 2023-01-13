@@ -60,7 +60,7 @@ void rx_callback(sx127x *device) {
         fprintf(stderr, "can't read frequency error %d", code);
     }
 
-    fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %d", data_length, payload, rssi, snr, frequency_error);
+    fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %d\n", data_length, payload, rssi, snr, frequency_error);
 }
 
 int setup_and_wait_for_interrupt(sx127x *device) {
@@ -134,5 +134,11 @@ int main() {
     // FIXME better poll on a separate thread and start RX only when started
     LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
 
-    return setup_and_wait_for_interrupt(device);
+//    return setup_and_wait_for_interrupt(device);
+    while (1) {
+        sleep(5);
+        printf("checking...\n");
+        sx127x_handle_interrupt(device);
+    }
+    return 0;
 }

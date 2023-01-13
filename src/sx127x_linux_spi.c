@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <errno.h>
 #include <linux/spi/spidev.h>
 #include <stdio.h>
@@ -16,7 +17,10 @@ int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uin
   tr[1].rx_buf = (unsigned long)result;
   tr[1].len = data_length;
   int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
-  printf("requested: %zu received: 0x%x code: %d to: %d\n", data_length, (*result), code, *((int *)spi_device));
+  // convert from big-endian to host order
+  *result = ntohl(*result);
+  *result = *result >> (4 - data_length) * 8;
+  printf("read 0x%x bytes %zu received: 0x%x code: %d to: %d\n", reg, data_length, (*result), code, *((int *)spi_device));
   if (code == -1) {
     return errno;
   }
@@ -32,7 +36,7 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
   tr[1].rx_buf = (unsigned long)buffer;
   tr[1].len = buffer_length;
   int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
-  printf("requested: %zu code: %d to: %d\n", buffer_length, code, *((int *)spi_device));
+  printf("read 0x%x bytes %zu code: %d to: %d\n", reg, buffer_length, code, *((int *)spi_device));
   if (code == -1) {
     return errno;
   }
@@ -48,7 +52,11 @@ int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *
   tr[1].tx_buf = (unsigned long)data;
   tr[1].len = data_length;
   int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
-  printf("requested: %zu written: 0x%x code: %d to: %d\n", data_length, data[0], code, *((int *)spi_device));
+  printf("write 0x%x bytes %zu written: 0x", reg, data_length);
+  for (int i = 0; i < data_length; i++) {
+    printf("%x", data[i]);
+  }
+  printf(" code: %d to: %d\n", code, *((int *)spi_device));
   if (code == -1) {
     return errno;
   }
