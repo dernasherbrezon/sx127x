@@ -58,3 +58,6 @@ sdkconfig.old
 dependencies.lock
 .DS_Store
 build_mac/
+/cmake-build-remote/
+/cmake-build-debug/
+.idea/
