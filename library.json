@@ -24,7 +24,13 @@
             "**/build",
             "**/sdkconfig",
             "**/sdkconfig.old",
-            "**/dependencies.lock"
+            "**/dependencies.lock",
+            "**/cmake-build-debug",
+            "**/cmake-build-remote",
+            "**/.idea",
+            "**/.DS_Store",
+            "**/.git",
+            "**/.gitignore"
         ]
     }
 }
