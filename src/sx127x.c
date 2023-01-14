@@ -342,6 +342,11 @@ int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device)
     if (code != SX127X_OK) {
       return code;
     }
+    uint8_t reg_data[] = {header->length};
+    code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
     return sx127x_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device);
   }
 }
@@ -444,7 +449,7 @@ int sx127x_dump_registers(sx127x *device) {
   for (int i = 0; i < length; i++) {
     uint8_t value;
     sx127x_read_register(i, device, &value);
-    printf("0x%.2x: 0x%.2x\n", i, value);
+    printf("0x%2x: 0x%2x\n", i, value);
   }
   return SX127X_OK;
 }

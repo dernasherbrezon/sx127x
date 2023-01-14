@@ -107,7 +107,6 @@ int main() {
         perror("unable to open device");
         return EXIT_FAILURE;
     }
-    printf("opened: %d\n", spi_device_fd);
     int mode = SPI_MODE_0; // CPOL=0, CPHA=0
     LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_MODE, &mode));
     int bits_per_word = 0; // means 8 bits
