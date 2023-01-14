@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <linux/gpio.h>
 #include <linux/spi/spidev.h>
 #include <stdio.h>
@@ -10,8 +9,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+// Correspond to SPI0 with chip select pin CE0 (GPIO8) on RaspberryPI
 #define SPI_DEVICE "/dev/spidev0.0"
 #define GPIO_DEVICE "/dev/gpiochip0"
+// GPIO 27
 #define GPIO_DIO0_PIN 27
 #define GPIO_POLL_TIMEOUT -1
 
@@ -69,14 +70,10 @@ int setup_and_wait_for_interrupt(sx127x *device) {
         perror("unable to open device");
         return EXIT_FAILURE;
     }
-
-    //FIXME make it low?
-
-    char label[] = "lora_raspberry";
-
     struct gpioevent_request rq;
     rq.lineoffset = GPIO_DIO0_PIN;
     rq.eventflags = GPIOEVENT_EVENT_RISING_EDGE;
+    char label[] = "lora_raspberry";
     memcpy(rq.consumer_label, label, sizeof(label));
     rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
 
@@ -91,11 +88,14 @@ int setup_and_wait_for_interrupt(sx127x *device) {
     pfd.fd = rq.fd;
     pfd.events = POLLIN;
     fprintf(stdout, "waiting for packets...\n");
-    code = poll(&pfd, 1, GPIO_POLL_TIMEOUT);
-    if (code < 0) {
-        perror("unable to receive gpio interrupt");
-    } else if (pfd.events & POLLIN) {
-        sx127x_handle_interrupt(device);
+    while (1) {
+        code = poll(&pfd, 1, GPIO_POLL_TIMEOUT);
+        if (code < 0) {
+            perror("unable to receive gpio interrupt");
+            break;
+        } else if (pfd.events & POLLIN) {
+            sx127x_handle_interrupt(device);
+        }
     }
     close(rq.fd);
     return EXIT_SUCCESS;
@@ -131,14 +131,7 @@ int main() {
     LINUX_ERROR_CHECK(sx127x_set_syncword(18, device));
     LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, device));
     sx127x_set_rx_callback(rx_callback, device);
-    // FIXME better poll on a separate thread and start RX only when started
     LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
 
-//    return setup_and_wait_for_interrupt(device);
-    while (1) {
-        sleep(5);
-        printf("checking...\n");
-        sx127x_handle_interrupt(device);
-    }
-    return 0;
+    return setup_and_wait_for_interrupt(device);
 }
