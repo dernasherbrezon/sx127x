@@ -1,5 +1,10 @@
 version: "2.0.1"
 description: Library to work with LoRa chips sx127x
 url: https://github.com/dernasherbrezon/sx127x
-dependencies:
-  idf : ">=4.0"
+files:
+  exclude:
+    - "**/cmake-build-debug/**/*"
+    - "**/cmake-build-remote/**/*"
+    - "**/.pio/**/*"
+    - "**/.gitignore"
+    - "**/*_linux_*"
