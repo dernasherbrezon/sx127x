@@ -1,4 +1,4 @@
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/dernasherbrezon/library/sx127x.svg)](https://registry.platformio.org/libraries/dernasherbrezon/sx127x)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/dernasherbrezon/library/sx127x.svg)](https://registry.platformio.org/libraries/dernasherbrezon/sx127x) [![Component Registry](https://components.espressif.com/components/dernasherbrezon/sx127x/badge.svg)](https://components.espressif.com/components/dernasherbrezon/sx127x)
 
 # About
 
