@@ -37,7 +37,7 @@
 int messages_sent = 0;
 
 void tx_callback(sx127x *device) {
-  fprintf(stdout, "transmitted");
+  fprintf(stdout, "transmitted\n");
   if (messages_sent == 0) {
     uint8_t data[] = {0xCA, 0xFE};
     LINUX_NO_CODE_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
@@ -53,7 +53,7 @@ void tx_callback(sx127x *device) {
     return;
   }
   LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, device));
-  fprintf(stdout, "transmitting");
+  fprintf(stdout, "transmitting\n");
   messages_sent++;
 }
 

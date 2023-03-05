@@ -122,7 +122,7 @@ void app_main() {
   ESP_ERROR_CHECK(gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE));
   ESP_ERROR_CHECK(gpio_install_isr_service(0));
   ESP_ERROR_CHECK(gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }
