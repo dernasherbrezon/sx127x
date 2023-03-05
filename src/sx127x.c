@@ -87,6 +87,7 @@ struct sx127x_t {
   uint64_t frequency;
   void (*rx_callback)(sx127x *);
   void (*tx_callback)(sx127x *);
+  void (*cad_callback)(sx127x *, int);
   uint8_t packet[256];
 };
 
@@ -190,6 +191,12 @@ void sx127x_handle_interrupt(sx127x *device) {
   uint8_t data[] = {value};
   code = sx127x_spi_write_register(REG_IRQ_FLAGS, data, 1, device->spi_device);
   if (code != SX127X_OK) {
+    return;
+  }
+  if ((value & SX127x_IRQ_FLAG_CADDONE) != 0) {
+    if (device->cad_callback != NULL) {
+      device->cad_callback(device, value & SX127x_IRQ_FLAG_CAD_DETECTED);
+    }
     return;
   }
   if ((value & SX127x_IRQ_FLAG_PAYLOAD_CRC_ERROR) != 0) {
@@ -569,6 +576,10 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
   }
 
   return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+}
+
+void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
+  device->cad_callback = cad_callback;
 }
 
 void sx127x_destroy(sx127x *device) {

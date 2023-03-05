@@ -474,6 +474,14 @@ void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device);
 int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
 
 /**
+ * @brief Set callback function for caddone interrupt. int argument is 0 when no CAD detected.
+ *
+ * @param cad_callback Callback function. Should accept pointer to variable to hold the device handle.
+ * @param device Pointer to variable to hold the device handle
+ */
+void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
+
+/**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
  *
  * @param device Pointer to variable to hold the device handle
