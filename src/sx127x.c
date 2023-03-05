@@ -250,6 +250,11 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x *device) {
     if (code != SX127X_OK) {
       return code;
     }
+  } else if (opmod == SX127x_MODE_CAD) {
+    int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_CAD_DONE, 0b00111111, device);
+    if (code != SX127X_OK) {
+      return code;
+    }
   }
   data[0] = (opmod | SX127x_LORA_MODE_LORA);
   return sx127x_spi_write_register(REG_OP_MODE, data, 1, device->spi_device);

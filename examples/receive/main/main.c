@@ -62,6 +62,17 @@ void rx_callback(sx127x *device) {
   total_packets_received++;
 }
 
+void cad_callback(sx127x *device, int cad_detected) {
+  if (cad_detected == 0) {
+    ESP_LOGI(TAG, "cad not detected");
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+    return;
+  }
+  // put into RX mode first to handle interrupt as soon as possible
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  ESP_LOGI(TAG, "cad detected\n");
+}
+
 void app_main() {
   ESP_LOGI(TAG, "starting up");
   spi_bus_config_t config = {
@@ -96,6 +107,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_syncword(18, device));
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
   sx127x_set_rx_callback(rx_callback, device);
+  sx127x_set_cad_callback(cad_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
@@ -110,7 +122,7 @@ void app_main() {
   ESP_ERROR_CHECK(gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE));
   ESP_ERROR_CHECK(gpio_install_isr_service(0));
   ESP_ERROR_CHECK(gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }

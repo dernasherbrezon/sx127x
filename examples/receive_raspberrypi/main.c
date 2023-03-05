@@ -16,23 +16,28 @@
 #define GPIO_DIO0_PIN 27
 #define GPIO_POLL_TIMEOUT -1
 
-#define LINUX_ERROR_CHECK(x)                                              \
-  do {                                                                    \
-    int __err_rc = (x);                                                   \
-    if (__err_rc != 0) {                                                  \
-      printf("failed at %s:%d code: %d\n", __FILE__, __LINE__, __err_rc); \
-      return EXIT_FAILURE;                                                \
-    }                                                                     \
+#define LINUX_ERROR_CHECK(x)                                                       \
+  do {                                                                             \
+    int __err_rc = (x);                                                            \
+    if (__err_rc != 0) {                                                           \
+      fprintf(stderr, "failed at %s:%d code: %d\n", __FILE__, __LINE__, __err_rc); \
+      return EXIT_FAILURE;                                                         \
+    }                                                                              \
+  } while (0)
+
+#define LINUX_NO_CODE_ERROR_CHECK(x)                                               \
+  do {                                                                             \
+    int __err_rc = (x);                                                            \
+    if (__err_rc != 0) {                                                           \
+      fprintf(stderr, "failed at %s:%d code: %d\n", __FILE__, __LINE__, __err_rc); \
+      return;                                                                      \
+    }                                                                              \
   } while (0)
 
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  int code = sx127x_read_payload(device, &data, &data_length);
-  if (code != SX127X_OK) {
-    fprintf(stderr, "can't read %d", code);
-    return;
-  }
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_read_payload(device, &data, &data_length));
   if (data_length == 0) {
     // no message received
     return;
@@ -47,33 +52,23 @@ void rx_callback(sx127x *device) {
   payload[data_length * 2] = '\0';
 
   int16_t rssi;
-  code = sx127x_get_packet_rssi(device, &rssi);
-  if (code != SX127X_OK) {
-    fprintf(stderr, "can't read rssi %d", code);
-  }
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
   float snr;
-  code = sx127x_get_packet_snr(device, &snr);
-  if (code != SX127X_OK) {
-    fprintf(stderr, "can't read snr %d", code);
-  }
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
   int32_t frequency_error;
-  code = sx127x_get_frequency_error(device, &frequency_error);
-  if (code != SX127X_OK) {
-    fprintf(stderr, "can't read frequency error %d", code);
-  }
-
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
   fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %d\n", data_length, payload, rssi, snr, frequency_error);
 }
 
 void cad_callback(sx127x *device, int cad_detected) {
   if (cad_detected == 0) {
-    fprintf(stdout, "cad not detected");
-    LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+    fprintf(stdout, "cad not detected\n");
+    LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
     return;
   }
-  // put RX first to handle interrupt as soon as possible
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
-  fprintf(stdout, "cad detected");
+  // put into RX mode first to handle interrupt as soon as possible
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  fprintf(stdout, "cad detected\n");
 }
 
 int setup_and_wait_for_interrupt(sx127x *device) {
@@ -143,7 +138,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, device));
   sx127x_set_rx_callback(rx_callback, device);
   sx127x_set_cad_callback(cad_callback, device);
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
 
   return setup_and_wait_for_interrupt(device);
 }
