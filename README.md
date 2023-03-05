@@ -19,6 +19,7 @@ There are several similar libraries exist, but this one is much better:
 And of course this library supports all standard LoRa features:
 
 * RX/TX
+* CAD (Channel activity detection). Can be used to reduce power consumption in RX mode.
 * TX with +20dbm power
 * Explicit and implicit headers
 * Granular sx127x register configuration
@@ -74,6 +75,7 @@ target_link_libraries(my_application sx127x)
 * ```receive_deepsleep``` - receive messages from deep sleep
 * ```receive_implicit_header``` - receive messages without header (implicit header)
 * ```receive_raspberrypi``` - sample program to receive messages on RaspberryPI via GPIO pins and onboard SPI. Tested on module RA-02.  
+* ```transmit_raspberrypi``` - sample program to transmit messages from RaspberryPI. Tested on module RA-02.  
 * ```transmit``` - basic TX
 * ```transmit_different_power``` - TX on different power levels
 * ```transmit_implicit_header``` - transmit messages without header (implicit header)
