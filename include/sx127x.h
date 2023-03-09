@@ -29,6 +29,12 @@ typedef enum {
 } sx127x_mode_t;
 
 typedef enum {
+  SX127x_MODULATION_LORA = 0b10000000,
+  SX127x_MODULATION_FSK = 0b00000000,
+  SX127x_MODULATION_OOK = 0b01000000
+} sx127x_modulation_t;
+
+typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
   SX127x_LNA_GAIN_G2 = 0b01000000,
   SX127x_LNA_GAIN_G3 = 0b01100000,
@@ -182,12 +188,13 @@ int sx127x_create(void *spi_device, sx127x **result);
  * @brief Set operating mode.
  *
  * @param mode Sleep, standby, rx or tx. See @ref sx127x_mode_t for details.
+ * @param modulation LoRa, FSK, OOK. See @ref sx127x_modulation_t for details.
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_opmod(sx127x_mode_t mode, sx127x *device);
+int sx127x_set_opmod(sx127x_mode_t mode, sx127x_modulation_t modulation, sx127x *device);
 
 /**
  * @brief Set frequency for RX or TX.
@@ -480,6 +487,8 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
  * @param device Pointer to variable to hold the device handle
  */
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
+
+int sx127x_set_fsk_ook_bitrate(float bitrate, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

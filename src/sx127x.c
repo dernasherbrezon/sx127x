@@ -8,6 +8,7 @@
 // registers
 #define REG_FIFO 0x00
 #define REG_OP_MODE 0x01
+#define REG_BITRATE_MSB 0x02
 #define REG_FRF_MSB 0x06
 #define REG_FRF_MID 0x07
 #define REG_FRF_LSB 0x08
@@ -42,11 +43,9 @@
 #define REG_DIO_MAPPING_2 0x41
 #define REG_VERSION 0x42
 #define REG_PA_DAC 0x4d
+#define REG_BITRATE_FRAC 0x5d
 
 #define SX127x_VERSION 0x12
-
-#define SX127x_LORA_MODE_FSK 0b00000000
-#define SX127x_LORA_MODE_LORA 0b10000000
 
 #define SX127x_OSCILLATOR_FREQUENCY 32000000.0f
 #define SX127x_FREQ_ERROR_FACTOR ((1 << 24) / SX127x_OSCILLATOR_FREQUENCY)
@@ -89,6 +88,7 @@ struct sx127x_t {
   void (*tx_callback)(sx127x *);
   void (*cad_callback)(sx127x *, int);
   uint8_t packet[256];
+  sx127x_modulation_t active_modem;
 };
 
 int sx127x_read_register(int reg, sx127x *device, uint8_t *result) {
@@ -233,11 +233,12 @@ int sx127x_create(void *spi_device, sx127x **result) {
     sx127x_destroy(device);
     return SX127X_ERR_INVALID_VERSION;
   }
+  device->active_modem = SX127x_MODULATION_LORA;
   *result = device;
   return SX127X_OK;
 }
 
-int sx127x_set_opmod(sx127x_mode_t opmod, sx127x *device) {
+int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x *device) {
   uint8_t data[] = {0};
   // enforce DIO mappings for during RX and TX
   if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
@@ -256,8 +257,12 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x *device) {
       return code;
     }
   }
-  data[0] = (opmod | SX127x_LORA_MODE_LORA);
-  return sx127x_spi_write_register(REG_OP_MODE, data, 1, device->spi_device);
+  data[0] = (opmod | modulation);
+  int result = sx127x_spi_write_register(REG_OP_MODE, data, 1, device->spi_device);
+  if (result == SX127X_OK) {
+    device->active_modem = modulation;
+  }
+  return result;
 }
 
 int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
@@ -585,6 +590,26 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
 
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
   device->cad_callback = cad_callback;
+}
+
+int sx127x_set_fsk_ook_bitrate(float bitrate, sx127x *device) {
+  uint16_t bitrate_value;
+  uint8_t bitrate_fractional;
+  if (device->active_modem == SX127x_MODULATION_FSK) {
+    uint32_t value = (uint32_t)(SX127x_OSCILLATOR_FREQUENCY * 16.0 / bitrate);
+    bitrate_value = (value >> 4) & 0xFFFF;
+    bitrate_fractional = value & 0x0F;
+  } else if (device->active_modem == SX127x_MODULATION_OOK) {
+    bitrate_value = (uint16_t)(SX127x_OSCILLATOR_FREQUENCY / bitrate);
+    bitrate_fractional = 0;
+  } else {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  int code = sx127x_spi_write_register(REG_BITRATE_MSB, &bitrate_value, 2, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  return sx127x_spi_write_register(REG_BITRATE_FRAC, &bitrate_fractional, 1, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
