@@ -34,6 +34,58 @@ typedef enum {
   SX127x_MODULATION_OOK = 0b01000000
 } sx127x_modulation_t;
 
+/**
+ * @brief Size of each decrement of the RSSI threshold in the OOK demodulator
+ *
+ */
+typedef enum {
+  SX127X_0_5_DB = 0b00000000,  // 0.5db
+  SX127X_1_0_DB = 0b00000001,  // 1.0db
+  SX127X_1_5_DB = 0b00000010,  // 1.5db
+  SX127X_2_0_DB = 0b00000011,  // 2.0db
+  SX127X_3_0_DB = 0b00000100,  // 3.0db
+  SX127X_4_0_DB = 0b00000101,  // 4.0db
+  SX127X_5_0_DB = 0b00000110,  // 5.0db
+  SX127X_6_0_DB = 0b00000111   // 6.0db
+} sx127x_ook_peak_thresh_step_t;
+
+/**
+ * @brief Static offset added to the threshold in average mode in order to reduce glitching activity (OOK only)
+ *
+ */
+typedef enum {
+  SX127X_0_DB = 0b00000000,
+  SX127X_2_DB = 0b00000100,
+  SX127X_4_DB = 0b00001000,
+  SX127X_6_DB = 0b00001100
+} sx127x_ook_avg_offset_t;
+
+/**
+ * @brief Filter coefficients in average mode of the OOK demodulator
+ *
+ */
+typedef enum {
+  SX127X_32_PI = 0b00000000,  // chip rate / 32.π
+  SX127X_8_PI = 0b00000001,   // chip rate / 8.π
+  SX127X_4_PI = 0b00000010,   // chip rate / 4.π
+  SX127X_2_PI = 0b00000011,   // chip rate / 2.π
+} sx127x_ook_avg_thresh_t;
+
+/**
+ * @brief Period of decrement of the RSSI threshold in the OOK demodulator
+ *
+ */
+typedef enum {
+  SX127X_1_1_CHIP = 0b00000000,   // once per chip
+  SX127X_1_2_CHIP = 0b00100000,   // once every 2 chips
+  SX127X_1_4_CHIP = 0b01000000,   // once every 4 chips
+  SX127X_1_8_CHIP = 0b01100000,   // once every 8 chips
+  SX127X_2_1_CHIP = 0b10000000,   // twice in each chip
+  SX127X_4_1_CHIP = 0b10100000,   // 4 times in each chip
+  SX127X_8_1_CHIP = 0b11000000,   // 8 times in each chip
+  SX127X_16_1_CHIP = 0b11100000,  // 16 times in each chip
+} sx127x_ook_peak_thresh_dec_t;
+
 typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
   SX127x_LNA_GAIN_G2 = 0b01000000,
@@ -488,7 +540,15 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
  */
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
 
-int sx127x_set_fsk_ook_bitrate(float bitrate, sx127x *device);
+int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device);
+
+int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device);
+
+int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device);
+
+int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
+
+int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

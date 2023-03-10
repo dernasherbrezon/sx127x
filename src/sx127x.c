@@ -9,6 +9,7 @@
 #define REG_FIFO 0x00
 #define REG_OP_MODE 0x01
 #define REG_BITRATE_MSB 0x02
+#define REG_FDEV_MSB 0x04
 #define REG_FRF_MSB 0x06
 #define REG_FRF_MID 0x07
 #define REG_FRF_LSB 0x08
@@ -21,6 +22,9 @@
 #define REG_FIFO_RX_CURRENT_ADDR 0x10
 #define REG_IRQ_FLAGS 0x12
 #define REG_RX_NB_BYTES 0x13
+#define REG_OOK_PEAK 0x14
+#define REG_OOK_FIX 0x15
+#define REG_OOK_AVG 0x16
 #define REG_PKT_SNR_VALUE 0x19
 #define REG_PKT_RSSI_VALUE 0x1a
 #define REG_RSSI_VALUE 0x1b
@@ -49,6 +53,7 @@
 
 #define SX127x_OSCILLATOR_FREQUENCY 32000000.0f
 #define SX127x_FREQ_ERROR_FACTOR ((1 << 24) / SX127x_OSCILLATOR_FREQUENCY)
+#define SX127x_FSTEP (SX127x_OSCILLATOR_FREQUENCY / (1 << 19))
 #define SX127x_REG_MODEM_CONFIG_3_AGC_ON 0b00000100
 #define SX127x_REG_MODEM_CONFIG_3_AGC_OFF 0b00000000
 
@@ -592,7 +597,7 @@ void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device
   device->cad_callback = cad_callback;
 }
 
-int sx127x_set_fsk_ook_bitrate(float bitrate, sx127x *device) {
+int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   uint16_t bitrate_value;
   uint8_t bitrate_fractional;
   if (device->active_modem == SX127x_MODULATION_FSK) {
@@ -610,6 +615,43 @@ int sx127x_set_fsk_ook_bitrate(float bitrate, sx127x *device) {
     return code;
   }
   return sx127x_spi_write_register(REG_BITRATE_FRAC, &bitrate_fractional, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device) {
+  uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP) & 0x3FFF;
+  return sx127x_spi_write_register(REG_FDEV_MSB, &value, 2, device->spi_device);
+}
+
+int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
+  int code = sx127x_spi_write_register(REG_OOK_FIX, &floor_threshold, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  code = sx127x_append_register(REG_OOK_AVG, &decrement, 0b11100000, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  uint8_t value = (0b00001000 | step);
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011111, device->spi_device);
+}
+
+int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
+  int code = sx127x_spi_write_register(REG_OOK_FIX, &fixed_threshold, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  uint8_t value = 0b00000000;
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011000, device->spi_device);
+}
+
+int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
+  uint8_t value = (avg_offset | avg_thresh);
+  int code = sx127x_append_register(REG_OOK_AVG, &value, 0b00001111, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  value = 0b00010000;
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011000, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
