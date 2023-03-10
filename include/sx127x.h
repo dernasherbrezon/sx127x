@@ -551,6 +551,16 @@ int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
 int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device);
 
 /**
+ * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected
+ * 
+ * @param enable 
+ * @param threshold 
+ * @param device 
+ * @return int 
+ */
+int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device);
+
+/**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
  *
  * @param device Pointer to variable to hold the device handle

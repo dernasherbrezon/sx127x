@@ -17,8 +17,10 @@
 #define REG_OCP 0x0b
 #define REG_LNA 0x0c
 #define REG_FIFO_ADDR_PTR 0x0d
+#define REG_RX_CONFIG 0x0d
 #define REG_FIFO_TX_BASE_ADDR 0x0e
 #define REG_FIFO_RX_BASE_ADDR 0x0f
+#define REG_RSSI_COLLISION 0x0f
 #define REG_FIFO_RX_CURRENT_ADDR 0x10
 #define REG_IRQ_FLAGS 0x12
 #define REG_RX_NB_BYTES 0x13
@@ -30,6 +32,7 @@
 #define REG_RSSI_VALUE 0x1b
 #define REG_MODEM_CONFIG_1 0x1d
 #define REG_MODEM_CONFIG_2 0x1e
+#define REG_FEI_MSB 0x1d
 #define REG_PREAMBLE_MSB 0x20
 #define REG_PREAMBLE_LSB 0x21
 #define REG_PAYLOAD_LENGTH 0x22
@@ -288,14 +291,27 @@ int sx127x_reset_fifo(sx127x *device) {
 }
 
 int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
-  if (gain == SX127x_LNA_GAIN_AUTO) {
-    return sx127x_append_register(REG_MODEM_CONFIG_3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, device);
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    if (gain == SX127x_LNA_GAIN_AUTO) {
+      return sx127x_append_register(REG_MODEM_CONFIG_3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, device);
+    }
+    int code = sx127x_append_register(REG_MODEM_CONFIG_3, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    return sx127x_append_register(REG_LNA, gain, 0b00011111, device);
+  } else if (device->active_modem = SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    if (gain == SX127x_LNA_GAIN_AUTO) {
+      return sx127x_append_register(REG_RX_CONFIG, 0b00001000, 0b11110111, device);
+    }
+    int code = sx127x_append_register(REG_RX_CONFIG, 0b00000000, 0b11110111, device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    return sx127x_append_register(REG_LNA, gain, 0b00011111, device);
+  } else {
+    return SX127X_ERR_INVALID_ARG;
   }
-  int code = sx127x_append_register(REG_MODEM_CONFIG_3, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, device);
-  if (code != SX127X_OK) {
-    return code;
-  }
-  return sx127x_append_register(REG_LNA, gain, 0b00011111, device);
 }
 
 int sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device) {
@@ -445,25 +461,44 @@ int sx127x_get_packet_snr(sx127x *device, float *snr) {
 }
 
 int sx127x_get_frequency_error(sx127x *device, int32_t *result) {
-  uint32_t frequency_error;
-  int code = sx127x_spi_read_registers(REG_FREQ_ERROR_MSB, device->spi_device, 3, &frequency_error);
-  if (code != SX127X_OK) {
-    return code;
-  }
-  uint32_t bandwidth;
-  code = sx127x_get_bandwidth(device, &bandwidth);
-  if (code != SX127X_OK) {
-    return code;
-  }
-  if (frequency_error & 0x80000) {
-    // keep within original 2.5 bytes
-    frequency_error = ((~frequency_error) + 1) & 0xFFFFF;
-    *result = -1;
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    uint32_t frequency_error;
+    int code = sx127x_spi_read_registers(REG_FREQ_ERROR_MSB, device->spi_device, 3, &frequency_error);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    uint32_t bandwidth;
+    code = sx127x_get_bandwidth(device, &bandwidth);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    if (frequency_error & 0x80000) {
+      // keep within original 2.5 bytes
+      frequency_error = ((~frequency_error) + 1) & 0xFFFFF;
+      *result = -1;
+    } else {
+      *result = 1;
+    }
+    *result = (*result) * (frequency_error * SX127x_FREQ_ERROR_FACTOR * bandwidth / 500000.0f);
+    return SX127X_OK;
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    uint16_t frequency_error;
+    int code = sx127x_spi_read_registers(REG_FEI_MSB, device->spi_device, 2, &frequency_error);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    if (frequency_error & 0x8000) {
+      // keep within original 2 bytes
+      frequency_error = ((~frequency_error) + 1) & 0xFFFF;
+      *result = -1;
+    } else {
+      *result = 1;
+    }
+    *result = (*result) * SX127x_FSTEP * frequency_error;
+    return SX127X_OK;
   } else {
-    *result = 1;
+    return SX127X_ERR_INVALID_ARG;
   }
-  *result = (*result) * (frequency_error * SX127x_FREQ_ERROR_FACTOR * bandwidth / 500000.0f);
-  return SX127X_OK;
 }
 
 int sx127x_dump_registers(sx127x *device) {
@@ -627,12 +662,12 @@ int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_t
   if (code != SX127X_OK) {
     return code;
   }
-  code = sx127x_append_register(REG_OOK_AVG, &decrement, 0b11100000, device->spi_device);
+  code = sx127x_append_register(REG_OOK_AVG, &decrement, 0b00011111, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
   uint8_t value = (0b00001000 | step);
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011111, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100000, device->spi_device);
 }
 
 int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
@@ -641,17 +676,26 @@ int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
     return code;
   }
   uint8_t value = 0b00000000;
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011000, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100111, device->spi_device);
 }
 
 int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
   uint8_t value = (avg_offset | avg_thresh);
-  int code = sx127x_append_register(REG_OOK_AVG, &value, 0b00001111, device->spi_device);
+  int code = sx127x_append_register(REG_OOK_AVG, &value, 0b11110000, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
   value = 0b00010000;
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b00011000, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100111, device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device) {
+  int code = sx127x_spi_write_register(REG_RSSI_COLLISION, &threshold, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  uint8_t value = (enable << 7);
+  return sx127x_append_register(REG_RX_CONFIG, &value, 0b01111111, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
