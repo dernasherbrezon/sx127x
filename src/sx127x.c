@@ -23,7 +23,9 @@
 #define REG_RSSI_COLLISION 0x0f
 #define REG_FIFO_RX_CURRENT_ADDR 0x10
 #define REG_IRQ_FLAGS 0x12
+#define REG_RX_BW 0x12
 #define REG_RX_NB_BYTES 0x13
+#define REG_AFC_BW 0x13
 #define REG_OOK_PEAK 0x14
 #define REG_OOK_FIX 0x15
 #define REG_OOK_AVG 0x16
@@ -35,9 +37,12 @@
 #define REG_FEI_MSB 0x1d
 #define REG_PREAMBLE_MSB 0x20
 #define REG_PREAMBLE_LSB 0x21
+#define REG_PREAMBLE_MSB_FSK 0x25
 #define REG_PAYLOAD_LENGTH 0x22
 #define REG_MODEM_CONFIG_3 0x26
+#define REG_SYNC_CONFIG 0x27
 #define REG_FREQ_ERROR_MSB 0x28
+#define REG_SYNC_VALUE1 0x28
 #define REG_FREQ_ERROR_MID 0x29
 #define REG_FREQ_ERROR_LSB 0x2a
 #define REG_RSSI_WIDEBAND 0x2c
@@ -367,8 +372,13 @@ int sx127x_set_syncword(uint8_t value, sx127x *device) {
 }
 
 int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
-  uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
-  return sx127x_spi_write_register(REG_PREAMBLE_MSB, data, 2, device->spi_device);
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB, &value, 2, device->spi_device);
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB_FSK, &value, 2, device->spi_device);
+  } else {
+    return SX127X_ERR_INVALID_ARG;
+  }
 }
 
 int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device) {
@@ -696,6 +706,54 @@ int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *d
   }
   uint8_t value = (enable << 7);
   return sx127x_append_register(REG_RX_CONFIG, &value, 0b01111111, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device) {
+  return sx127x_append_register(REG_RX_CONFIG, &afc_auto, 0b11101111, device->spi_device);
+}
+
+uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
+  for (uint8_t e = 7; e >= 1; e--) {
+    for (int8_t m = 2; m >= 0; m--) {
+      float point = SX127x_OSCILLATOR_FREQUENCY / (((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
+      if (fabs(bandwidth - (point + 0.05)) <= 0.5) {
+        return ((m << 3) | e);
+      }
+    }
+  }
+  return 0;
+}
+
+int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device) {
+  uint8_t value = sx127x_fsk_ook_calculate_bw_register(bandwidth);
+  return sx127x_spi_write_register(REG_AFC_BW, &value, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device) {
+  uint8_t value = sx127x_fsk_ook_calculate_bw_register(bandwidth);
+  return sx127x_spi_write_register(REG_RX_BW, &value, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
+  return sx127x_append_register(REG_RX_CONFIG, &trigger, 0b11111000, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device) {
+  if (syncword_length == 0 || syncword_length > 8) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  for (uint8_t i = 0; i < syncword_length; i++) {
+    if (syncword[i] == 0x00) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+  }
+  // SYNC_ON
+  uint8_t value = 0b00010000 | (syncword_length - 1);
+  int code = sx127x_append_register(REG_SYNC_CONFIG, value, 0b11101000, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  return sx127x_spi_write_buffer(REG_SYNC_VALUE1, syncword, syncword_length, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {

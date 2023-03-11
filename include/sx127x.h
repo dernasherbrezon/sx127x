@@ -87,6 +87,13 @@ typedef enum {
 } sx127x_ook_peak_thresh_dec_t;
 
 typedef enum {
+  SX127X_NONE = 0b00000000,
+  SX127X_RSSI = 0b00000001,
+  SX127X_PREAMBLE = 0b00000110,
+  SX127X_RSSI_PREAMBLE = 0b00000111
+} sx127x_rx_trigger_t;
+
+typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
   SX127x_LNA_GAIN_G2 = 0b01000000,
   SX127x_LNA_GAIN_G3 = 0b01100000,
@@ -104,6 +111,11 @@ typedef enum {
   SX127x_LNA_BOOST_HF_ON = 0b00000011,  // Default LNA current
   SX127x_LNA_BOOST_HF_OFF = 0b00000000  // Boost on, 150% LNA current
 } sx127x_lna_boost_hf_t;
+
+typedef enum {
+  SX127x_AFC_AUTO_ON = 0b00010000,
+  SX127x_AFC_AUTO_OFF = 0b00000000
+} sx127x_afc_auto_t;
 
 /**
  * @brief Signal bandwidth.
@@ -550,15 +562,25 @@ int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
 
 int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device);
 
+int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device);
+
+int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device);
+
+int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device);
+
+int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
+
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected
- * 
- * @param enable 
- * @param threshold 
- * @param device 
- * @return int 
+ *
+ * @param enable
+ * @param threshold
+ * @param device
+ * @return int
  */
 int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device);
+
+int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
