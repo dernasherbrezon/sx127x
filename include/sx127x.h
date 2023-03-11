@@ -117,6 +117,11 @@ typedef enum {
 } sx127x_crc_type_t;
 
 typedef enum {
+  SX127X_FIXED = 0b00000000,
+  SX127X_VARIABLE = 0b10000000
+} sx127x_packet_format_t;
+
+typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
   SX127x_LNA_GAIN_G2 = 0b01000000,
   SX127x_LNA_GAIN_G3 = 0b01100000,
@@ -598,6 +603,8 @@ int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t off
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
+
+int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
 
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected

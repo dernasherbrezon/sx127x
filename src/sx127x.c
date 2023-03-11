@@ -49,6 +49,8 @@
 #define REG_RSSI_WIDEBAND 0x2c
 #define REG_PACKET_CONFIG1 0x30
 #define REG_DETECTION_OPTIMIZE 0x31
+#define REG_PACKET_CONFIG2 0x31
+#define REG_PAYLOAD_LENGTH_FSK 0x32
 #define REG_INVERTIQ 0x33
 #define REG_DETECTION_THRESHOLD 0x37
 #define REG_SYNC_WORD 0x39
@@ -674,12 +676,11 @@ int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_t
   if (code != SX127X_OK) {
     return code;
   }
-  code = sx127x_append_register(REG_OOK_AVG, &decrement, 0b00011111, device->spi_device);
+  code = sx127x_append_register(REG_OOK_AVG, decrement, 0b00011111, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
-  uint8_t value = (0b00001000 | step);
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100000, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, (0b00001000 | step), 0b11100000, device->spi_device);
 }
 
 int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
@@ -687,18 +688,15 @@ int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
   if (code != SX127X_OK) {
     return code;
   }
-  uint8_t value = 0b00000000;
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100111, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, 0b00000000, 0b11100111, device->spi_device);
 }
 
 int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
-  uint8_t value = (avg_offset | avg_thresh);
-  int code = sx127x_append_register(REG_OOK_AVG, &value, 0b11110000, device->spi_device);
+  int code = sx127x_append_register(REG_OOK_AVG, (avg_offset | avg_thresh), 0b11110000, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
-  value = 0b00010000;
-  return sx127x_append_register(REG_OOK_PEAK, &value, 0b11100111, device->spi_device);
+  return sx127x_append_register(REG_OOK_PEAK, 0b00010000, 0b11100111, device->spi_device);
 }
 
 int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device) {
@@ -706,12 +704,11 @@ int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *d
   if (code != SX127X_OK) {
     return code;
   }
-  uint8_t value = (enable << 7);
-  return sx127x_append_register(REG_RX_CONFIG, &value, 0b01111111, device->spi_device);
+  return sx127x_append_register(REG_RX_CONFIG, (enable << 7), 0b01111111, device->spi_device);
 }
 
 int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device) {
-  return sx127x_append_register(REG_RX_CONFIG, &afc_auto, 0b11101111, device->spi_device);
+  return sx127x_append_register(REG_RX_CONFIG, afc_auto, 0b11101111, device->spi_device);
 }
 
 uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
@@ -737,7 +734,7 @@ int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device) {
 }
 
 int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
-  return sx127x_append_register(REG_RX_CONFIG, &trigger, 0b11111000, device->spi_device);
+  return sx127x_append_register(REG_RX_CONFIG, trigger, 0b11111000, device->spi_device);
 }
 
 int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device) {
@@ -750,8 +747,7 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
     }
   }
   // SYNC_ON
-  uint8_t value = 0b00010000 | (syncword_length - 1);
-  int code = sx127x_append_register(REG_SYNC_CONFIG, value, 0b11101000, device->spi_device);
+  int code = sx127x_append_register(REG_SYNC_CONFIG, 0b00010000 | (syncword_length - 1), 0b11101000, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
@@ -767,11 +763,32 @@ int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t off
 }
 
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device) {
-  return sx127x_append_register(REG_PACKET_CONFIG1, &encoding, 0b10011111, device->spi_device);
+  return sx127x_append_register(REG_PACKET_CONFIG1, encoding, 0b10011111, device->spi_device);
 }
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
-  return sx127x_append_register(REG_PACKET_CONFIG1, &crc_type, 0b11110110, device->spi_device);
+  return sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11110110, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device) {
+  if (format == SX127X_FIXED && (max_payload_length == 0 || max_payload_length > 2047)) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  // max_payload_length = 2047 in variable packet mode will disable max payload length check
+  if (format == SX127X_VARIABLE && (max_payload_length == 0 || (max_payload_length > 255 && max_payload_length != 2047))) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  uint8_t msb_bits = ((max_payload_length >> 7) & 0b111);
+  int code = sx127x_append_register(REG_PACKET_CONFIG2, msb_bits, 0b11111000, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  uint8_t lsb_bits = (max_payload_length & 0xFF);
+  code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH_FSK, &lsb_bits, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  return sx127x_append_register(REG_PACKET_CONFIG1, format, 0b01111111, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
