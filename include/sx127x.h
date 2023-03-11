@@ -68,7 +68,7 @@ typedef enum {
   SX127X_32_PI = 0b00000000,  // chip rate / 32.π
   SX127X_8_PI = 0b00000001,   // chip rate / 8.π
   SX127X_4_PI = 0b00000010,   // chip rate / 4.π
-  SX127X_2_PI = 0b00000011,   // chip rate / 2.π
+  SX127X_2_PI = 0b00000011   // chip rate / 2.π
 } sx127x_ook_avg_thresh_t;
 
 /**
@@ -83,7 +83,7 @@ typedef enum {
   SX127X_2_1_CHIP = 0b10000000,   // twice in each chip
   SX127X_4_1_CHIP = 0b10100000,   // 4 times in each chip
   SX127X_8_1_CHIP = 0b11000000,   // 8 times in each chip
-  SX127X_16_1_CHIP = 0b11100000,  // 16 times in each chip
+  SX127X_16_1_CHIP = 0b11100000  // 16 times in each chip
 } sx127x_ook_peak_thresh_dec_t;
 
 typedef enum {
@@ -92,6 +92,29 @@ typedef enum {
   SX127X_PREAMBLE = 0b00000110,
   SX127X_RSSI_PREAMBLE = 0b00000111
 } sx127x_rx_trigger_t;
+
+typedef enum {
+  SX127X_2 = 0b00000000,
+  SX127X_4 = 0b00000001,
+  SX127X_8 = 0b00000010,
+  SX127X_16 = 0b00000011,
+  SX127X_32 = 0b00000100,
+  SX127X_64 = 0b00000101,
+  SX127X_128 = 0b00000110,
+  SX127X_256 = 0b00000111
+} sx127x_rssi_smoothing_t;
+
+typedef enum {
+  SX127X_NRZ = 0b00000000,
+  SX127X_MANCHESTER = 0b00100000,
+  SX127X_SCRAMBLED = 0b01000000  // LFSR Polynomial =X9 + X5 + 1
+} sx127x_packet_encoding_t;
+
+typedef enum {
+  SX127X_CRC_NONE = 0b00000000,
+  SX127X_CRC_CCITT = 0b00001000, // Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
+  SX127X_CRC_IBM = 0b00001001 // Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
+} sx127x_crc_type_t;
 
 typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
@@ -569,6 +592,12 @@ int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device);
 int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device);
 
 int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
+
+int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device);
+
+int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
+
+int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
 
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected

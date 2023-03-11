@@ -19,6 +19,7 @@
 #define REG_FIFO_ADDR_PTR 0x0d
 #define REG_RX_CONFIG 0x0d
 #define REG_FIFO_TX_BASE_ADDR 0x0e
+#define REG_RSSI_CONFIG 0x0e
 #define REG_FIFO_RX_BASE_ADDR 0x0f
 #define REG_RSSI_COLLISION 0x0f
 #define REG_FIFO_RX_CURRENT_ADDR 0x10
@@ -46,6 +47,7 @@
 #define REG_FREQ_ERROR_MID 0x29
 #define REG_FREQ_ERROR_LSB 0x2a
 #define REG_RSSI_WIDEBAND 0x2c
+#define REG_PACKET_CONFIG1 0x30
 #define REG_DETECTION_OPTIMIZE 0x31
 #define REG_INVERTIQ 0x33
 #define REG_DETECTION_THRESHOLD 0x37
@@ -754,6 +756,22 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
     return code;
   }
   return sx127x_spi_write_buffer(REG_SYNC_VALUE1, syncword, syncword_length, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device) {
+  if (offset < -16 || offset > 15) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  uint8_t value = (offset << 3) | smoothing;
+  return sx127x_spi_write_register(REG_RSSI_CONFIG, &value, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device) {
+  return sx127x_append_register(REG_PACKET_CONFIG1, &encoding, 0b10011111, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
+  return sx127x_append_register(REG_PACKET_CONFIG1, &crc_type, 0b11110110, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
