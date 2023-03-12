@@ -118,7 +118,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_trigger(SX127X_RSSI_PREAMBLE, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
 
   sx127x_set_rx_callback(rx_callback, device);
 

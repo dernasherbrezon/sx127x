@@ -88,10 +88,10 @@ typedef enum {
 } sx127x_ook_peak_thresh_dec_t;
 
 typedef enum {
-  SX127X_NONE = 0b00000000,
-  SX127X_RSSI = 0b00000001,
-  SX127X_PREAMBLE = 0b00000110,
-  SX127X_RSSI_PREAMBLE = 0b00000111
+  SX127X_RX_TRIGGER_NONE = 0b00000000,
+  SX127X_RX_TRIGGER_RSSI = 0b00000001,
+  SX127X_RX_TRIGGER_PREAMBLE = 0b00000110,
+  SX127X_RX_TRIGGER_RSSI_PREAMBLE = 0b00000111
 } sx127x_rx_trigger_t;
 
 typedef enum {
@@ -153,14 +153,14 @@ typedef enum {
 } sx127x_afc_auto_t;
 
 typedef enum {
-  SX127X_NONE = 0b00000000,    // no shaping
+  SX127X_FSK_SHAPING_NONE = 0b00000000,    // no shaping
   SX127X_BT_1_0 = 0b00100000,  // Gaussian filter BT = 1.0
   SX127X_BT_0_5 = 0b01000000,  // Gaussian filter BT = 0.5
   SX127X_BT_0_3 = 0b01100000   // Gaussian filter BT = 0.3
 } sx127x_fsk_data_shaping_t;
 
 typedef enum {
-  SX127X_NONE = 0b00000000,        // no shaping
+  SX127X_OOK_SHAPING_NONE = 0b00000000,        // no shaping
   SX127X_1_BIT_RATE = 0b00100000,  // filtering with fcutoff = bit_rate
   SX127X_2_BIT_RATE = 0b01000000   // filtering with fcutoff = 2*bit_rate (for bit_rate < 125 kb/s)
 } sx127x_ook_data_shaping_t;
