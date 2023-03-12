@@ -1,5 +1,6 @@
 #include "sx127x.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,7 +206,7 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   config = (config >> 4);
 
   // Section 4.1.1.5
-  long symbol_duration = 1000 / (bandwidth / (1L << config));
+  uint32_t symbol_duration = 1000 / (bandwidth / (1L << config));
   if (symbol_duration > 16) {
     // force low data rate optimization
     return sx127x_set_low_datarate_optimization(SX127x_LOW_DATARATE_OPTIMIZATION_ON, device);
@@ -375,7 +376,7 @@ int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
       return code;
     }
     return sx127x_append_register(REG_LNA, gain, 0b00011111, device);
-  } else if (device->active_modem = SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
     if (gain == SX127x_LNA_GAIN_AUTO) {
       return sx127x_append_register(REG_RX_CONFIG, 0b00001000, 0b11110111, device);
     }
@@ -437,15 +438,14 @@ void sx127x_set_rx_callback(void (*rx_callback)(sx127x *), sx127x *device) {
 }
 
 int sx127x_set_syncword(uint8_t value, sx127x *device) {
-  uint8_t data[] = {value};
-  return sx127x_spi_write_register(REG_SYNC_WORD, data, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_SYNC_WORD, &value, 1, device->spi_device);
 }
 
 int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
-    return sx127x_spi_write_register(REG_PREAMBLE_MSB, &value, 2, device->spi_device);
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB, (uint8_t *)&value, 2, device->spi_device);
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    return sx127x_spi_write_register(REG_PREAMBLE_MSB_FSK, &value, 2, device->spi_device);
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB_FSK, (uint8_t *)&value, 2, device->spi_device);
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -460,8 +460,7 @@ int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device)
     if (code != SX127X_OK) {
       return code;
     }
-    uint8_t reg_data[] = {header->length};
-    code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
+    code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, &(header->length), 1, device->spi_device);
     if (code != SX127X_OK) {
       return code;
     }
@@ -562,7 +561,7 @@ int sx127x_get_frequency_error(sx127x *device, int32_t *result) {
     *result = (*result) * (frequency_error * SX127x_FREQ_ERROR_FACTOR * bandwidth / 500000.0f);
     return SX127X_OK;
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    uint16_t frequency_error;
+    uint32_t frequency_error;
     int code = sx127x_spi_read_registers(REG_FEI_MSB, device->spi_device, 2, &frequency_error);
     if (code != SX127X_OK) {
       return code;
@@ -592,13 +591,11 @@ int sx127x_dump_registers(sx127x *device) {
 }
 
 int sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device) {
-  uint8_t data[] = {value};
-  return sx127x_spi_write_register(REG_DIO_MAPPING_1, data, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_DIO_MAPPING_1, (uint8_t *)&value, 1, device->spi_device);
 }
 
 int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device) {
-  uint8_t data[] = {value};
-  return sx127x_spi_write_register(REG_DIO_MAPPING_2, data, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_DIO_MAPPING_2, (uint8_t *)&value, 1, device->spi_device);
 }
 
 void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device) {
@@ -721,9 +718,8 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
       // if address filtering is required for tx, then it should be part of data
       return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
     }
-  } else {
-    return SX127X_ERR_INVALID_ARG;
   }
+  return SX127X_ERR_INVALID_ARG;
 }
 
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
@@ -743,7 +739,7 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
-  int code = sx127x_spi_write_register(REG_BITRATE_MSB, &bitrate_value, 2, device->spi_device);
+  int code = sx127x_spi_write_register(REG_BITRATE_MSB, (uint8_t *)&bitrate_value, 2, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
@@ -752,7 +748,7 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
 
 int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device) {
   uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP) & 0x3FFF;
-  return sx127x_spi_write_register(REG_FDEV_MSB, &value, 2, device->spi_device);
+  return sx127x_spi_write_register(REG_FDEV_MSB, (uint8_t *)&value, 2, device->spi_device);
 }
 
 int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
