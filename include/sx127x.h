@@ -68,7 +68,7 @@ typedef enum {
   SX127X_32_PI = 0b00000000,  // chip rate / 32.π
   SX127X_8_PI = 0b00000001,   // chip rate / 8.π
   SX127X_4_PI = 0b00000010,   // chip rate / 4.π
-  SX127X_2_PI = 0b00000011   // chip rate / 2.π
+  SX127X_2_PI = 0b00000011    // chip rate / 2.π
 } sx127x_ook_avg_thresh_t;
 
 /**
@@ -76,13 +76,13 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127X_1_1_CHIP = 0b00000000,   // once per chip
-  SX127X_1_2_CHIP = 0b00100000,   // once every 2 chips
-  SX127X_1_4_CHIP = 0b01000000,   // once every 4 chips
-  SX127X_1_8_CHIP = 0b01100000,   // once every 8 chips
-  SX127X_2_1_CHIP = 0b10000000,   // twice in each chip
-  SX127X_4_1_CHIP = 0b10100000,   // 4 times in each chip
-  SX127X_8_1_CHIP = 0b11000000,   // 8 times in each chip
+  SX127X_1_1_CHIP = 0b00000000,  // once per chip
+  SX127X_1_2_CHIP = 0b00100000,  // once every 2 chips
+  SX127X_1_4_CHIP = 0b01000000,  // once every 4 chips
+  SX127X_1_8_CHIP = 0b01100000,  // once every 8 chips
+  SX127X_2_1_CHIP = 0b10000000,  // twice in each chip
+  SX127X_4_1_CHIP = 0b10100000,  // 4 times in each chip
+  SX127X_8_1_CHIP = 0b11000000,  // 8 times in each chip
   SX127X_16_1_CHIP = 0b11100000  // 16 times in each chip
 } sx127x_ook_peak_thresh_dec_t;
 
@@ -112,14 +112,20 @@ typedef enum {
 
 typedef enum {
   SX127X_CRC_NONE = 0b00000000,
-  SX127X_CRC_CCITT = 0b00001000, // Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
-  SX127X_CRC_IBM = 0b00001001 // Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
+  SX127X_CRC_CCITT = 0b00001000,  // Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
+  SX127X_CRC_IBM = 0b00001001     // Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
 } sx127x_crc_type_t;
 
 typedef enum {
   SX127X_FIXED = 0b00000000,
   SX127X_VARIABLE = 0b10000000
 } sx127x_packet_format_t;
+
+typedef enum {
+  SX127X_FILTER_NONE = 0b00000000,
+  SX127X_FILTER_NODE_ADDRESS = 0b00000010,
+  SX127X_FILTER_NODE_AND_BROADCAST = 0b00000100
+} sx127x_address_filtering_t;
 
 typedef enum {
   SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
@@ -602,21 +608,42 @@ int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t off
 
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
 
+/**
+ * @brief Set checksum generation for TX or validation for RX.
+ * 
+ * @param crc_type Can be one of: NONE, CCITT, IBM.
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
 
+/**
+ * @brief Set the packet format.
+ *
+ * @param format Packet format can be FIXED or VARIABLE (Unlimit is not supported). FIXED should have fixed length known to RX.
+ * @param max_payload_length Maximum 2047 for FIXED type. Maximum 255 for VARIABLE. If specified 2047 for VARIABLE type, then payload length check is disabled.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
 
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected
  *
- * @param enable
+ * @param enable 1 - to enable. 0 - to disable.
  * @param threshold
  * @param device
  * @return int
  */
-int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device);
+int sx127x_fsk_ook_rx_collision_restart(int enabled, uint8_t threshold, sx127x *device);
 
 int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
+
+int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

@@ -52,6 +52,8 @@
 #define REG_PACKET_CONFIG2 0x31
 #define REG_PAYLOAD_LENGTH_FSK 0x32
 #define REG_INVERTIQ 0x33
+#define REG_NODE_ADDR 0x33
+#define REG_BROADCAST_ADDR 0x34
 #define REG_DETECTION_THRESHOLD 0x37
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
@@ -789,6 +791,22 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
     return code;
   }
   return sx127x_append_register(REG_PACKET_CONFIG1, format, 0b01111111, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device) {
+  if (type == SX127X_FILTER_NODE_AND_BROADCAST) {
+    int code = sx127x_spi_write_register(REG_BROADCAST_ADDR, &broadcast_address, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+  }
+  if (type == SX127X_FILTER_NODE_AND_BROADCAST || type == SX127X_FILTER_NODE_ADDRESS) {
+    int code = sx127x_spi_write_register(REG_NODE_ADDR, &node_address, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+  }
+  return sx127x_append_register(REG_PACKET_CONFIG1, type, 0b11111001, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
