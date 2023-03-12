@@ -151,6 +151,38 @@ typedef enum {
   SX127x_AFC_AUTO_OFF = 0b00000000
 } sx127x_afc_auto_t;
 
+typedef enum {
+  SX127X_NONE = 0b00000000,    // no shaping
+  SX127X_BT_1_0 = 0b00100000,  // Gaussian filter BT = 1.0
+  SX127X_BT_0_5 = 0b01000000,  // Gaussian filter BT = 0.5
+  SX127X_BT_0_3 = 0b01100000   // Gaussian filter BT = 0.3
+} sx127x_fsk_data_shaping_t;
+
+typedef enum {
+  SX127X_NONE = 0b00000000,        // no shaping
+  SX127X_1_BIT_RATE = 0b00100000,  // filtering with fcutoff = bit_rate
+  SX127X_2_BIT_RATE = 0b01000000   // filtering with fcutoff = 2*bit_rate (for bit_rate < 125 kb/s)
+} sx127x_ook_data_shaping_t;
+
+typedef enum {
+  SX127X_PA_RAMP_1 = 0b00000000,   // 3.4 ms
+  SX127X_PA_RAMP_2 = 0b00000001,   // 2 ms
+  SX127X_PA_RAMP_3 = 0b00000010,   // 1 ms
+  SX127X_PA_RAMP_4 = 0b00000011,   // 500 us
+  SX127X_PA_RAMP_5 = 0b00000100,   // 250 us
+  SX127X_PA_RAMP_6 = 0b00000101,   // 125 us
+  SX127X_PA_RAMP_7 = 0b00000110,   // 100 us
+  SX127X_PA_RAMP_8 = 0b00000111,   // 62 us
+  SX127X_PA_RAMP_9 = 0b00001000,   // 50 us
+  SX127X_PA_RAMP_10 = 0b00001001,  // Default. 40 us
+  SX127X_PA_RAMP_11 = 0b00001010,  // 31 us
+  SX127X_PA_RAMP_12 = 0b00001011,  // 25 us
+  SX127X_PA_RAMP_13 = 0b00001100,  // 20 us
+  SX127X_PA_RAMP_14 = 0b00001101,  // 15 us
+  SX127X_PA_RAMP_15 = 0b00001110,  // 12 us
+  SX127X_PA_RAMP_16 = 0b00001111   // 10 us
+} sx127x_pa_ramp_t;
+
 /**
  * @brief Signal bandwidth.
  *
@@ -610,10 +642,10 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
 
 /**
  * @brief Set checksum generation for TX or validation for RX.
- * 
+ *
  * @param crc_type Can be one of: NONE, CCITT, IBM.
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -644,6 +676,10 @@ int sx127x_fsk_ook_rx_collision_restart(int enabled, uint8_t threshold, sx127x *
 int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
+
+int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
+
+int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

@@ -14,6 +14,7 @@
 #define REG_FRF_MID 0x07
 #define REG_FRF_LSB 0x08
 #define REG_PA_CONFIG 0x09
+#define REG_PA_RAMP 0x0a
 #define REG_OCP 0x0b
 #define REG_LNA 0x0c
 #define REG_FIFO_ADDR_PTR 0x0d
@@ -807,6 +808,16 @@ int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_
     }
   }
   return sx127x_append_register(REG_PACKET_CONFIG1, type, 0b11111001, device->spi_device);
+}
+
+int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device) {
+  uint8_t value = (data_shaping | pa_ramp);
+  return sx127x_spi_write_register(REG_PA_RAMP, &value, 1, device->spi_device);
+}
+
+int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device) {
+  uint8_t value = (data_shaping | pa_ramp);
+  return sx127x_spi_write_register(REG_PA_RAMP, &value, 1, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
