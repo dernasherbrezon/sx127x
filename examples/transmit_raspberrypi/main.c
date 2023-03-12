@@ -52,7 +52,7 @@ void tx_callback(sx127x *device) {
   } else {
     return;
   }
-  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, device));
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
   fprintf(stdout, "transmitting\n");
   messages_sent++;
 }
@@ -113,10 +113,10 @@ int main() {
 
   sx127x *device = NULL;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   LINUX_ERROR_CHECK(sx127x_reset_fifo(device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   LINUX_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
   LINUX_ERROR_CHECK(sx127x_set_implicit_header(NULL, device));
   LINUX_ERROR_CHECK(sx127x_set_modem_config_2(SX127x_SF_9, device));

@@ -63,11 +63,11 @@ void rx_callback(sx127x *device) {
 void cad_callback(sx127x *device, int cad_detected) {
   if (cad_detected == 0) {
     fprintf(stdout, "cad not detected\n");
-    LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+    LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
     return;
   }
   // put into RX mode first to handle interrupt as soon as possible
-  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   fprintf(stdout, "cad detected\n");
 }
 
@@ -125,11 +125,11 @@ int main() {
 
   sx127x *device = NULL;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   LINUX_ERROR_CHECK(sx127x_reset_fifo(device));
   LINUX_ERROR_CHECK(sx127x_set_lna_boost_hf(SX127x_LNA_BOOST_HF_ON, device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   LINUX_ERROR_CHECK(sx127x_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   LINUX_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
   LINUX_ERROR_CHECK(sx127x_set_implicit_header(NULL, device));
@@ -138,7 +138,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, device));
   sx127x_set_rx_callback(rx_callback, device);
   sx127x_set_cad_callback(cad_callback, device);
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
 
   return setup_and_wait_for_interrupt(device);
 }

@@ -65,11 +65,11 @@ void rx_callback(sx127x *device) {
 void cad_callback(sx127x *device, int cad_detected) {
   if (cad_detected == 0) {
     ESP_LOGI(TAG, "cad not detected");
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
     return;
   }
   // put into RX mode first to handle interrupt as soon as possible
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   ESP_LOGI(TAG, "cad detected\n");
 }
 
@@ -95,11 +95,11 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   ESP_ERROR_CHECK(sx127x_reset_fifo(device));
   ESP_ERROR_CHECK(sx127x_set_lna_boost_hf(SX127x_LNA_BOOST_HF_ON, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   ESP_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
   ESP_ERROR_CHECK(sx127x_set_implicit_header(NULL, device));
@@ -122,7 +122,7 @@ void app_main() {
   ESP_ERROR_CHECK(gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE));
   ESP_ERROR_CHECK(gpio_install_isr_service(0));
   ESP_ERROR_CHECK(gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }

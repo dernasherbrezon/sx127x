@@ -41,7 +41,7 @@ void tx_callback(sx127x *device) {
 
   uint8_t data[] = {0xCA, 0xFE};
   ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
   ESP_LOGI(TAG, "transmitting %d %d", current_power, messages_current_power);
   messages_current_power++;
   if (messages_current_power > 5) {
@@ -75,10 +75,10 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));   
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   ESP_ERROR_CHECK(sx127x_reset_fifo(device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
   ESP_ERROR_CHECK(sx127x_set_implicit_header(NULL, device));
   ESP_ERROR_CHECK(sx127x_set_modem_config_2(SX127x_SF_9, device));

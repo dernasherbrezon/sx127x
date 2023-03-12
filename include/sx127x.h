@@ -424,7 +424,7 @@ int sx127x_set_syncword(uint8_t value, sx127x *device);
 /**
  * @brief Set preamble length. See 4.1.1 for more details.
  *
- * @param value Preamble length
+ * @param value Preamble length in symbols for LoRa and bytes for FSK/OOK.
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
