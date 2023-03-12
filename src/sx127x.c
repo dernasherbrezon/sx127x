@@ -109,6 +109,7 @@ struct sx127x_t {
   void (*cad_callback)(sx127x *, int);
   uint8_t packet[256];
   sx127x_modulation_t active_modem;
+  sx127x_packet_format_t fsk_ook_format;
 };
 
 int sx127x_read_register(int reg, sx127x *device, uint8_t *result) {
@@ -254,6 +255,7 @@ int sx127x_create(void *spi_device, sx127x **result) {
     return SX127X_ERR_INVALID_VERSION;
   }
   device->active_modem = SX127x_MODULATION_LORA;
+  device->fsk_ook_format = SX127X_VARIABLE;
   *result = device;
   return SX127X_OK;
 }
@@ -631,18 +633,36 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
   if (data_length == 0) {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};
-  int code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, fifo_addr, 1, device->spi_device);
-  if (code != SX127X_OK) {
-    return code;
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};
+    int code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, fifo_addr, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    uint8_t reg_data[] = {data_length};
+    code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    if (device->fsk_ook_format == SX127X_VARIABLE && data_length > (MAX_PACKET_SIZE_FSK_OOK - 1)) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_OOK) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    if (device->fsk_ook_format == SX127X_VARIABLE) {
+      int code = sx127x_spi_write_register(REG_FIFO, &data_length, 1, device->spi_device);
+      if (code != SX127X_OK) {
+        return code;
+      }
+      // if address filtering is required for tx, then it should be part of data
+      return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+    }
+  } else {
+    return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t reg_data[] = {data_length};
-  code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
-  if (code != SX127X_OK) {
-    return code;
-  }
-
-  return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
 }
 
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
@@ -791,7 +811,12 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
   if (code != SX127X_OK) {
     return code;
   }
-  return sx127x_append_register(REG_PACKET_CONFIG1, format, 0b01111111, device->spi_device);
+  code = sx127x_append_register(REG_PACKET_CONFIG1, format, 0b01111111, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  device->fsk_ook_format = format;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device) {
