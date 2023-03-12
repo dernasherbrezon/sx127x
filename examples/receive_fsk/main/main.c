@@ -24,7 +24,7 @@
 static const char *TAG = "sx127x";
 
 sx127x *device = NULL;
-int messages_sent = 0;
+int total_packets_received = 0;
 TaskHandle_t handle_interrupt;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
@@ -38,21 +38,37 @@ void handle_interrupt_task(void *arg) {
   }
 }
 
-void tx_callback(sx127x *device) {
-  ESP_LOGI(TAG, "transmitted");
-  if (messages_sent == 0) {
-    uint8_t data[] = {0xCA, 0xFE};
-    ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
-  } else if (messages_sent == 1) {
-    // 65 bytes max for variable
-    uint8_t data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40};
-    ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
-  } else {
+void rx_callback(sx127x *device) {
+  uint8_t *data = NULL;
+  uint8_t data_length = 0;
+  esp_err_t code = sx127x_read_payload(device, &data, &data_length);
+  if (code != ESP_OK) {
+    ESP_LOGE(TAG, "can't read %d", code);
     return;
   }
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
-  ESP_LOGI(TAG, "transmitting");
-  messages_sent++;
+  if (data_length == 0) {
+    // no message received
+    return;
+  }
+  uint8_t payload[514];
+  const char SYMBOLS[] = "0123456789ABCDEF";
+  for (size_t i = 0; i < data_length; i++) {
+    uint8_t cur = data[i];
+    payload[2 * i] = SYMBOLS[cur >> 4];
+    payload[2 * i + 1] = SYMBOLS[cur & 0x0F];
+  }
+  payload[data_length * 2] = '\0';
+
+  int16_t rssi;
+  ESP_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
+  float snr;
+  ESP_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
+  int32_t frequency_error;
+  ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
+
+  ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %ld", data_length, payload, rssi, snr, frequency_error);
+
+  total_packets_received++;
 }
 
 void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
@@ -101,10 +117,10 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
-  ESP_ERROR_CHECK(sx127x_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_trigger(SX127X_RSSI_PREAMBLE, device));
 
-  sx127x_set_tx_callback(tx_callback, device);
+  sx127x_set_rx_callback(rx_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
@@ -117,8 +133,7 @@ void app_main() {
   setup_gpio_interrupts((gpio_num_t)DIO1, device);
   setup_gpio_interrupts((gpio_num_t)DIO2, device);
 
-  tx_callback(device);
-
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }
