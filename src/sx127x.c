@@ -58,6 +58,8 @@
 #define REG_DETECTION_THRESHOLD 0x37
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
+#define REG_IRQ_FLAGS_1 0x3e
+#define REG_IRQ_FLAGS_2 0x3f
 #define REG_DIO_MAPPING_1 0x40
 #define REG_DIO_MAPPING_2 0x41
 #define REG_VERSION 0x42
@@ -80,6 +82,15 @@
 #define SX127x_IRQ_FLAG_CADDONE 0b00000100
 #define SX127x_IRQ_FLAG_FHSSCHANGECHANNEL 0b00000010
 #define SX127x_IRQ_FLAG_CAD_DETECTED 0b00000001
+
+#define SX127X_FSK_IRQ_FIFO_FULL 0b10000000
+#define SX127X_FSK_IRQ_FIFO_EMPTY 0b01000000
+#define SX127X_FSK_IRQ_FIFO_LEVEL 0b00100000
+#define SX127X_FSK_IRQ_FIFO_OVERRUN 0b00010000
+#define SX127X_FSK_IRQ_PACKET_SENT 0b00001000
+#define SX127X_FSK_IRQ_PAYLOAD_READY 0b00000100
+#define SX127X_FSK_IRQ_CRC_OK 0b00000010
+#define SX127X_FSK_IRQ_LOW_BATTERY 0b00000001
 
 #define RF_MID_BAND_THRESHOLD 525E6
 #define RSSI_OFFSET_HF_PORT 157
@@ -202,15 +213,39 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   return SX127X_OK;
 }
 
-void sx127x_handle_interrupt(sx127x *device) {
+void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
+  uint8_t value;
+  int code = sx127x_read_register(REG_IRQ_FLAGS_2, device, &value);
+  if (code != SX127X_OK) {
+    return;
+  }
+  // clear the irq
+  code = sx127x_spi_write_register(REG_IRQ_FLAGS_2, &value, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return;
+  }
+  // FIXME handle FIFO LEVEL for long packets
+  if ((value & SX127X_FSK_IRQ_CRC_OK) != 0) {
+    if (device->rx_callback != NULL) {
+      device->rx_callback(device);
+    }
+    return;
+  }
+  if ((value & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
+    if (device->tx_callback != NULL) {
+      device->tx_callback(device);
+    }
+    return;
+  }
+}
+
+void sx127x_lora_handle_interrupt(sx127x *device) {
   uint8_t value;
   int code = sx127x_read_register(REG_IRQ_FLAGS, device, &value);
   if (code != SX127X_OK) {
     return;
   }
-  // clear the irq
-  uint8_t data[] = {value};
-  code = sx127x_spi_write_register(REG_IRQ_FLAGS, data, 1, device->spi_device);
+  code = sx127x_spi_write_register(REG_IRQ_FLAGS, &value, 1, device->spi_device);
   if (code != SX127X_OK) {
     return;
   }
@@ -234,6 +269,14 @@ void sx127x_handle_interrupt(sx127x *device) {
       device->tx_callback(device);
     }
     return;
+  }
+}
+
+void sx127x_handle_interrupt(sx127x *device) {
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    sx127x_lora_handle_interrupt(device);
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    sx127x_fsk_ook_handle_interrupt(device);
   }
 }
 
@@ -261,26 +304,44 @@ int sx127x_create(void *spi_device, sx127x **result) {
 }
 
 int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x *device) {
-  uint8_t data[] = {0};
-  // enforce DIO mappings for during RX and TX
-  if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
-    int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_RX_DONE, 0b00111111, device);
-    if (code != SX127X_OK) {
-      return code;
+  // enforce DIO mappings for RX and TX
+  if (modulation == SX127x_MODULATION_LORA) {
+    if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
+      int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_RX_DONE, 0b00111111, device);
+      if (code != SX127X_OK) {
+        return code;
+      }
+    } else if (opmod == SX127x_MODE_TX) {
+      int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_TX_DONE, 0b00111111, device);
+      if (code != SX127X_OK) {
+        return code;
+      }
+    } else if (opmod == SX127x_MODE_CAD) {
+      int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_CAD_DONE, 0b00111111, device);
+      if (code != SX127X_OK) {
+        return code;
+      }
     }
-  } else if (opmod == SX127x_MODE_TX) {
-    int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_TX_DONE, 0b00111111, device);
-    if (code != SX127X_OK) {
-      return code;
+  } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
+    if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
+      int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_CRC_OK | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device);
+      if (code != SX127X_OK) {
+        return code;
+      }
+    } else if (opmod == SX127x_MODE_TX) {
+      int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device);
+      if (code != SX127X_OK) {
+        return code;
+      }
+    } else if (opmod == SX127x_MODE_CAD) {
+      // unsupported?
+      return SX127X_ERR_INVALID_ARG;
     }
-  } else if (opmod == SX127x_MODE_CAD) {
-    int code = sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_CAD_DONE, 0b00111111, device);
-    if (code != SX127X_OK) {
-      return code;
-    }
+  } else {
+    return SX127X_ERR_INVALID_ARG;
   }
-  data[0] = (opmod | modulation);
-  int result = sx127x_spi_write_register(REG_OP_MODE, data, 1, device->spi_device);
+  uint8_t value = (opmod | modulation);
+  int result = sx127x_spi_write_register(REG_OP_MODE, &value, 1, device->spi_device);
   if (result == SX127X_OK) {
     device->active_modem = modulation;
   }

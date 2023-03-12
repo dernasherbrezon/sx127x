@@ -267,13 +267,23 @@ typedef enum {
   SX127x_DIO0_TX_DONE = 0b01000000,              // FIFO Payload transmission complete
   SX127x_DIO0_CAD_DONE = 0b10000000,             // CAD complete
   SX127x_DIO1_RXTIMEOUT = 0b00000000,            // RX timeout interrupt. Used in RX single mode
-  SX127x_DIO1_FHSS_CHANGE_CHANNEL = 0b01000000,  // FHSS change channel
-  SX127x_DIO1_CAD_DETECTED = 0b10000000,         // Valid Lora signal detected during CAD operation
+  SX127x_DIO1_FHSS_CHANGE_CHANNEL = 0b00010000,  // FHSS change channel
+  SX127x_DIO1_CAD_DETECTED = 0b00100000,         // Valid Lora signal detected during CAD operation
   SX127x_DIO2_FHSS_CHANGE_CHANNEL = 0b00000000,  // FHSS change channel on digital pin 2
   SX127x_DIO3_CAD_DONE = 0b00000000,             // CAD complete on digital pin 3
-  SX127x_DIO3_VALID_HEADER = 0b01000000,         // Valid header received in Rx
-  SX127x_DIO3_PAYLOAD_CRC_ERROR = 0b10000000,    // Payload CRC error
+  SX127x_DIO3_VALID_HEADER = 0b00000001,         // Valid header received in Rx
+  SX127x_DIO3_PAYLOAD_CRC_ERROR = 0b00000010,    // Payload CRC error
 } sx127x_dio_mapping1_t;
+
+typedef enum {
+  SX127x_FSK_DIO0_PAYLOAD_READY = 0b00000000,
+  SX127x_FSK_DIO0_PACKET_SENT = 0b00000000,
+  SX127x_FSK_DIO0_CRC_OK = 0b01000000,
+  SX127x_FSK_DIO1_FIFO_LEVEL = 0b00000000,
+  SX127x_FSK_DIO1_FIFO_EMPTY = 0b00010000,
+  SX127x_FSK_DIO1_FIFO_FULL = 0b00100000,
+  SX127x_FSK_DIO2_FIFO_FULL = 0b00000000
+} sx127x_fsk_ook_dio_mapping1_t;
 
 /**
  * @brief Type of interrupt. Same interrupts can happen on different digital pins.
