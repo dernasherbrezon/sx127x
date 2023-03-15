@@ -76,7 +76,6 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
   gpio_pulldown_en(gpio);
   gpio_pullup_dis(gpio);
   gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
-  gpio_install_isr_service(0);
   gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
 }
 
@@ -129,6 +128,7 @@ void app_main() {
     return;
   }
 
+  gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t)DIO0, device);
   setup_gpio_interrupts((gpio_num_t)DIO1, device);
   setup_gpio_interrupts((gpio_num_t)DIO2, device);

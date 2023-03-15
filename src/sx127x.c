@@ -56,6 +56,7 @@
 #define REG_INVERTIQ 0x33
 #define REG_NODE_ADDR 0x33
 #define REG_BROADCAST_ADDR 0x34
+#define REG_FIFO_THRESH 0x35
 #define REG_DETECTION_THRESHOLD 0x37
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
@@ -116,9 +117,13 @@ struct sx127x_t {
   sx127x_implicit_header_t *header;
   uint8_t version;
   uint64_t frequency;
+
   void (*rx_callback)(sx127x *);
+
   void (*tx_callback)(sx127x *);
+
   void (*cad_callback)(sx127x *, int);
+
   uint8_t packet[256];
   sx127x_modulation_t active_modem;
   sx127x_packet_format_t fsk_ook_format;
@@ -334,6 +339,12 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       if (code != SX127X_OK) {
         return code;
       }
+      // start tx as soon as
+      uint8_t data = 0b10001111;
+      code = sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device);
+      if (code != SX127X_OK) {
+        return code;
+      }
     } else if (opmod == SX127x_MODE_CAD) {
       // unsupported?
       return SX127X_ERR_INVALID_ARG;
@@ -416,13 +427,11 @@ int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device) {
     detection_optimize = 0xc3;
     detection_threshold = 0x0a;
   }
-  uint8_t data[] = {detection_optimize};
-  int code = sx127x_spi_write_register(REG_DETECTION_OPTIMIZE, data, 1, device->spi_device);
+  int code = sx127x_spi_write_register(REG_DETECTION_OPTIMIZE, &detection_optimize, 1, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
-  data[0] = detection_threshold;
-  code = sx127x_spi_write_register(REG_DETECTION_THRESHOLD, data, 1, device->spi_device);
+  code = sx127x_spi_write_register(REG_DETECTION_THRESHOLD, &detection_threshold, 1, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
@@ -442,10 +451,11 @@ int sx127x_set_syncword(uint8_t value, sx127x *device) {
 }
 
 int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
+  uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
   if (device->active_modem == SX127x_MODULATION_LORA) {
-    return sx127x_spi_write_register(REG_PREAMBLE_MSB, (uint8_t *)&value, 2, device->spi_device);
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB, data, 2, device->spi_device);
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    return sx127x_spi_write_register(REG_PREAMBLE_MSB_FSK, (uint8_t *)&value, 2, device->spi_device);
+    return sx127x_spi_write_register(REG_PREAMBLE_MSB_FSK, data, 2, device->spi_device);
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -488,8 +498,7 @@ int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length
     *packet = NULL;
     return code;
   }
-  uint8_t data[] = {current};
-  code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, data, 1, device->spi_device);
+  code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, &current, 1, device->spi_device);
   if (code != SX127X_OK) {
     *packet_length = 0;
     *packet = NULL;
@@ -653,8 +662,7 @@ int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
       value = SX127x_PA_PIN_BOOST | (power - 2);
     }
   }
-  data[0] = value;
-  return sx127x_spi_write_register(REG_PA_CONFIG, data, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_PA_CONFIG, &value, 1, device->spi_device);
 }
 
 int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t max_current, sx127x *device) {
@@ -739,7 +747,8 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
-  int code = sx127x_spi_write_register(REG_BITRATE_MSB, (uint8_t *)&bitrate_value, 2, device->spi_device);
+  uint8_t data[] = {(uint8_t)(bitrate_value >> 8), (uint8_t)(bitrate_value >> 0)};
+  int code = sx127x_spi_write_register(REG_BITRATE_MSB, data, 2, device->spi_device);
   if (code != SX127X_OK) {
     return code;
   }
@@ -747,8 +756,9 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
 }
 
 int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device) {
-  uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP) & 0x3FFF;
-  return sx127x_spi_write_register(REG_FDEV_MSB, (uint8_t *)&value, 2, device->spi_device);
+  uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP);
+  uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
+  return sx127x_spi_write_register(REG_FDEV_MSB, data, 2, device->spi_device);
 }
 
 int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
