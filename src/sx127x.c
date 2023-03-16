@@ -857,7 +857,7 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
 }
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
-  return sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11110110, device->spi_device);
+  return sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11100110, device->spi_device);
 }
 
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device) {

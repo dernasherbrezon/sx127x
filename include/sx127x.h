@@ -112,9 +112,9 @@ typedef enum {
 } sx127x_packet_encoding_t;
 
 typedef enum {
-  SX127X_CRC_NONE = 0b00000000,
-  SX127X_CRC_CCITT = 0b00001000,  // Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
-  SX127X_CRC_IBM = 0b00001001     // Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
+  SX127X_CRC_NONE = 0b00001000,   // CrcOff + Do not clear FIFO
+  SX127X_CRC_CCITT = 0b00010000,  // CrcOn + CrcWhiteningType. Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
+  SX127X_CRC_IBM = 0b00010001     // CrcOn + CrcWhiteningType. Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
 } sx127x_crc_type_t;
 
 typedef enum {
@@ -153,16 +153,16 @@ typedef enum {
 } sx127x_afc_auto_t;
 
 typedef enum {
-  SX127X_FSK_SHAPING_NONE = 0b00000000,    // no shaping
-  SX127X_BT_1_0 = 0b00100000,  // Gaussian filter BT = 1.0
-  SX127X_BT_0_5 = 0b01000000,  // Gaussian filter BT = 0.5
-  SX127X_BT_0_3 = 0b01100000   // Gaussian filter BT = 0.3
+  SX127X_FSK_SHAPING_NONE = 0b00000000,  // no shaping
+  SX127X_BT_1_0 = 0b00100000,            // Gaussian filter BT = 1.0
+  SX127X_BT_0_5 = 0b01000000,            // Gaussian filter BT = 0.5
+  SX127X_BT_0_3 = 0b01100000             // Gaussian filter BT = 0.3
 } sx127x_fsk_data_shaping_t;
 
 typedef enum {
-  SX127X_OOK_SHAPING_NONE = 0b00000000,        // no shaping
-  SX127X_1_BIT_RATE = 0b00100000,  // filtering with fcutoff = bit_rate
-  SX127X_2_BIT_RATE = 0b01000000   // filtering with fcutoff = 2*bit_rate (for bit_rate < 125 kb/s)
+  SX127X_OOK_SHAPING_NONE = 0b00000000,  // no shaping
+  SX127X_1_BIT_RATE = 0b00100000,        // filtering with fcutoff = bit_rate
+  SX127X_2_BIT_RATE = 0b01000000         // filtering with fcutoff = 2*bit_rate (for bit_rate < 125 kb/s)
 } sx127x_ook_data_shaping_t;
 
 typedef enum {
