@@ -339,14 +339,13 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       if (code != SX127X_OK) {
         return code;
       }
-      // start tx as soon as
+      // start tx as soon as first byte in FIFO available
       uint8_t data = 0b10001111;
       code = sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device);
       if (code != SX127X_OK) {
         return code;
       }
-    } else if (opmod == SX127x_MODE_CAD) {
-      // unsupported?
+    } else {
       return SX127X_ERR_INVALID_ARG;
     }
   } else {
@@ -591,7 +590,7 @@ int sx127x_get_frequency_error(sx127x *device, int32_t *result) {
 
 int sx127x_dump_registers(sx127x *device) {
   uint8_t length = 0x7F;
-  for (int i = 0; i < length; i++) {
+  for (int i = 1; i < length; i++) {
     uint8_t value;
     sx127x_read_register(i, device->spi_device, &value);
     printf("0x%2x: 0x%2x\n", i, value);
@@ -868,7 +867,7 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
   if (format == SX127X_VARIABLE && (max_payload_length == 0 || (max_payload_length > 255 && max_payload_length != 2047))) {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t msb_bits = ((max_payload_length >> 7) & 0b111);
+  uint8_t msb_bits = ((max_payload_length >> 8) & 0b111);
   int code = sx127x_append_register(REG_PACKET_CONFIG2, msb_bits, 0b11111000, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -910,6 +909,10 @@ int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_p
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device) {
   uint8_t value = (data_shaping | pa_ramp);
   return sx127x_spi_write_register(REG_PA_RAMP, &value, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device) {
+  return sx127x_append_register(REG_SYNC_CONFIG, type, 0b11011111, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {

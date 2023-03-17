@@ -95,6 +95,11 @@ typedef enum {
 } sx127x_rx_trigger_t;
 
 typedef enum {
+  SX127X_PREAMBLE_55 = 0b00000000,
+  SX127X_PREAMBLE_AA = 0b00000000
+} sx127x_preamble_type_t;
+
+typedef enum {
   SX127X_2 = 0b00000000,
   SX127X_4 = 0b00000001,
   SX127X_8 = 0b00000010,
@@ -691,6 +696,8 @@ int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_
 int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
+
+int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
