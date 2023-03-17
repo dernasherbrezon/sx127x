@@ -722,9 +722,9 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
       if (code != SX127X_OK) {
         return code;
       }
-      // if address filtering is required for tx, then it should be part of data
-      return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
     }
+    // if address filtering is required for tx, then it should be part of data
+    return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
   }
   return SX127X_ERR_INVALID_ARG;
 }
