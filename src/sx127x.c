@@ -345,8 +345,6 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       if (code != SX127X_OK) {
         return code;
       }
-    } else {
-      return SX127X_ERR_INVALID_ARG;
     }
   } else {
     return SX127X_ERR_INVALID_ARG;
