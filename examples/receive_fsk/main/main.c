@@ -108,7 +108,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_fdev(5000.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_afc_auto(SX127x_AFC_AUTO_ON, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_afc_bandwidth(20000.0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_bandwidth(20000.0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_bandwidth(5000.0, device));
   ESP_ERROR_CHECK(sx127x_set_preamble_length(4, device));
   uint8_t syncWord[] = {0x12, 0xAD};
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
@@ -118,6 +118,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_rx_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_rssi_config(SX127X_8, 0, device));
 
   sx127x_set_rx_callback(rx_callback, device);
 
