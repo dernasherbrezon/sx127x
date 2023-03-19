@@ -25,6 +25,7 @@
 #define REG_FIFO_RX_BASE_ADDR 0x0f
 #define REG_RSSI_COLLISION 0x0f
 #define REG_FIFO_RX_CURRENT_ADDR 0x10
+#define REG_RSSI_VALUE_FSK 0x11
 #define REG_IRQ_FLAGS 0x12
 #define REG_RX_BW 0x12
 #define REG_RX_NB_BYTES 0x13
@@ -232,7 +233,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     return;
   }
   // FIXME handle FIFO LEVEL for long packets
-  if ((value & SX127X_FSK_IRQ_CRC_OK) != 0) {
+  if ((value & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
     if (device->rx_callback != NULL) {
       device->rx_callback(device);
     }
@@ -570,27 +571,42 @@ int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length
 }
 
 int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi) {
-  uint8_t value;
-  int code = sx127x_read_register(REG_PKT_RSSI_VALUE, device->spi_device, &value);
-  if (code != SX127X_OK) {
-    return code;
-  }
-  if (device->frequency < RF_MID_BAND_THRESHOLD) {
-    *rssi = value - RSSI_OFFSET_LF_PORT;
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    uint8_t value;
+    int code = sx127x_read_register(REG_PKT_RSSI_VALUE, device->spi_device, &value);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    if (device->frequency < RF_MID_BAND_THRESHOLD) {
+      *rssi = value - RSSI_OFFSET_LF_PORT;
+    } else {
+      *rssi = value - RSSI_OFFSET_HF_PORT;
+    }
+    // section 5.5.5.
+    float snr;
+    code = sx127x_get_packet_snr(device, &snr);
+    // if snr failed then rssi is not precise
+    if (code == SX127X_OK && snr < 0) {
+      *rssi = *rssi + snr;
+    }
+  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
+    uint8_t value;
+    int code = sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value);
+    if (code != SX127X_OK) {
+      return code;
+    }
+    // TODO read offset and add here?
+    *rssi = -value / 2;
   } else {
-    *rssi = value - RSSI_OFFSET_HF_PORT;
-  }
-  // section 5.5.5.
-  float snr;
-  code = sx127x_get_packet_snr(device, &snr);
-  // if snr failed then rssi is not precise
-  if (code == SX127X_OK && snr < 0) {
-    *rssi = *rssi + snr;
+    return SX127X_ERR_INVALID_ARG;
   }
   return SX127X_OK;
 }
 
 int sx127x_get_packet_snr(sx127x *device, float *snr) {
+  if (device->active_modem != SX127x_MODULATION_LORA) {
+    return SX127X_ERR_INVALID_ARG;
+  }
   uint8_t value;
   int code = sx127x_read_register(REG_PKT_SNR_VALUE, device->spi_device, &value);
   if (code != SX127X_OK) {
