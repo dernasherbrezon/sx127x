@@ -700,6 +700,19 @@ int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_p
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
 /**
+ * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
+ * 
+ * @param enabled 1 is for ON, 0 is for OFF
+ * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes
+ * @param detector_tolerance Number or chip errors tolerated over detector_size
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
+
+/**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
  *
  * @param device Pointer to variable to hold the device handle

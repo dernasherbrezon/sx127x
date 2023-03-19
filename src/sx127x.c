@@ -37,6 +37,7 @@
 #define REG_RSSI_VALUE 0x1b
 #define REG_MODEM_CONFIG_1 0x1d
 #define REG_MODEM_CONFIG_2 0x1e
+#define REG_PREAMBLE_DETECT 0x1f
 #define REG_FEI_MSB 0x1d
 #define REG_PREAMBLE_MSB 0x20
 #define REG_PREAMBLE_LSB 0x21
@@ -853,19 +854,19 @@ int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device) {
 }
 
 uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
-    float min_tolerance = bandwidth;
-    uint8_t result = 0;
-    for (uint8_t e = 7; e >= 1; e--) {
-        for (int8_t m = 2; m >= 0; m--) {
-            float point = SX127x_OSCILLATOR_FREQUENCY / (float) (((4 * m) + 16) * ((uint32_t) 1 << (e + 2)));
-            float current_tolerance = fabsf(bandwidth - point);
-            if (current_tolerance < min_tolerance) {
-                result = ((m << 3) | e);
-                min_tolerance = current_tolerance;
-            }
-        }
+  float min_tolerance = bandwidth;
+  uint8_t result = 0;
+  for (uint8_t e = 7; e >= 1; e--) {
+    for (int8_t m = 2; m >= 0; m--) {
+      float point = SX127x_OSCILLATOR_FREQUENCY / (float)(((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
+      float current_tolerance = fabsf(bandwidth - point);
+      if (current_tolerance < min_tolerance) {
+        result = ((m << 3) | e);
+        min_tolerance = current_tolerance;
+      }
     }
-    return result;
+  }
+  return result;
 }
 
 int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device) {
@@ -969,6 +970,14 @@ int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_p
 
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device) {
   return sx127x_append_register(REG_SYNC_CONFIG, type, 0b11011111, device->spi_device);
+}
+
+int sx127x_fsk_ook_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device) {
+  if (detector_size > 3 || detector_size < 1) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  uint8_t value = (enabled << 7) | ((detector_size - 1) << 5) | (detector_tolerance & 0b00011111);
+  return sx127x_spi_write_register(REG_PREAMBLE_DETECT, &value, 1, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
