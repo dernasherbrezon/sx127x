@@ -680,37 +680,68 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
 
 /**
- * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected
+ * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
  *
  * @param enable 1 - to enable. 0 - to disable.
- * @param threshold
- * @param device
+ * @param threshold Sensitivity of the system in 1 dB steps that detect sudden change in RSSI. Default: 10dB
+ * @param device Pointer to variable to hold the device handle
  * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_rx_collision_restart(int enabled, uint8_t threshold, sx127x *device);
+int sx127x_fsk_ook_rx_set_collision_restart(int enabled, uint8_t threshold, sx127x *device);
 
-int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
+/**
+ * @brief Configure trigger that will start receiver.
+ *
+ * @param trigger Interrupt that will start receiver. Can be either NONE, Rssi, PreambleDetect or BOTH
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 
+/**
+ * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
+ *
+ * @param type Type of filtering. Can be NONE - when no filtering applied, NODE_ADDRESS - when expecting point-to-point message or NODE_AND_BROADCAST - when expecting point-to-point and broadcast messages
+ * @param node_address Address of this node. Ignored when no filtering is requested.
+ * @param broadcast_address Broadcast address of this node. Ignored when no filtering is requested.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
 
 int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
+/**
+ * @brief Sets the polarity of the Preamble to be 0xAA (default) or 0x55
+ *
+ * @param type Preamble Polarity 0xAA (default) or 0x55
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
- * 
+ *
  * @param enabled 1 is for ON, 0 is for OFF
  * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes
  * @param detector_tolerance Number or chip errors tolerated over detector_size
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
+int sx127x_fsk_ook_rx_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

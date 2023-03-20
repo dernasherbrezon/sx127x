@@ -857,7 +857,7 @@ int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_t
   return sx127x_append_register(REG_OOK_PEAK, 0b00010000, 0b11100111, device->spi_device);
 }
 
-int sx127x_fsk_ook_rx_collision_restart(int enable, uint8_t threshold, sx127x *device) {
+int sx127x_fsk_ook_rx_set_collision_restart(int enable, uint8_t threshold, sx127x *device) {
   int code = sx127x_spi_write_register(REG_RSSI_COLLISION, &threshold, 1, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -895,7 +895,7 @@ int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device) {
   return sx127x_spi_write_register(REG_RX_BW, &value, 1, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_rx_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
+int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
   return sx127x_append_register(REG_RX_CONFIG, trigger, 0b11111000, device->spi_device);
 }
 
@@ -988,7 +988,7 @@ int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device
   return sx127x_append_register(REG_SYNC_CONFIG, type, 0b11011111, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device) {
+int sx127x_fsk_ook_rx_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device) {
   if (detector_size > 3 || detector_size < 1) {
     return SX127X_ERR_INVALID_ARG;
   }

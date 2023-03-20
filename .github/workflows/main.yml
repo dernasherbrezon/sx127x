@@ -5,7 +5,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -14,9 +13,7 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
+      uses: actions/checkout@v3
     - name: example - receive
       uses: espressif/esp-idf-ci-action@v1
       with:

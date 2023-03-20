@@ -67,6 +67,20 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sx127x)
 target_link_libraries(my_application sx127x)
 ```
 
+## Functions
+
+All functions follow the same format:
+
+```
+sx127x_(modulation)_(rx or tx or empty)_(set or get)_(parameter)
+```
+
+Where:
+
+  * modulation - can be "fsk" or "ook" or "fsk_ook" or empty. If empty, then applicable for all modulation types
+  * rx or tx - some functions specific for rx or tx. If empty, then applicable for both
+  * set or get - normally functions operate over sx127x registers - either set or get them
+
 # Examples
 
 ```examples``` folder contains the following examples:
