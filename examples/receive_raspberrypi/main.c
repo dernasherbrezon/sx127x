@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 // Correspond to SPI0 with chip select pin CE0 (GPIO8) on RaspberryPI
 #define SPI_DEVICE "/dev/spidev0.0"
@@ -57,7 +58,7 @@ void rx_callback(sx127x *device) {
   LINUX_NO_CODE_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
   int32_t frequency_error;
   LINUX_NO_CODE_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
-  fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %d\n", data_length, payload, rssi, snr, frequency_error);
+  fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %" PRId32 "\n", data_length, payload, rssi, snr, frequency_error);
 }
 
 void cad_callback(sx127x *device, int cad_detected) {

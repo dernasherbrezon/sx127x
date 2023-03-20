@@ -5,6 +5,7 @@
 #include <esp_log.h>
 #include <freertos/task.h>
 #include <sx127x.h>
+#include <inttypes.h>
 
 #define SCK 5
 #define MISO 19
@@ -57,7 +58,7 @@ void rx_callback(sx127x *device) {
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
 
-  ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %ld", data_length, payload, rssi, snr, frequency_error);
+  ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %" PRId32, data_length, payload, rssi, snr, frequency_error);
 
   total_packets_received++;
 }
