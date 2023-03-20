@@ -792,7 +792,7 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
         return code;
       }
     }
-    // if address filtering is required for tx, then it should be part of data
+    // FIXME if address filtering is required for tx, then it should be read from device
     return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
   }
   return SX127X_ERR_INVALID_ARG;
@@ -885,12 +885,12 @@ uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
   return result;
 }
 
-int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device) {
+int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device) {
   uint8_t value = sx127x_fsk_ook_calculate_bw_register(bandwidth);
   return sx127x_spi_write_register(REG_AFC_BW, &value, 1, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device) {
+int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device) {
   uint8_t value = sx127x_fsk_ook_calculate_bw_register(bandwidth);
   return sx127x_spi_write_register(REG_RX_BW, &value, 1, device->spi_device);
 }
@@ -916,7 +916,7 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
   return sx127x_spi_write_buffer(REG_SYNC_VALUE1, syncword, syncword_length, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device) {
+int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device) {
   if (offset < -16 || offset > 15) {
     return SX127X_ERR_INVALID_ARG;
   }

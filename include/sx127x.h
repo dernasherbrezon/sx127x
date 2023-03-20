@@ -90,7 +90,7 @@ typedef enum {
 typedef enum {
   SX127X_RX_TRIGGER_NONE = 0b00000000,
   SX127X_RX_TRIGGER_RSSI = 0b00000001,
-  SX127X_RX_TRIGGER_PREAMBLE = 0b00000110,
+  SX127X_RX_TRIGGER_PREAMBLE = 0b00000110, // default
   SX127X_RX_TRIGGER_RSSI_PREAMBLE = 0b00000111
 } sx127x_rx_trigger_t;
 
@@ -646,20 +646,67 @@ int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_t
 
 int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device);
 
-int sx127x_fsk_ook_set_afc_bandwidth(float bandwidth, sx127x *device);
+/**
+ * @brief Configure alternate receiver bandwidth during the AFC phase. This allow the accommodation of larger frequency errors. In a typical receiver application the, once the AFC is performed, the radio will revert to the receiver communication or channel bandwidth (RegRxBw) for the ensuing communication phase.
+ * 
+ * @param bandwidth The single-side channel filter bandwidth. Defined by 2 numbers: mantissa and exponent. Thus approximate requested bandwidth. Minimum is 2600 hz, maximum - 250000 hz. Default: 50000 hz.
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
 
-int sx127x_fsk_ook_set_rx_bandwidth(float bandwidth, sx127x *device);
+/**
+ * @brief Configure bandwidth of channel filter. The role of the channel filter is to reject noise and interference outside of the wanted channel. Channel filtering is implemented with a 16-tap finite impulse response (FIR) filter. To respect sampling criterion in the decimation chain of the receiver, the communication bit rate cannot be set at a higher than twice the single side receiver bandwidth (BitRate < 2 x RxBw)
+ * 
+ * @param bandwidth The single-side channel filter bandwidth. Defined by 2 numbers: mantissa and exponent. Thus approximate requested bandwidth. Minimum is 2600 hz, maximum - 250000 hz. Default: 10400 hz.
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device);
 
+/**
+ * @brief Configure sync word. Sync word can be used to separate several different networks.
+ * 
+ * @param syncword Array of sync word bytes. Any sync word byte cannot be zero (0x00).
+ * @param syncword_length Length of array of sync word bytes. Maximum is 8. Minimum - 1. Default: 3
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
 
-int sx127x_fsk_ook_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device);
+/**
+ * @brief Configure RSSI calculation
+ * 
+ * @param smoothing The number of samples taken to average the RSSI result
+ * @param offset Signed RSSI offset, to compensate for the possible losses/gains in the front-end (LNA, SAW filter...). 1dB / LSB, 2’s complement format
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device);
 
+/**
+ * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
+ * 
+ * @param encoding Can be NRZ (none) (default), MANCHESTER or SCRAMBLED. Scrambled data is passed through proper LFSR polynomial
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
 
 /**
  * @brief Set checksum generation for TX or validation for RX.
  *
- * @param crc_type Can be one of: NONE, CCITT, IBM.
+ * @param crc_type Can be one of: NONE, CCITT (default), IBM.
  * @param device Pointer to variable to hold the device handle
  * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
@@ -670,7 +717,7 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
 /**
  * @brief Set the packet format.
  *
- * @param format Packet format can be FIXED or VARIABLE (Unlimit is not supported). FIXED should have fixed length known to RX.
+ * @param format Packet format can be FIXED or VARIABLE (default) (Unlimit is not supported). FIXED should have fixed length known to RX.
  * @param max_payload_length Maximum 2047 for FIXED type. Maximum 255 for VARIABLE. If specified 2047 for VARIABLE type, then payload length check is disabled.
  * @param device Pointer to variable to hold the device handle
  * @return int
@@ -682,7 +729,7 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
  *
- * @param enable 1 - to enable. 0 - to disable.
+ * @param enable 1 - to enable. 0 - to disable. Default: OFF
  * @param threshold Sensitivity of the system in 1 dB steps that detect sudden change in RSSI. Default: 10dB
  * @param device Pointer to variable to hold the device handle
  * @return int
@@ -694,7 +741,7 @@ int sx127x_fsk_ook_rx_set_collision_restart(int enabled, uint8_t threshold, sx12
 /**
  * @brief Configure trigger that will start receiver.
  *
- * @param trigger Interrupt that will start receiver. Can be either NONE, Rssi, PreambleDetect or BOTH
+ * @param trigger Interrupt that will start receiver. Can be either NONE, Rssi, PreambleDetect (default) or BOTH
  * @param device Pointer to variable to hold the device handle
  * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
@@ -705,7 +752,7 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 /**
  * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
  *
- * @param type Type of filtering. Can be NONE - when no filtering applied, NODE_ADDRESS - when expecting point-to-point message or NODE_AND_BROADCAST - when expecting point-to-point and broadcast messages
+ * @param type Type of filtering. Can be NONE (default) - when no filtering applied, NODE_ADDRESS - when expecting point-to-point message or NODE_AND_BROADCAST - when expecting point-to-point and broadcast messages
  * @param node_address Address of this node. Ignored when no filtering is requested.
  * @param broadcast_address Broadcast address of this node. Ignored when no filtering is requested.
  * @param device Pointer to variable to hold the device handle
@@ -715,8 +762,28 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
  */
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
 
+/**
+ * @brief Set FSK modulation shaping. Used to improve the narrow band response of the transmitter.
+ * 
+ * @param data_shaping Modulation shaping. Can be NONE (default) or Gaussian filtered with BT 0.3, 0.5 or 1.0
+ * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
+ * @param device Pointer to variable to hold the device handle 
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
+/**
+ * @brief Set OOK modulation shaping. Used to improve the narrow band response of the transmitter.
+ * 
+ * @param data_shaping Modulation shaping. Can be NONE (default) or filtered with fcutoff = bit_rate or fcutoff = 2*bit_rate
+ * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
+ * @param device Pointer to variable to hold the device handle 
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
 /**
@@ -733,9 +800,9 @@ int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
  *
- * @param enabled 1 is for ON, 0 is for OFF
- * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes
- * @param detector_tolerance Number or chip errors tolerated over detector_size
+ * @param enabled 1 is for ON (default), 0 is for OFF
+ * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes. Default: 2 bytes
+ * @param detector_tolerance Number or chip errors tolerated over detector_size. Default: 0x0A
  * @param device Pointer to variable to hold the device handle
  * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
