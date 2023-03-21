@@ -58,18 +58,18 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_reset_fifo(device));
+  ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-  ESP_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
       .crc = SX127x_RX_PAYLOAD_CRC_ON,
       .length = 2};
-  ESP_ERROR_CHECK(sx127x_set_implicit_header(&header, device));
-  ESP_ERROR_CHECK(sx127x_set_modem_config_2(SX127x_SF_9, device));
-  ESP_ERROR_CHECK(sx127x_set_syncword(18, device));
-  ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
-  sx127x_set_tx_callback(tx_callback, device);
+  ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(8, device));
+  sx127x_tx_set_callback(tx_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
@@ -86,10 +86,10 @@ void app_main() {
   gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device);
 
   // 4 is OK
-  ESP_ERROR_CHECK(sx127x_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
+  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
 
   uint8_t data[] = {0xCA, 0xFE};
-  ESP_ERROR_CHECK(sx127x_set_for_transmission(data, sizeof(data), device));
+  ESP_ERROR_CHECK(sx127x_tx_set_for_transmission(data, sizeof(data), device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
   ESP_LOGI(TAG, "transmitting");
 

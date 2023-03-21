@@ -361,7 +361,7 @@ int sx127x_set_frequency(uint64_t frequency, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_reset_fifo(sx127x *device);
+int sx127x_lora_reset_fifo(sx127x *device);
 
 /**
  * @brief Set signal bandwidth
@@ -375,7 +375,7 @@ int sx127x_reset_fifo(sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
+int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
 
 /**
  * @brief Get signal bandwidth in hz.
@@ -386,7 +386,7 @@ int sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth);
+int sx127x_lora_get_bandwidth(sx127x *device, uint32_t *bandwidth);
 
 /**
  * @brief Set speading factor (SF rate). See section 4.1.1.2. for more details.
@@ -399,7 +399,7 @@ int sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
+int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
 
 /**
  * @brief Enable or disable low datarate optimization.
@@ -412,7 +412,7 @@ int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device);
+int sx127x_lora_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device);
 
 /**
  * @brief Set syncword.
@@ -424,7 +424,7 @@ int sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_t valu
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_syncword(uint8_t value, sx127x *device);
+int sx127x_lora_set_syncword(uint8_t value, sx127x *device);
 
 /**
  * @brief Set preamble length. See 4.1.1 for more details.
@@ -435,7 +435,7 @@ int sx127x_set_syncword(uint8_t value, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_preamble_length(uint16_t value, sx127x *device);
+int sx127x_lora_set_preamble_length(uint16_t value, sx127x *device);
 
 /**
  * @brief Set implicit header.
@@ -449,7 +449,7 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
+int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
 /**
  * @brief Map different interrupts from sx127x to different digital pins output.
@@ -488,7 +488,6 @@ int sx127x_dump_registers(sx127x *device);
  */
 void sx127x_handle_interrupt(sx127x *device);
 
-// RX-related functions
 /**
  * @brief Set RX gain. Can be manual or automatic.
  *
@@ -498,7 +497,7 @@ void sx127x_handle_interrupt(sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device);
+int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device);
 
 /**
  * @brief Boost LNA current in high frequency mode (over 525Mhz).
@@ -509,7 +508,7 @@ int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
+int sx127x_rx_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
 
 /**
  * @brief Set callback function for rxdone interrupt.
@@ -517,7 +516,7 @@ int sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
  * @param rx_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_set_rx_callback(void (*rx_callback)(sx127x *), sx127x *device);
+void sx127x_rx_set_callback(void (*rx_callback)(sx127x *), sx127x *device);
 
 /**
  * @brief Read payload from sx127x's internal FIFO.
@@ -529,7 +528,7 @@ void sx127x_set_rx_callback(void (*rx_callback)(sx127x *), sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
+int sx127x_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
 
 /**
  * @brief RSSI of the latest packet received (dBm)
@@ -540,7 +539,7 @@ int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi);
+int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi);
 
 /**
  * @brief Estimation of SNR on last packet received
@@ -551,7 +550,7 @@ int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_get_packet_snr(sx127x *device, float *snr);
+int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr);
 
 /**
  * @brief Read estimated frequency error from modem.
@@ -562,7 +561,7 @@ int sx127x_get_packet_snr(sx127x *device, float *snr);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_get_frequency_error(sx127x *device, int32_t *frequency_error);
+int sx127x_rx_get_frequency_error(sx127x *device, int32_t *frequency_error);
 
 // TX-related functions
 /**
@@ -581,7 +580,7 @@ int sx127x_get_frequency_error(sx127x *device, int32_t *frequency_error);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
+int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
 
 /**
  * @brief Configure overload current protection (OCP) for PA.
@@ -593,7 +592,7 @@ int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
+int sx127x_tx_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
 
 /**
  * @brief Set explicit header during TX.
@@ -604,7 +603,7 @@ int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device);
+int sx127x_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device);
 
 /**
  * @brief Set callback function for txdone interrupt.
@@ -612,7 +611,7 @@ int sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device);
  * @param tx_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device);
+void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device);
 
 /**
  * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
@@ -624,7 +623,7 @@ void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+int sx127x_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
 
 /**
  * @brief Set callback function for caddone interrupt. int argument is 0 when no CAD detected.
@@ -632,7 +631,7 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
  * @param cad_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
+void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
 
 /**
  * @brief Set the bit rate for the modulation. Bit rate is the FXOSC / bitrate. FSK modulation utilize fractional bits to make this ratio more precise.
@@ -655,6 +654,100 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device);
+
+/**
+ * @brief Configure sync word. Sync word can be used to separate several different networks.
+ *
+ * @param syncword Array of sync word bytes. Any sync word byte cannot be zero (0x00).
+ * @param syncword_length Length of array of sync word bytes. Maximum is 8. Minimum - 1. Default: 3
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
+
+/**
+ * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
+ *
+ * @param encoding Can be NRZ (none) (default), MANCHESTER or SCRAMBLED. Scrambled data is passed through proper LFSR polynomial
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
+
+/**
+ * @brief Set checksum generation for TX or validation for RX.
+ *
+ * @param crc_type Can be one of: NONE, CCITT (default), IBM.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
+
+/**
+ * @brief Set the packet format.
+ *
+ * @param format Packet format can be FIXED or VARIABLE (default) (Unlimit is not supported). FIXED should have fixed length known to RX.
+ * @param max_payload_length Maximum 2047 for FIXED type. Maximum 255 for VARIABLE. If specified 2047 for VARIABLE type, then payload length check is disabled.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
+
+/**
+ * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
+ *
+ * @param type Type of filtering. Can be NONE (default) - when no filtering applied, NODE_ADDRESS - when expecting point-to-point message or NODE_AND_BROADCAST - when expecting point-to-point and broadcast messages
+ * @param node_address Address of this node. Ignored when no filtering is requested.
+ * @param broadcast_address Broadcast address of this node. Ignored when no filtering is requested.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
+
+/**
+ * @brief Set FSK modulation shaping. Used to improve the narrow band response of the transmitter.
+ *
+ * @param data_shaping Modulation shaping. Can be NONE (default) or Gaussian filtered with BT 0.3, 0.5 or 1.0
+ * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
+
+/**
+ * @brief Set OOK modulation shaping. Used to improve the narrow band response of the transmitter.
+ *
+ * @param data_shaping Modulation shaping. Can be NONE (default) or filtered with fcutoff = bit_rate or fcutoff = 2*bit_rate
+ * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
+
+/**
+ * @brief Sets the polarity of the Preamble to be 0xAA (default) or 0x55
+ *
+ * @param type Preamble Polarity 0xAA (default) or 0x55
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
 /**
  * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects PEAK mode and configure its parameters.
@@ -726,18 +819,6 @@ int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
 int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device);
 
 /**
- * @brief Configure sync word. Sync word can be used to separate several different networks.
- *
- * @param syncword Array of sync word bytes. Any sync word byte cannot be zero (0x00).
- * @param syncword_length Length of array of sync word bytes. Maximum is 8. Minimum - 1. Default: 3
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
-
-/**
  * @brief Configure RSSI calculation
  *
  * @param smoothing The number of samples taken to average the RSSI result
@@ -748,40 +829,6 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device);
-
-/**
- * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
- *
- * @param encoding Can be NRZ (none) (default), MANCHESTER or SCRAMBLED. Scrambled data is passed through proper LFSR polynomial
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
-
-/**
- * @brief Set checksum generation for TX or validation for RX.
- *
- * @param crc_type Can be one of: NONE, CCITT (default), IBM.
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
-
-/**
- * @brief Set the packet format.
- *
- * @param format Packet format can be FIXED or VARIABLE (default) (Unlimit is not supported). FIXED should have fixed length known to RX.
- * @param max_payload_length Maximum 2047 for FIXED type. Maximum 255 for VARIABLE. If specified 2047 for VARIABLE type, then payload length check is disabled.
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
 
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
@@ -805,54 +852,6 @@ int sx127x_fsk_ook_rx_set_collision_restart(int enabled, uint8_t threshold, sx12
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
-
-/**
- * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
- *
- * @param type Type of filtering. Can be NONE (default) - when no filtering applied, NODE_ADDRESS - when expecting point-to-point message or NODE_AND_BROADCAST - when expecting point-to-point and broadcast messages
- * @param node_address Address of this node. Ignored when no filtering is requested.
- * @param broadcast_address Broadcast address of this node. Ignored when no filtering is requested.
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
-
-/**
- * @brief Set FSK modulation shaping. Used to improve the narrow band response of the transmitter.
- *
- * @param data_shaping Modulation shaping. Can be NONE (default) or Gaussian filtered with BT 0.3, 0.5 or 1.0
- * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
-
-/**
- * @brief Set OOK modulation shaping. Used to improve the narrow band response of the transmitter.
- *
- * @param data_shaping Modulation shaping. Can be NONE (default) or filtered with fcutoff = bit_rate or fcutoff = 2*bit_rate
- * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
-
-/**
- * @brief Sets the polarity of the Preamble to be 0xAA (default) or 0x55
- *
- * @param type Preamble Polarity 0xAA (default) or 0x55
- * @param device Pointer to variable to hold the device handle
- * @return int
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.

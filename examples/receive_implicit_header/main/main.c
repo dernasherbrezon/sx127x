@@ -33,7 +33,7 @@ void handle_interrupt_task(void *arg) {
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  esp_err_t code = sx127x_read_payload(device, &data, &data_length);
+  esp_err_t code = sx127x_rx_read_payload(device, &data, &data_length);
   if (code != ESP_OK) {
     ESP_LOGE(TAG, "can't read %d", code);
     return;
@@ -52,11 +52,11 @@ void rx_callback(sx127x *device) {
   payload[data_length * 2] = '\0';
 
   int16_t rssi;
-  ESP_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
+  ESP_ERROR_CHECK(sx127x_rx_get_packet_rssi(device, &rssi));
   float snr;
-  ESP_ERROR_CHECK(sx127x_get_packet_snr(device, &snr));
+  ESP_ERROR_CHECK(sx127x_lora_rx_get_packet_snr(device, &snr));
   int32_t frequency_error;
-  ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
+  ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
 
   ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %" PRId32, data_length, payload, rssi, snr, frequency_error);
 
@@ -87,20 +87,20 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_reset_fifo(device));
-  ESP_ERROR_CHECK(sx127x_set_lna_boost_hf(SX127x_LNA_BOOST_HF_ON, device));
+  ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
+  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(SX127x_LNA_BOOST_HF_ON, device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-  ESP_ERROR_CHECK(sx127x_set_lna_gain(SX127x_LNA_GAIN_G4, device));
-  ESP_ERROR_CHECK(sx127x_set_bandwidth(SX127x_BW_125000, device));
+  ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
       .crc = SX127x_RX_PAYLOAD_CRC_ON,
       .length = 2};
-  ESP_ERROR_CHECK(sx127x_set_implicit_header(&header, device));
-  ESP_ERROR_CHECK(sx127x_set_modem_config_2(SX127x_SF_9, device));
-  ESP_ERROR_CHECK(sx127x_set_syncword(18, device));
-  ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
-  sx127x_set_rx_callback(rx_callback, device);
+  ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(8, device));
+  sx127x_rx_set_callback(rx_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {

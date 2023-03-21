@@ -151,11 +151,11 @@ int sx127x_append_register(int reg, uint8_t value, uint8_t mask, void *spi_devic
   return sx127x_spi_write_register(reg, data, 1, spi_device);
 }
 
-int sx127x_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device) {
+int sx127x_lora_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device) {
   return sx127x_append_register(REG_MODEM_CONFIG_3, value, 0b11110111, device->spi_device);
 }
 
-int sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth) {
+int sx127x_lora_get_bandwidth(sx127x *device, uint32_t *bandwidth) {
   uint8_t config = 0;
   int code = sx127x_read_register(REG_MODEM_CONFIG_1, device->spi_device, &config);
   if (code != SX127X_OK) {
@@ -201,7 +201,7 @@ int sx127x_get_bandwidth(sx127x *device, uint32_t *bandwidth) {
 
 int sx127x_reload_low_datarate_optimization(sx127x *device) {
   uint32_t bandwidth;
-  int code = sx127x_get_bandwidth(device, &bandwidth);
+  int code = sx127x_lora_get_bandwidth(device, &bandwidth);
   if (code != SX127X_OK) {
     return code;
   }
@@ -216,7 +216,7 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   uint32_t symbol_duration = 1000 / (bandwidth / (1L << config));
   if (symbol_duration > 16) {
     // force low data rate optimization
-    return sx127x_set_low_datarate_optimization(SX127x_LOW_DATARATE_OPTIMIZATION_ON, device);
+    return sx127x_lora_set_low_datarate_optimization(SX127x_LOW_DATARATE_OPTIMIZATION_ON, device);
   }
   return SX127X_OK;
 }
@@ -370,13 +370,13 @@ int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
   return SX127X_OK;
 }
 
-int sx127x_reset_fifo(sx127x *device) {
+int sx127x_lora_reset_fifo(sx127x *device) {
   // reset both RX and TX
   uint8_t data[] = {FIFO_TX_BASE_ADDR, FIFO_RX_BASE_ADDR};
   return sx127x_spi_write_register(REG_FIFO_TX_BASE_ADDR, data, 2, device->spi_device);
 }
 
-int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
+int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
     if (gain == SX127x_LNA_GAIN_AUTO) {
       return sx127x_append_register(REG_MODEM_CONFIG_3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, device->spi_device);
@@ -400,11 +400,11 @@ int sx127x_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
   }
 }
 
-int sx127x_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device) {
+int sx127x_rx_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device) {
   return sx127x_append_register(REG_LNA, value, 0b11111100, device->spi_device);
 }
 
-int sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
+int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
   int code = sx127x_append_register(REG_MODEM_CONFIG_1, bandwidth, 0b00001111, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -412,7 +412,7 @@ int sx127x_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
   return sx127x_reload_low_datarate_optimization(device);
 }
 
-int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device) {
+int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device) {
   if (spreading_factor == SX127x_SF_6 && device->header == NULL) {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -441,15 +441,15 @@ int sx127x_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device) {
   return sx127x_reload_low_datarate_optimization(device);
 }
 
-void sx127x_set_rx_callback(void (*rx_callback)(sx127x *), sx127x *device) {
+void sx127x_rx_set_callback(void (*rx_callback)(sx127x *), sx127x *device) {
   device->rx_callback = rx_callback;
 }
 
-int sx127x_set_syncword(uint8_t value, sx127x *device) {
+int sx127x_lora_set_syncword(uint8_t value, sx127x *device) {
   return sx127x_spi_write_register(REG_SYNC_WORD, &value, 1, device->spi_device);
 }
 
-int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
+int sx127x_lora_set_preamble_length(uint16_t value, sx127x *device) {
   uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
   if (device->active_modem == SX127x_MODULATION_LORA) {
     return sx127x_spi_write_register(REG_PREAMBLE_MSB, data, 2, device->spi_device);
@@ -460,7 +460,7 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
   }
 }
 
-int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device) {
+int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device) {
   device->header = header;
   if (header == NULL) {
     return sx127x_append_register(REG_MODEM_CONFIG_1, SX127x_HEADER_MODE_EXPLICIT, 0b11111110, device->spi_device);
@@ -477,7 +477,7 @@ int sx127x_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device)
   }
 }
 
-int sx127x_read_payload_lora(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
+int sx127x_rx_read_payload_lora(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
   uint8_t length;
   if (device->header == NULL) {
     int code = sx127x_read_register(REG_RX_NB_BYTES, device->spi_device, &length);
@@ -516,7 +516,7 @@ int sx127x_read_payload_lora(sx127x *device, uint8_t **packet, uint8_t *packet_l
   return SX127X_OK;
 }
 
-int sx127x_read_payload_fsk(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
+int sx127x_rx_read_payload_fsk(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
   uint16_t length;
   if (device->fsk_ook_format == SX127X_FIXED) {
     uint8_t value;
@@ -560,17 +560,17 @@ int sx127x_read_payload_fsk(sx127x *device, uint8_t **packet, uint8_t *packet_le
   return SX127X_OK;
 }
 
-int sx127x_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
+int sx127x_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
-    return sx127x_read_payload_lora(device, packet, packet_length);
+    return sx127x_rx_read_payload_lora(device, packet, packet_length);
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    return sx127x_read_payload_fsk(device, packet, packet_length);
+    return sx127x_rx_read_payload_fsk(device, packet, packet_length);
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
 }
 
-int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi) {
+int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
     uint8_t value;
     int code = sx127x_read_register(REG_PKT_RSSI_VALUE, device->spi_device, &value);
@@ -584,7 +584,7 @@ int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi) {
     }
     // section 5.5.5.
     float snr;
-    code = sx127x_get_packet_snr(device, &snr);
+    code = sx127x_lora_rx_get_packet_snr(device, &snr);
     // if snr failed then rssi is not precise
     if (code == SX127X_OK && snr < 0) {
       *rssi = *rssi + snr;
@@ -603,7 +603,7 @@ int sx127x_get_packet_rssi(sx127x *device, int16_t *rssi) {
   return SX127X_OK;
 }
 
-int sx127x_get_packet_snr(sx127x *device, float *snr) {
+int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr) {
   if (device->active_modem != SX127x_MODULATION_LORA) {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -616,7 +616,7 @@ int sx127x_get_packet_snr(sx127x *device, float *snr) {
   return SX127X_OK;
 }
 
-int sx127x_get_frequency_error(sx127x *device, int32_t *result) {
+int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
     uint32_t frequency_error;
     int code = sx127x_spi_read_registers(REG_FREQ_ERROR_MSB, device->spi_device, 3, &frequency_error);
@@ -624,7 +624,7 @@ int sx127x_get_frequency_error(sx127x *device, int32_t *result) {
       return code;
     }
     uint32_t bandwidth;
-    code = sx127x_get_bandwidth(device, &bandwidth);
+    code = sx127x_lora_get_bandwidth(device, &bandwidth);
     if (code != SX127X_OK) {
       return code;
     }
@@ -675,11 +675,11 @@ int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device) {
   return sx127x_spi_write_register(REG_DIO_MAPPING_2, (uint8_t *)&value, 1, device->spi_device);
 }
 
-void sx127x_set_tx_callback(void (*tx_callback)(sx127x *), sx127x *device) {
+void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {
   device->tx_callback = tx_callback;
 }
 
-int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
+int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
   if (pin == SX127x_PA_PIN_RFO && (power < -4 || power > 15)) {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -711,7 +711,7 @@ int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
       max_current = 20;
     }
   }
-  code = sx127x_set_ocp(SX127x_OCP_ON, max_current, device);
+  code = sx127x_tx_set_ocp(SX127x_OCP_ON, max_current, device);
   if (code != SX127X_OK) {
     return code;
   }
@@ -733,7 +733,7 @@ int sx127x_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
   return sx127x_spi_write_register(REG_PA_CONFIG, &value, 1, device->spi_device);
 }
 
-int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t max_current, sx127x *device) {
+int sx127x_tx_set_ocp(sx127x_ocp_t onoff, uint8_t max_current, sx127x *device) {
   uint8_t data[1];
   if (onoff == SX127x_OCP_OFF) {
     data[0] = SX127x_OCP_OFF;
@@ -751,7 +751,7 @@ int sx127x_set_ocp(sx127x_ocp_t onoff, uint8_t max_current, sx127x *device) {
   return sx127x_spi_write_register(REG_OCP, data, 1, device->spi_device);
 }
 
-int sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
+int sx127x_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
   if (header == NULL) {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -762,7 +762,7 @@ int sx127x_set_tx_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
   return sx127x_append_register(REG_MODEM_CONFIG_2, header->crc, 0b11111011, device->spi_device);
 }
 
-int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
+int sx127x_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
   // uint8_t can't be more than MAX_PACKET_SIZE
   if (data_length == 0) {
     return SX127X_ERR_INVALID_ARG;
@@ -798,7 +798,7 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
   return SX127X_ERR_INVALID_ARG;
 }
 
-void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
+void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
   device->cad_callback = cad_callback;
 }
 

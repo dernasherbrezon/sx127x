@@ -42,7 +42,7 @@ void handle_interrupt_task(void *arg) {
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  esp_err_t code = sx127x_read_payload(device, &data, &data_length);
+  esp_err_t code = sx127x_rx_read_payload(device, &data, &data_length);
   if (code != ESP_OK) {
     ESP_LOGE(TAG, "can't read %d", code);
     return;
@@ -61,9 +61,9 @@ void rx_callback(sx127x *device) {
   payload[data_length * 2] = '\0';
 
   int16_t rssi;
-  ESP_ERROR_CHECK(sx127x_get_packet_rssi(device, &rssi));
+  ESP_ERROR_CHECK(sx127x_rx_get_packet_rssi(device, &rssi));
   int32_t frequency_error;
-  ESP_ERROR_CHECK(sx127x_get_frequency_error(device, &frequency_error));
+  ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
 
   ESP_LOGI(TAG, "received: %d %s rssi: %d freq_error: %" PRId32, data_length, payload, rssi, frequency_error);
 
@@ -119,7 +119,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(1, 2, 0x0A, device));
 
-  sx127x_set_rx_callback(rx_callback, device);
+  sx127x_rx_set_callback(rx_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
