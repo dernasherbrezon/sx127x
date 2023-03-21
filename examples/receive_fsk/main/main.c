@@ -104,8 +104,8 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_fdev(5000.0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_afc_auto(SX127x_AFC_AUTO_ON, device));
+  ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(SX127x_AFC_AUTO_ON, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
   uint8_t syncWord[] = {0x12, 0xAD};
