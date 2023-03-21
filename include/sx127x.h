@@ -68,7 +68,7 @@ typedef enum {
 typedef enum {
   SX127X_32_PI = 0b00000000,  // chip rate / 32.π
   SX127X_8_PI = 0b00000001,   // chip rate / 8.π
-  SX127X_4_PI = 0b00000010,   // chip rate / 4.π
+  SX127X_4_PI = 0b00000010,   // chip rate / 4.π (default)
   SX127X_2_PI = 0b00000011    // chip rate / 2.π
 } sx127x_ook_avg_thresh_t;
 
@@ -90,7 +90,7 @@ typedef enum {
 typedef enum {
   SX127X_RX_TRIGGER_NONE = 0b00000000,
   SX127X_RX_TRIGGER_RSSI = 0b00000001,
-  SX127X_RX_TRIGGER_PREAMBLE = 0b00000110, // default
+  SX127X_RX_TRIGGER_PREAMBLE = 0b00000110,  // default
   SX127X_RX_TRIGGER_RSSI_PREAMBLE = 0b00000111
 } sx127x_rx_trigger_t;
 
@@ -634,24 +634,81 @@ int sx127x_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *devi
  */
 void sx127x_set_cad_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
 
+/**
+ * @brief Set the bit rate for the modulation. Bit rate is the FXOSC / bitrate. FSK modulation utilize fractional bits to make this ratio more precise.
+ *
+ * @param bitrate Default: 4.8 kb/s
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
 int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device);
 
-int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device);
+/**
+ * @brief Set frequency deviation for FSK modulation. It is most efficient when the modulation index of the signal is greater than 0.5 and below 10.
+ *
+ * @param frequency_deviation Minimum 600 hz, maximum - 200 khz. Default: 5 kHz
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device);
 
-int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device);
+/**
+ * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects PEAK mode and configure its parameters.
+ *
+ * @param step Size of each decrement of the RSSI threshold in the OOK demodulator. Default: 0.5 dB
+ * @param floor_threshold Floor threshold for the Data Slicer. Default: 0x0C
+ * @param decrement Period of decrement of the RSSI threshold. Default: once per chip (SX127X_1_1_CHIP)
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device);
 
-int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
+/**
+ * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects FIXED mode and configure its parameters.
+ *
+ * @param fixed_threshold Fixed threshold for the Data Slicer in OOK mode. Default: 0x0C
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_rx_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
 
-int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device);
+/**
+ * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects AVERAGE mode and configure its parameters.
+ *
+ * @param avg_offset Static offset added to the threshold in average mode in order to reduce glitching activity. Default: 0 dB
+ * @param avg_thresh Filter coefficients in average mode of the OOK demodulator. Default: fC ≈ chip rate / 4.π
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device);
 
-int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device);
+/**
+ * @brief Enable AFC on each receiver startup
+ *
+ * @param afc_auto ON - AFC is performed at each receiver startup. OFF (default) No AFC performed at receiver startup
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device);
 
 /**
  * @brief Configure alternate receiver bandwidth during the AFC phase. This allow the accommodation of larger frequency errors. In a typical receiver application the, once the AFC is performed, the radio will revert to the receiver communication or channel bandwidth (RegRxBw) for the ensuing communication phase.
- * 
+ *
  * @param bandwidth The single-side channel filter bandwidth. Defined by 2 numbers: mantissa and exponent. Thus approximate requested bandwidth. Minimum is 2600 hz, maximum - 250000 hz. Default: 50000 hz.
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -659,10 +716,10 @@ int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
 
 /**
  * @brief Configure bandwidth of channel filter. The role of the channel filter is to reject noise and interference outside of the wanted channel. Channel filtering is implemented with a 16-tap finite impulse response (FIR) filter. To respect sampling criterion in the decimation chain of the receiver, the communication bit rate cannot be set at a higher than twice the single side receiver bandwidth (BitRate < 2 x RxBw)
- * 
+ *
  * @param bandwidth The single-side channel filter bandwidth. Defined by 2 numbers: mantissa and exponent. Thus approximate requested bandwidth. Minimum is 2600 hz, maximum - 250000 hz. Default: 10400 hz.
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -670,11 +727,11 @@ int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device);
 
 /**
  * @brief Configure sync word. Sync word can be used to separate several different networks.
- * 
+ *
  * @param syncword Array of sync word bytes. Any sync word byte cannot be zero (0x00).
  * @param syncword_length Length of array of sync word bytes. Maximum is 8. Minimum - 1. Default: 3
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -682,11 +739,11 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
 
 /**
  * @brief Configure RSSI calculation
- * 
+ *
  * @param smoothing The number of samples taken to average the RSSI result
  * @param offset Signed RSSI offset, to compensate for the possible losses/gains in the front-end (LNA, SAW filter...). 1dB / LSB, 2’s complement format
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -694,10 +751,10 @@ int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t 
 
 /**
  * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
- * 
+ *
  * @param encoding Can be NRZ (none) (default), MANCHESTER or SCRAMBLED. Scrambled data is passed through proper LFSR polynomial
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -764,11 +821,11 @@ int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_
 
 /**
  * @brief Set FSK modulation shaping. Used to improve the narrow band response of the transmitter.
- * 
+ *
  * @param data_shaping Modulation shaping. Can be NONE (default) or Gaussian filtered with BT 0.3, 0.5 or 1.0
  * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
- * @param device Pointer to variable to hold the device handle 
- * @return int 
+ * @param device Pointer to variable to hold the device handle
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -776,11 +833,11 @@ int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_p
 
 /**
  * @brief Set OOK modulation shaping. Used to improve the narrow band response of the transmitter.
- * 
+ *
  * @param data_shaping Modulation shaping. Can be NONE (default) or filtered with fcutoff = bit_rate or fcutoff = 2*bit_rate
  * @param pa_ramp Rise/Fall time of ramp up/down in FSK. Default: 40 us
- * @param device Pointer to variable to hold the device handle 
- * @return int 
+ * @param device Pointer to variable to hold the device handle
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */

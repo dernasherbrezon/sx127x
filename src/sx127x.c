@@ -806,10 +806,16 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   uint16_t bitrate_value;
   uint8_t bitrate_fractional;
   if (device->active_modem == SX127x_MODULATION_FSK) {
+    if (bitrate < 1200 || bitrate > 300000) {
+      return SX127X_ERR_INVALID_ARG;
+    }
     uint32_t value = (uint32_t)(SX127x_OSCILLATOR_FREQUENCY * 16.0 / bitrate);
     bitrate_value = (value >> 4) & 0xFFFF;
     bitrate_fractional = value & 0x0F;
   } else if (device->active_modem == SX127x_MODULATION_OOK) {
+    if (bitrate < 1200 || bitrate > 25000) {
+      return SX127X_ERR_INVALID_ARG;
+    }
     bitrate_value = (uint16_t)(SX127x_OSCILLATOR_FREQUENCY / bitrate);
     bitrate_fractional = 0;
   } else {
@@ -823,13 +829,16 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   return sx127x_spi_write_register(REG_BITRATE_FRAC, &bitrate_fractional, 1, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_fdev(float frequency_deviation, sx127x *device) {
+int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device) {
+  if (frequency_deviation < 600 || frequency_deviation > 200000) {
+    return SX127X_ERR_INVALID_ARG;
+  }
   uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP);
   uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
   return sx127x_spi_write_register(REG_FDEV_MSB, data, 2, device->spi_device);
 }
 
-int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
+int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
   int code = sx127x_spi_write_register(REG_OOK_FIX, &floor_threshold, 1, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -841,7 +850,7 @@ int sx127x_ook_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_t
   return sx127x_append_register(REG_OOK_PEAK, (0b00001000 | step), 0b11100000, device->spi_device);
 }
 
-int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
+int sx127x_ook_rx_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
   int code = sx127x_spi_write_register(REG_OOK_FIX, &fixed_threshold, 1, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -849,7 +858,7 @@ int sx127x_ook_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
   return sx127x_append_register(REG_OOK_PEAK, 0b00000000, 0b11100111, device->spi_device);
 }
 
-int sx127x_ook_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
+int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
   int code = sx127x_append_register(REG_OOK_AVG, (avg_offset | avg_thresh), 0b11110000, device->spi_device);
   if (code != SX127X_OK) {
     return code;
@@ -865,7 +874,7 @@ int sx127x_fsk_ook_rx_set_collision_restart(int enable, uint8_t threshold, sx127
   return sx127x_append_register(REG_RX_CONFIG, (enable << 7), 0b01111111, device->spi_device);
 }
 
-int sx127x_fsk_ook_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device) {
+int sx127x_fsk_ook_rx_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device) {
   return sx127x_append_register(REG_RX_CONFIG, afc_auto, 0b11101111, device->spi_device);
 }
 
