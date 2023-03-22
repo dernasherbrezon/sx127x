@@ -91,7 +91,6 @@ Where:
 * ```receive_raspberrypi``` - sample program to receive messages on RaspberryPI via GPIO pins and onboard SPI. Tested on module RA-02.  
 * ```transmit_raspberrypi``` - sample program to transmit messages from RaspberryPI. Tested on module RA-02.  
 * ```transmit``` - basic TX
-* ```transmit_different_power``` - TX on different power levels
 * ```transmit_implicit_header``` - transmit messages without header (implicit header)
 
 # Implementation notes
