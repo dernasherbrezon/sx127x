@@ -217,7 +217,7 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   uint32_t symbol_duration = 1000 / (bandwidth / (1L << config));
   if (symbol_duration > 16) {
     // force low data rate optimization
-    return sx127x_lora_set_low_datarate_optimization(SX127x_LOW_DATARATE_OPTIMIZATION_ON, device);
+    return sx127x_lora_set_low_datarate_optimization(true, device);
   }
   return SX127X_OK;
 }
