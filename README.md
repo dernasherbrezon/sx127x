@@ -85,13 +85,13 @@ Where:
 
 ```examples``` folder contains the following examples:
 
-* ```receive``` - basic RX
-* ```receive_deepsleep``` - receive messages from deep sleep
-* ```receive_implicit_header``` - receive messages without header (implicit header)
-* ```receive_raspberrypi``` - sample program to receive messages on RaspberryPI via GPIO pins and onboard SPI. Tested on module RA-02.  
-* ```transmit_raspberrypi``` - sample program to transmit messages from RaspberryPI. Tested on module RA-02.  
-* ```transmit``` - basic TX
-* ```transmit_implicit_header``` - transmit messages without header (implicit header)
+* ```receive_lora``` - RX in LoRa mode and explicit header
+* ```receive_lora_deepsleep``` - RX in LoRa mode while in the deep sleep
+* ```receive_lora_implicit_header``` - RX in LoRa mode and implicit header (without header)
+* ```receive_lora_raspberrypi``` - RX in LoRa mode on RaspberryPI via GPIO pins and onboard SPI. Tested on module RA-02
+* ```transmit_lora``` - TX in LoRa mode and explicit header. Several messages of the different size and at all supported power levels
+* ```transmit_lora_implicit_header``` - TX in LoRa mode and implicit header (without header)
+* ```transmit_lora_raspberrypi``` - TX messages using LoRa mode from RaspberryPI. Tested on module RA-02
 
 # Implementation notes
 
