@@ -9,7 +9,6 @@ extern "C" {
 #include <stdbool.h>
 
 #define MAX_PACKET_SIZE 256
-#define MAX_PACKET_SIZE_FSK_OOK 66
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
 #define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
@@ -591,7 +590,30 @@ void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+
+/**
+ * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
+ *
+ * @param data Packet
+ * @param data_length Packet length. Maximum length depend on packet format (sx127x_packet_format_t). VARIABLE format is limited by 255 bytes. FIXED format - 2047 bytes
+ * @param device Pointer to variable to hold the device handle
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device);
+
+/**
+ * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
+ * 
+ * @param data Packet
+ * @param data_length Packet length. Maximum length depend on packet format (sx127x_packet_format_t). VARIABLE format is limited by 254 bytes. FIXED format - 2046 bytes
+ * @param address_to Address to send to. Can be Node address or broadcast address
+ * @param device 
+ * @return int 
+ */
+int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device);
 
 /**
  * @brief Set callback function for caddone interrupt. int argument is 0 when no CAD detected.

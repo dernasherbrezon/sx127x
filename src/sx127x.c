@@ -766,40 +766,60 @@ int sx127x_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
   return sx127x_append_register(REG_MODEM_CONFIG_2, value, 0b11111011, device->spi_device);
 }
 
-int sx127x_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
+int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
   // uint8_t can't be more than MAX_PACKET_SIZE
-  if (data_length == 0) {
+  if (data_length == 0 || device->active_modem != SX127x_MODULATION_LORA) {
     return SX127X_ERR_INVALID_ARG;
   }
-  if (device->active_modem == SX127x_MODULATION_LORA) {
-    uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};
-    int code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, fifo_addr, 1, device->spi_device);
-    if (code != SX127X_OK) {
-      return code;
-    }
-    uint8_t reg_data[] = {data_length};
-    code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
-    if (code != SX127X_OK) {
-      return code;
-    }
-    return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
-  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    if (device->fsk_ook_format == SX127X_VARIABLE && data_length > (MAX_PACKET_SIZE_FSK_OOK - 1)) {
-      return SX127X_ERR_INVALID_ARG;
-    }
-    if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_OOK) {
-      return SX127X_ERR_INVALID_ARG;
-    }
-    if (device->fsk_ook_format == SX127X_VARIABLE) {
-      int code = sx127x_spi_write_register(REG_FIFO, &data_length, 1, device->spi_device);
-      if (code != SX127X_OK) {
-        return code;
-      }
-    }
-    // FIXME if address filtering is required for tx, then it should be read from device
-    return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+  uint8_t fifo_addr[] = {FIFO_TX_BASE_ADDR};
+  int code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, fifo_addr, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
   }
-  return SX127X_ERR_INVALID_ARG;
+  uint8_t reg_data[] = {data_length};
+  code = sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+}
+
+int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device) {
+  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > 255) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  if (device->fsk_ook_format == SX127X_FIXED && data_length > 2047) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  if (device->fsk_ook_format == SX127X_VARIABLE) {
+    int code = sx127x_spi_write_register(REG_FIFO, &data_length, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+  }
+  // FIXME complex fill with FIFO Level interrupts
+  return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+}
+
+int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
+  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > 254) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  if (device->fsk_ook_format == SX127X_FIXED && data_length > 2046) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  if (device->fsk_ook_format == SX127X_VARIABLE) {
+    int code = sx127x_spi_write_register(REG_FIFO, &data_length, 1, device->spi_device);
+    if (code != SX127X_OK) {
+      return code;
+    }
+  }
+  int code = sx127x_spi_write_register(REG_FIFO, &address_to, 1, device->spi_device);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  // FIXME complex fill with FIFO Level interrupts
+  return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
 }
 
 void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
