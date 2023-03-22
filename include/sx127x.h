@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define MAX_PACKET_SIZE 256
 #define MAX_PACKET_SIZE_FSK_OOK 66
@@ -143,20 +144,6 @@ typedef enum {
   SX127x_LNA_GAIN_AUTO = 0b00000000  // Automatic. See 5.5.3. for details
 } sx127x_gain_t;
 
-/**
- * @brief High Frequency (RFI_HF) LNA current adjustment
- *
- */
-typedef enum {
-  SX127x_LNA_BOOST_HF_ON = 0b00000011,  // Default LNA current
-  SX127x_LNA_BOOST_HF_OFF = 0b00000000  // Boost on, 150% LNA current
-} sx127x_lna_boost_hf_t;
-
-typedef enum {
-  SX127x_AFC_AUTO_ON = 0b00010000,
-  SX127x_AFC_AUTO_OFF = 0b00000000
-} sx127x_afc_auto_t;
-
 typedef enum {
   SX127X_FSK_SHAPING_NONE = 0b00000000,  // no shaping
   SX127X_BT_1_0 = 0b00100000,            // Gaussian filter BT = 1.0
@@ -215,11 +202,6 @@ typedef enum {
   SX127x_CR_4_8 = 0b00001000
 } sx127x_cr_t;
 
-typedef enum {
-  SX127x_LOW_DATARATE_OPTIMIZATION_ON = 0b00001000,
-  SX127x_LOW_DATARATE_OPTIMIZATION_OFF = 0b00000000
-} sx127x_low_datarate_optimization_t;
-
 /**
  * @brief SF rate (expressed as a base-2 logarithm)
  *
@@ -234,32 +216,18 @@ typedef enum {
   SX127x_SF_12 = 0b11000000   // 4096 chips / symbol
 } sx127x_sf_t;
 
-typedef enum {
-  SX127x_RX_PAYLOAD_CRC_ON = 0b00000100,
-  SX127x_RX_PAYLOAD_CRC_OFF = 0b00000000
-} sx127x_crc_payload_t;
-
-/**
- * @brief Enable or disable overload current protection (OCP) for power amplifier.
- *
- */
-typedef enum {
-  SX127x_OCP_ON = 0b0010000,
-  SX127x_OCP_OFF = 0b00000000
-} sx127x_ocp_t;
-
 /**
  * @brief Imlicit header for TX or RX.
  *
  */
 typedef struct {
   uint8_t length;            // payload length. Cannot be more than 256 bytes.
-  sx127x_crc_payload_t crc;  // Enable or disable CRC.
+  bool enable_crc;  // Enable or disable CRC.
   sx127x_cr_t coding_rate;   // Coding rate
 } sx127x_implicit_header_t;
 
 typedef struct {
-  sx127x_crc_payload_t crc;
+  bool enable_crc;
   sx127x_cr_t coding_rate;
 } sx127x_tx_header_t;
 
@@ -412,7 +380,7 @@ int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device)
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_set_low_datarate_optimization(sx127x_low_datarate_optimization_t value, sx127x *device);
+int sx127x_lora_set_low_datarate_optimization(bool value, sx127x *device);
 
 /**
  * @brief Set syncword.
@@ -508,7 +476,7 @@ int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_rx_set_lna_boost_hf(sx127x_lna_boost_hf_t value, sx127x *device);
+int sx127x_rx_set_lna_boost_hf(bool value, sx127x *device);
 
 /**
  * @brief Set callback function for rxdone interrupt.
@@ -592,7 +560,7 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_tx_set_ocp(sx127x_ocp_t onoff, uint8_t milliamps, sx127x *device);
+int sx127x_tx_set_ocp(bool enable, uint8_t milliamps, sx127x *device);
 
 /**
  * @brief Set explicit header during TX.
@@ -794,7 +762,7 @@ int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_av
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_rx_set_afc_auto(sx127x_afc_auto_t afc_auto, sx127x *device);
+int sx127x_fsk_ook_rx_set_afc_auto(bool afc_auto, sx127x *device);
 
 /**
  * @brief Configure alternate receiver bandwidth during the AFC phase. This allow the accommodation of larger frequency errors. In a typical receiver application the, once the AFC is performed, the radio will revert to the receiver communication or channel bandwidth (RegRxBw) for the ensuing communication phase.
@@ -833,14 +801,14 @@ int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t 
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
  *
- * @param enable 1 - to enable. 0 - to disable. Default: OFF
+ * @param enable Enable or disable. Default: disabled
  * @param threshold Sensitivity of the system in 1 dB steps that detect sudden change in RSSI. Default: 10dB
  * @param device Pointer to variable to hold the device handle
  * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_rx_set_collision_restart(int enabled, uint8_t threshold, sx127x *device);
+int sx127x_fsk_ook_rx_set_collision_restart(bool enable, uint8_t threshold, sx127x *device);
 
 /**
  * @brief Configure trigger that will start receiver.
@@ -856,7 +824,7 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
  *
- * @param enabled 1 is for ON (default), 0 is for OFF
+ * @param enabled Enable or disable. Default: disabled
  * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes. Default: 2 bytes
  * @param detector_tolerance Number or chip errors tolerated over detector_size. Default: 0x0A
  * @param device Pointer to variable to hold the device handle
@@ -864,7 +832,7 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_rx_set_preamble_detector(int enabled, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
+int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
 
 /**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.

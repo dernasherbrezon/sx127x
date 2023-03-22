@@ -63,7 +63,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
-      .crc = SX127x_RX_PAYLOAD_CRC_ON,
+      .enable_crc = true,
       .length = 2};
   ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
   ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));

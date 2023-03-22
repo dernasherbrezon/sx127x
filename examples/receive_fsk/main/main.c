@@ -105,7 +105,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(SX127x_AFC_AUTO_ON, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
   uint8_t syncWord[] = {0x12, 0xAD};
@@ -117,7 +117,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(1, 2, 0x0A, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
 
   sx127x_rx_set_callback(rx_callback, device);
 

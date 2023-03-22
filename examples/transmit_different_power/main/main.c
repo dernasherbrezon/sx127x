@@ -101,7 +101,7 @@ void app_main() {
   gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device);
 
   sx127x_tx_header_t header;
-  header.crc = SX127x_RX_PAYLOAD_CRC_ON;
+  header.enable_crc = true;
   header.coding_rate = SX127x_CR_4_5;
   ESP_ERROR_CHECK(sx127x_tx_set_explicit_header(&header, device));
   current_power = 2;

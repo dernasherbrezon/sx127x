@@ -88,13 +88,13 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
-  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(SX127x_LNA_BOOST_HF_ON, device));
+  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
-      .crc = SX127x_RX_PAYLOAD_CRC_ON,
+      .enable_crc = true,
       .length = 2};
   ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
   ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
