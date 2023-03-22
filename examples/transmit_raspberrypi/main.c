@@ -126,9 +126,9 @@ int main() {
 
   // 4 is OK
   LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
-  sx127x_tx_header_t header;
-  header.enable_crc = true;
-  header.coding_rate = SX127x_CR_4_5;
+  sx127x_tx_header_t header = {
+      .enable_crc = true,
+      .coding_rate = SX127x_CR_4_5};
   LINUX_ERROR_CHECK(sx127x_tx_set_explicit_header(&header, device));
 
   return setup_and_wait_for_interrupt(device);

@@ -71,7 +71,7 @@ void app_main() {
       .dummy_bits = 0,
       .mode = 0};
   spi_device_handle_t spi_device;
-  ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));   
+  ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
@@ -100,9 +100,9 @@ void app_main() {
 
   // 4 is OK
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
-  sx127x_tx_header_t header;
-  header.enable_crc = true;
-  header.coding_rate = SX127x_CR_4_5;
+  sx127x_tx_header_t header = {
+      .enable_crc = true,
+      .coding_rate = SX127x_CR_4_5};
   ESP_ERROR_CHECK(sx127x_tx_set_explicit_header(&header, device));
 
   tx_callback(device);
