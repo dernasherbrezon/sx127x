@@ -7,12 +7,20 @@
 #include <inttypes.h>
 #include <sx127x.h>
 
+// TTGO lora32 v2
 #define SCK 5
 #define MISO 19
 #define MOSI 27
 #define SS 18
 #define RST 23
 #define DIO0 26
+// must be manually wired to GPIO
+#define DIO1 33
+#define DIO2 32
+
+// Heltec lora32 v2
+// #define DIO1 35
+// #define DIO2 34
 
 sx127x *device = NULL;
 TaskHandle_t handle_interrupt;
@@ -32,8 +40,8 @@ void handle_interrupt_task(void *arg) {
 
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
-  uint8_t data_length = 0;
-  ESP_ERROR_CHECK(sx127x_lora_rx_read_payload(device, &data, &data_length));
+  uint16_t data_length = 0;
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
   if (data_length == 0) {
     // no message received
     return;
@@ -49,12 +57,10 @@ void rx_callback(sx127x *device) {
 
   int16_t rssi;
   ESP_ERROR_CHECK(sx127x_rx_get_packet_rssi(device, &rssi));
-  float snr;
-  ESP_ERROR_CHECK(sx127x_lora_rx_get_packet_snr(device, &snr));
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
 
-  ESP_LOGI(TAG, "received: %d %s rssi: %d snr: %f freq_error: %" PRId32, data_length, payload, rssi, snr, frequency_error);
+  ESP_LOGI(TAG, "received: %d %s rssi: %d freq_error: %" PRId32, data_length, payload, rssi, frequency_error);
 
   total_packets_received++;
 }
@@ -89,21 +95,25 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
-  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-  ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
-  sx127x_implicit_header_t header = {
-      .coding_rate = SX127x_CR_4_5,
-      .enable_crc = true,
-      .length = 2};
-  ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(8, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
+  uint8_t syncWord[] = {0x12, 0xAD};
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x00, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
+  ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
+
   sx127x_rx_set_callback(rx_callback, device);
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
@@ -115,8 +125,10 @@ void app_main() {
 
   gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t)DIO0, device);
+  setup_gpio_interrupts((gpio_num_t)DIO1, device);
+  setup_gpio_interrupts((gpio_num_t)DIO2, device);
 
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }

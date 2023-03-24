@@ -243,8 +243,8 @@ int sx127x_fsk_ook_read_fixed_packet_length(sx127x *device, uint16_t *packet_len
 int sx127x_fsk_ook_is_address_filtered(sx127x *device, bool *address_filtered) {
   uint8_t value;
   ERROR_CHECK(sx127x_read_register(REG_PACKET_CONFIG1, device->spi_device, &value));
-  value = ((value >> 1) & 0b11);
-  *address_filtered = (value == 0b01 || value == 0b10);
+  value = (value & 0b00000110);
+  *address_filtered = (value == SX127X_FILTER_NODE_ADDRESS || value == SX127X_FILTER_NODE_AND_BROADCAST);
   return SX127X_OK;
 }
 

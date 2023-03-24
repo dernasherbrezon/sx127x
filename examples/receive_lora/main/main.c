@@ -33,11 +33,7 @@ void handle_interrupt_task(void *arg) {
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  esp_err_t code = sx127x_lora_rx_read_payload(device, &data, &data_length);
-  if (code != ESP_OK) {
-    ESP_LOGE(TAG, "can't read %d", code);
-    return;
-  }
+  ESP_ERROR_CHECK(sx127x_lora_rx_read_payload(device, &data, &data_length));
   if (data_length == 0) {
     // no message received
     return;
@@ -72,6 +68,14 @@ void cad_callback(sx127x *device, int cad_detected) {
   // put into RX mode first to handle interrupt as soon as possible
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   ESP_LOGI(TAG, "cad detected\n");
+}
+
+void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
+  gpio_set_direction(gpio, GPIO_MODE_INPUT);
+  gpio_pulldown_en(gpio);
+  gpio_pullup_dis(gpio);
+  gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
+  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
 }
 
 void app_main() {
@@ -117,12 +121,9 @@ void app_main() {
     return;
   }
 
-  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT));
-  ESP_ERROR_CHECK(gpio_pulldown_en((gpio_num_t)DIO0));
-  ESP_ERROR_CHECK(gpio_pullup_dis((gpio_num_t)DIO0));
-  ESP_ERROR_CHECK(gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE));
-  ESP_ERROR_CHECK(gpio_install_isr_service(0));
-  ESP_ERROR_CHECK(gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)device));
+  gpio_install_isr_service(0);
+  setup_gpio_interrupts((gpio_num_t)DIO0, device);
+
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   while (1) {
     vTaskDelay(10000 / portTICK_PERIOD_MS);

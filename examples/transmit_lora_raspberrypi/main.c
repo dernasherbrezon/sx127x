@@ -37,7 +37,9 @@
 int messages_sent = 0;
 
 void tx_callback(sx127x *device) {
-  fprintf(stdout, "transmitted\n");
+  if (messages_sent > 0) {
+    fprintf(stdout, "transmitted\n");
+  }
   if (messages_sent == 0) {
     uint8_t data[] = {0xCA, 0xFE};
     LINUX_NO_CODE_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), device));

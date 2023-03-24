@@ -4,8 +4,8 @@
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
 #include <freertos/task.h>
-#include <sx127x.h>
 #include <inttypes.h>
+#include <sx127x.h>
 
 // TTGO lora32 v2
 #define SCK 5
@@ -22,11 +22,10 @@
 // #define DIO1 35
 // #define DIO2 34
 
-static const char *TAG = "sx127x";
-
 sx127x *device = NULL;
-int total_packets_received = 0;
 TaskHandle_t handle_interrupt;
+int total_packets_received = 0;
+static const char *TAG = "sx127x";
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
   xTaskResumeFromISR(handle_interrupt);
@@ -41,12 +40,8 @@ void handle_interrupt_task(void *arg) {
 
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
-  uint8_t data_length = 0;
-  esp_err_t code = sx127x_fsk_ook_rx_read_payload(device, &data, &data_length);
-  if (code != ESP_OK) {
-    ESP_LOGE(TAG, "can't read %d", code);
-    return;
-  }
+  uint16_t data_length = 0;
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
   if (data_length == 0) {
     // no message received
     return;
