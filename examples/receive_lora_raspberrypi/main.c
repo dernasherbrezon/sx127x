@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <inttypes.h>
 #include <linux/gpio.h>
 #include <linux/spi/spidev.h>
 #include <stdio.h>
@@ -8,7 +9,6 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <inttypes.h>
 
 // Correspond to SPI0 with chip select pin CE0 (GPIO8) on RaspberryPI
 #define SPI_DEVICE "/dev/spidev0.0"
