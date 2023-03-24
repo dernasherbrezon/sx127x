@@ -9,6 +9,7 @@ extern "C" {
 #include <stdbool.h>
 
 #define MAX_PACKET_SIZE 256
+#define MAX_PACKET_SIZE_FSK_FIXED 2047
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
 #define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
