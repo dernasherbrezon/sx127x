@@ -236,26 +236,45 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   return SX127X_OK;
 }
 
+int sx127x_fsk_ook_read_fixed_packet_length(sx127x *device, uint16_t *packet_length) {
+  uint16_t result;
+  uint8_t value;
+  int code = sx127x_read_register(REG_PACKET_CONFIG2, device->spi_device, &value);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  result = ((value & 0b00000111) << 8);
+  code = sx127x_read_register(REG_PAYLOAD_LENGTH_FSK, device->spi_device, &value);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  result += value;
+  *packet_length = result;
+  return SX127X_OK;
+}
+
+int sx127x_fsk_ook_is_address_filtered(sx127x *device, bool *address_filtered) {
+  uint8_t value;
+  int code = sx127x_read_register(REG_PACKET_CONFIG1, device->spi_device, &value);
+  if (code != SX127X_OK) {
+    return code;
+  }
+  value = ((value >> 1) & 0b11);
+  *address_filtered = (value == 0b01 || value == 0b10);
+  return SX127X_OK;
+}
+
 // ignore status code here. it will be returned in the read_payload function
 void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   uint8_t remaining_fifo = FIFO_SIZE_FSK;
   if (device->packet_length == 0) {
     uint16_t packet_length;
     if (device->fsk_ook_format == SX127X_FIXED) {
-      // FIXME seems to be used somewhere else. check it
-      uint8_t value;
-      int code = sx127x_read_register(REG_PACKET_CONFIG2, device->spi_device, &value);
+      int code = sx127x_fsk_ook_read_fixed_packet_length(device, &packet_length);
       if (code != SX127X_OK) {
         device->packet_read_code = code;
         return;
       }
-      packet_length = ((value & 0b00000111) << 8);
-      code = sx127x_read_register(REG_PAYLOAD_LENGTH_FSK, device->spi_device, &value);
-      if (code != SX127X_OK) {
-        device->packet_read_code = code;
-        return;
-      }
-      packet_length += value;
     } else if (device->fsk_ook_format == SX127X_VARIABLE) {
       uint8_t value;
       int code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
@@ -270,16 +289,15 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
       return;
     }
     device->packet_length = packet_length;
-    // FIXME can the below be extracted in a separate function? Just to make it readble
-    uint8_t value;
-    int code = sx127x_read_register(REG_PACKET_CONFIG1, device->spi_device, &value);
+    bool address_filtered;
+    int code = sx127x_fsk_ook_is_address_filtered(device, &address_filtered);
     if (code != SX127X_OK) {
       device->packet_read_code = code;
       return;
     }
-    value = ((value >> 1) & 0b11);
     // if node filtering is enabled, then skip next byte because it will be node id
-    if (value == 0b01 || value == 0b10) {
+    if (address_filtered) {
+      uint8_t value;
       code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
       if (code != SX127X_OK) {
         device->packet_read_code = code;
