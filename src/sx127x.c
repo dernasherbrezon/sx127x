@@ -358,7 +358,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     }
     return;
   }
-  if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL != 0) && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
+  if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
     if (device->mode == MODE_TX) {
       uint8_t to_send;
       if (device->packet_length - device->packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
