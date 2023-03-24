@@ -23,7 +23,7 @@ static const char *TAG = "sx127x";
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  esp_err_t code = sx127x_rx_read_payload(device, &data, &data_length);
+  esp_err_t code = sx127x_lora_rx_read_payload(device, &data, &data_length);
   if (code != ESP_OK) {
     ESP_LOGE(TAG, "can't read %d", code);
     return;

@@ -496,7 +496,19 @@ void sx127x_rx_set_callback(void (*rx_callback)(sx127x *), sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
+int sx127x_lora_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
+
+/**
+ * @brief Read payload from sx127x's internal FIFO.
+ *
+ * @param device Pointer to variable to hold the device handle
+ * @param packet Output buffer
+ * @param packet_length Output buffer length
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length);
 
 /**
  * @brief RSSI of the latest packet received (dBm)

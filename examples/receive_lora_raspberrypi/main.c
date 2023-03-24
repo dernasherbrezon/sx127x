@@ -38,7 +38,7 @@
 void rx_callback(sx127x *device) {
   uint8_t *data = NULL;
   uint8_t data_length = 0;
-  LINUX_NO_CODE_ERROR_CHECK(sx127x_rx_read_payload(device, &data, &data_length));
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_lora_rx_read_payload(device, &data, &data_length));
   if (data_length == 0) {
     // no message received
     return;

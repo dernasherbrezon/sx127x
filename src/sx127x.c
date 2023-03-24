@@ -614,7 +614,22 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
   }
 }
 
-int sx127x_rx_read_payload_lora(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
+// FSK/OOK packets can exceed uint8_t, thus separate function
+// They also require batching, because max FIFO for FSK/OOK is only 64 bytes
+int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length) {
+  if (device->packet_read_code != SX127X_OK) {
+    *packet_length = 0;
+    *packet = NULL;
+    return device->packet_read_code;
+  }
+  *packet = device->packet;
+  *packet_length = device->packet_length;
+  return SX127X_OK;
+}
+
+// max lora packet is 255 bytes which can be stored fully in FIFO
+// thus delayed read
+int sx127x_lora_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
   uint8_t length;
   if (device->header == NULL) {
     int code = sx127x_read_register(REG_RX_NB_BYTES, device->spi_device, &length);
@@ -651,28 +666,6 @@ int sx127x_rx_read_payload_lora(sx127x *device, uint8_t **packet, uint8_t *packe
   *packet = device->packet;
   *packet_length = length;
   return SX127X_OK;
-}
-
-int sx127x_rx_read_payload_fsk(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
-  if (device->packet_read_code != SX127X_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return device->packet_read_code;
-  }
-  *packet = device->packet;
-  // FIXME
-  *packet_length = (uint8_t)device->packet_length;
-  return SX127X_OK;
-}
-
-int sx127x_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
-  if (device->active_modem == SX127x_MODULATION_LORA) {
-    return sx127x_rx_read_payload_lora(device, packet, packet_length);
-  } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    return sx127x_rx_read_payload_fsk(device, packet, packet_length);
-  } else {
-    return SX127X_ERR_INVALID_ARG;
-  }
 }
 
 int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi) {
