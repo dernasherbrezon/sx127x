@@ -358,7 +358,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     }
     return;
   }
-  if (irq & SX127X_FSK_IRQ_FIFO_LEVEL != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
+  if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL != 0) && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
     if (device->mode == MODE_TX) {
       uint8_t to_send;
       if (device->packet_length - device->packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
@@ -824,7 +824,7 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
     return SX127X_ERR_INVALID_ARG;
   }
   if (device->fsk_ook_format == SX127X_VARIABLE) {
-    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &data_length, 1, device->spi_device));
+    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, (uint8_t *)&data_length, 1, device->spi_device));
   }
   return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, FIFO_SIZE_FSK - 1, device);
 }
