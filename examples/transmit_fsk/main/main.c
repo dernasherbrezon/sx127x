@@ -14,12 +14,12 @@
 #define RST 23
 #define DIO0 26
 // must be manually wired to GPIO
-#define DIO1 33
-#define DIO2 32
+//#define DIO1 33
+//#define DIO2 32
 
 // Heltec lora32 v2
-// #define DIO1 35
-// #define DIO2 34
+#define DIO1 35
+#define DIO2 34
 
 static const char *TAG = "sx127x";
 

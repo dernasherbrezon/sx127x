@@ -302,7 +302,7 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
     device->packet_sent_received += batch_size;
   } else {
     // shortcut here for packets less than max fifo size
-    if (device->packet_length <= remaining_fifo) {
+    if (device->packet_sent_received == 0 && device->packet_length <= remaining_fifo) {
       int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->packet_length, device->spi_device);
       if (code != SX127X_OK) {
         device->packet_read_code = code;
@@ -459,6 +459,8 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_CRC_OK | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
+      ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       device->mode = MODE_RX;
     } else if (opmod == SX127x_MODE_TX) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
@@ -574,13 +576,15 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
 // FSK/OOK packets can exceed uint8_t, thus separate function
 // They also require batching, because max FIFO for FSK/OOK is only 64 bytes
 int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length) {
-  if (device->packet_read_code != SX127X_OK) {
+  if (device->packet_read_code != SX127X_OK || device->packet_length == 0) {
     *packet_length = 0;
     *packet = NULL;
     return device->packet_read_code;
   }
   *packet = device->packet;
   *packet_length = device->packet_length;
+  device->packet_length = 0;
+  device->packet_sent_received = 0;
   return SX127X_OK;
 }
 
