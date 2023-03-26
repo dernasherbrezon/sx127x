@@ -216,12 +216,12 @@ int sx127x_lora_get_bandwidth(sx127x *device, uint32_t *bandwidth) {
 int sx127x_reload_low_datarate_optimization(sx127x *device) {
   uint32_t bandwidth;
   ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth));
-  uint8_t config = 0;
-  ERROR_CHECK(sx127x_read_register(REG_MODEM_CONFIG_2, device->spi_device, &config));
-  config = (config >> 4);
+  uint8_t spreading_factor = 0;
+  ERROR_CHECK(sx127x_read_register(REG_MODEM_CONFIG_2, device->spi_device, &spreading_factor));
+  spreading_factor = (spreading_factor >> 4);
 
   // Section 4.1.1.5
-  uint32_t symbol_duration = 1000 / (bandwidth / (1L << config));
+  uint32_t symbol_duration = 1000 / (bandwidth / (1L << spreading_factor));
   if (symbol_duration > 16) {
     // force low data rate optimization
     return sx127x_lora_set_low_datarate_optimization(true, device);
