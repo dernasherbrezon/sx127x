@@ -358,30 +358,30 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     }
     return;
   }
-    if (device->mode == MODE_TX) {
-        if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) == 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
-            uint8_t to_send;
-            if (device->packet_length - device->packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
-                to_send = HALF_MAX_FIFO_THRESHOLD - 1;
-            } else {
-                to_send = device->packet_length - device->packet_sent_received;
-            }
-            // safe check
-            if (to_send == 0) {
-                return;
-            }
-            code = sx127x_spi_write_buffer(REG_FIFO, device->packet + device->packet_sent_received, to_send, device->spi_device);
-            if (code != SX127X_OK) {
-                // remaining bits not written to FIFO but modulator will eventually trigger SX127X_FSK_IRQ_PACKET_SENT
-                return;
-            }
-            device->packet_sent_received += to_send;
-        }
-    } else if (device->mode == MODE_RX) {
-        if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
-              sx127x_fsk_ook_read_payload_batch(true, device);
-        }
+  if (device->mode == MODE_TX) {
+    if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) == 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
+      uint8_t to_send;
+      if (device->packet_length - device->packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
+        to_send = HALF_MAX_FIFO_THRESHOLD - 1;
+      } else {
+        to_send = device->packet_length - device->packet_sent_received;
+      }
+      // safe check
+      if (to_send == 0) {
+        return;
+      }
+      code = sx127x_spi_write_buffer(REG_FIFO, device->packet + device->packet_sent_received, to_send, device->spi_device);
+      if (code != SX127X_OK) {
+        // remaining bits not written to FIFO but modulator will eventually trigger SX127X_FSK_IRQ_PACKET_SENT
+        return;
+      }
+      device->packet_sent_received += to_send;
     }
+  } else if (device->mode == MODE_RX) {
+    if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
+      sx127x_fsk_ook_read_payload_batch(true, device);
+    }
+  }
 }
 
 void sx127x_lora_handle_interrupt(sx127x *device) {
@@ -784,7 +784,7 @@ int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
   } else {
     data[0] = 27;
   }
-  data[0] = (data[0] | 0b0010000);
+  data[0] += 0b00100000;
   return sx127x_spi_write_register(REG_OCP, data, 1, device->spi_device);
 }
 

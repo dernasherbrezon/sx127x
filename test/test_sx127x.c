@@ -24,6 +24,7 @@ START_TEST(test_lora) {
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_low_datarate_optimization(true, device));
   ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_boost_hf(true, device));
   ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
 
   ck_assert_int_eq(registers[0x01], 0b10000000);
   ck_assert_int_eq(registers[0x06], 0x6d);
@@ -40,6 +41,9 @@ START_TEST(test_lora) {
   ck_assert_int_eq(registers[0x21], 8);
   ck_assert_int_eq(registers[0x26], 0b00001000);
   ck_assert_int_eq(registers[0x0c], 0b10000011);
+  ck_assert_int_eq(registers[0x4d], 0b10000100);
+  ck_assert_int_eq(registers[0x09], 0b10000010);
+  ck_assert_int_eq(registers[0x0b], 0x28);
 
   uint32_t bandwidth;
   ck_assert_int_eq(SX127X_OK, sx127x_lora_get_bandwidth(device, &bandwidth));
@@ -50,9 +54,24 @@ START_TEST(test_lora) {
   ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_get_packet_snr(device, &snr));
   ck_assert_float_eq(-5.25, snr);
 
+  registers[0x1a] = 134;
   int16_t rssi;
   ck_assert_int_eq(SX127X_OK, sx127x_rx_get_packet_rssi(device, &rssi));
-  // FIXME
+  ck_assert_int_eq(-35, rssi);
+
+  registers[0x28] = 0x0F;
+  registers[0x29] = 0xFF;
+  registers[0x2a] = 0xF0;
+  int32_t frequency_error;
+  ck_assert_int_eq(SX127X_OK, sx127x_rx_get_frequency_error(device, &frequency_error));
+  ck_assert_int_eq(-2, frequency_error);
+
+  sx127x_tx_header_t header = {
+      .enable_crc = true,
+      .coding_rate = SX127x_CR_4_5};
+  ck_assert_int_eq(SX127X_OK, sx127x_tx_set_explicit_header(&header, device));
+  ck_assert_int_eq(registers[0x1d], 0b01110010);
+  ck_assert_int_eq(registers[0x1e], 0b10010100);
 }
 END_TEST
 
