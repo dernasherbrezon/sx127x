@@ -63,10 +63,10 @@ void tx_callback(sx127x *device) {
     ESP_ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission_with_address(data, sizeof(data), 0x11, device));
   } else {
     // FSK mode require manual switch from TX to Standby
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_OOK, device));
     return;
   }
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, device));
   ESP_LOGI(TAG, "transmitting");
   messages_sent++;
 }
@@ -101,9 +101,9 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_OOK, device));
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_OOK, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
   ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(4, device));
   uint8_t syncWord[] = {0x12, 0xAD};

@@ -46,7 +46,7 @@ void rx_callback(sx127x *device) {
     // no message received
     return;
   }
-  uint8_t payload[514];
+  uint8_t payload[2090 * 2];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
     uint8_t cur = data[i];
