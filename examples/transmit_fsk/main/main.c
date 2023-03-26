@@ -6,20 +6,20 @@
 #include <freertos/task.h>
 #include <sx127x.h>
 
-// TTGO lora32 v2
+// TTGO lora32 v2.1 1.6.1
 #define SCK 5
 #define MISO 19
 #define MOSI 27
 #define SS 18
 #define RST 23
 #define DIO0 26
-// must be manually wired to GPIO
-//#define DIO1 33
-//#define DIO2 32
+// older versions of TTGO require manual wiring of pins below
+#define DIO1 33
+#define DIO2 32
 
 // Heltec lora32 v2
-#define DIO1 35
-#define DIO2 34
+//#define DIO1 35
+//#define DIO2 34
 
 static const char *TAG = "sx127x";
 
@@ -71,11 +71,11 @@ void tx_callback(sx127x *device) {
   messages_sent++;
 }
 
-void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
+void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device,  gpio_int_type_t type) {
   gpio_set_direction(gpio, GPIO_MODE_INPUT);
   gpio_pulldown_en(gpio);
   gpio_pullup_dis(gpio);
-  gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
+  gpio_set_intr_type(gpio, type);
   gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
 }
 
@@ -126,9 +126,9 @@ void app_main() {
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)DIO0, device);
-  setup_gpio_interrupts((gpio_num_t)DIO1, device);
-  setup_gpio_interrupts((gpio_num_t)DIO2, device);
+  setup_gpio_interrupts((gpio_num_t)DIO0, device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t)DIO1, device, GPIO_INTR_NEGEDGE);
+  setup_gpio_interrupts((gpio_num_t)DIO2, device, GPIO_INTR_POSEDGE);
 
   tx_callback(device);
 

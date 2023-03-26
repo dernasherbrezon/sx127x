@@ -7,20 +7,20 @@
 #include <inttypes.h>
 #include <sx127x.h>
 
-// TTGO lora32 v2
+// TTGO lora32 v2.1 1.6.1
 #define SCK 5
 #define MISO 19
 #define MOSI 27
 #define SS 18
 #define RST 23
 #define DIO0 26
-// must be manually wired to GPIO
-#define DIO1 33
-#define DIO2 32
+// older versions of TTGO require manual wiring of pins below
+//#define DIO1 33
+//#define DIO2 32
 
 // Heltec lora32 v2
-// #define DIO1 35
-// #define DIO2 34
+#define DIO1 35
+#define DIO2 34
 
 sx127x *device = NULL;
 TaskHandle_t handle_interrupt;
