@@ -131,7 +131,7 @@ int main() {
   sx127x_tx_header_t header = {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
-  LINUX_ERROR_CHECK(sx127x_tx_set_explicit_header(&header, device));
+  LINUX_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, device));
 
   return setup_and_wait_for_interrupt(device);
 }

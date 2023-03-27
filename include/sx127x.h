@@ -96,7 +96,7 @@ typedef enum {
 } sx127x_rx_trigger_t;
 
 typedef enum {
-  SX127X_PREAMBLE_55 = 0b00000000,
+  SX127X_PREAMBLE_55 = 0b00100000,
   SX127X_PREAMBLE_AA = 0b00000000
 } sx127x_preamble_type_t;
 
@@ -583,7 +583,7 @@ int sx127x_tx_set_ocp(bool enable, uint8_t milliamps, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device);
+int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device);
 
 /**
  * @brief Set callback function for txdone interrupt.

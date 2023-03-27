@@ -788,7 +788,7 @@ int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
   return sx127x_spi_write_register(REG_OCP, data, 1, device->spi_device);
 }
 
-int sx127x_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
+int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
   if (header == NULL) {
     return SX127X_ERR_INVALID_ARG;
   }

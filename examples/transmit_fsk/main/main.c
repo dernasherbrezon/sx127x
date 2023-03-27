@@ -106,7 +106,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(4, device));
+  ESP_ERROR_CHECK(sx127x_lora_set_preamble_length(4, device)); //FIXME?
   uint8_t syncWord[] = {0x12, 0xAD};
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, device));

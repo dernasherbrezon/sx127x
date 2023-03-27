@@ -39,6 +39,10 @@ int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *
 }
 
 int sx127x_spi_write_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
+  // not fifo
+  if (reg != 0) {
+    return sx127x_spi_write_register(reg, buffer, buffer_length, spi_device);
+  }
   actual_request[actual_request_length] = reg;
   actual_request_length++;
   memcpy(actual_request + actual_request_length, buffer, buffer_length);
