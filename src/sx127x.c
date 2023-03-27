@@ -96,6 +96,7 @@
 #define SX127X_FSK_IRQ_PAYLOAD_READY 0b00000100
 #define SX127X_FSK_IRQ_CRC_OK 0b00000010
 #define SX127X_FSK_IRQ_LOW_BATTERY 0b00000001
+#define SX127X_FSK_IRQ_PREAMBLE_DETECT 0b00000010
 
 #define RF_MID_BAND_THRESHOLD 525E6
 #define RSSI_OFFSET_HF_PORT 157
@@ -116,6 +117,7 @@
 
 #define MODE_RX 1
 #define MODE_TX 2
+#define MODE_NONE 3
 
 #define ERROR_CHECK(x)           \
   do {                           \
@@ -148,6 +150,8 @@ struct sx127x_t {
   uint16_t packet_sent_received;
   int packet_read_code;
   uint8_t mode;
+  bool fsk_rssi_available;
+  int16_t fsk_rssi;
 
   sx127x_modulation_t active_modem;
   sx127x_packet_format_t fsk_ook_format;
@@ -380,6 +384,28 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   } else if (device->mode == MODE_RX) {
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       sx127x_fsk_ook_read_payload_batch(true, device);
+    } else {
+      // if not RX irq, then try preamble detect
+      code = sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq);
+      if (code != SX127X_OK) {
+        return;
+      }
+      // clear the irq
+      code = sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device);
+      if (code != SX127X_OK) {
+        return;
+      }
+      if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
+        uint8_t value;
+        code = sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value);
+        if (code != SX127X_OK) {
+          return;
+        }
+        device->fsk_rssi_available = true;
+        device->fsk_rssi = -value / 2;
+        // TODO read offset and add here?
+        return;
+      }
     }
   }
 }
@@ -444,6 +470,8 @@ int sx127x_create(void *spi_device, sx127x **result) {
   }
   device->active_modem = SX127x_MODULATION_LORA;
   device->fsk_ook_format = SX127X_VARIABLE;
+  device->fsk_rssi_available = false;
+  device->mode = MODE_NONE;
   *result = device;
   return SX127X_OK;
 }
@@ -461,6 +489,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_CRC_OK | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       device->mode = MODE_RX;
@@ -470,6 +499,8 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       device->mode = MODE_TX;
+    } else {
+      device->mode = MODE_NONE;
     }
   } else {
     return SX127X_ERR_INVALID_ARG;
@@ -648,10 +679,14 @@ int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi) {
       *rssi = *rssi + snr;
     }
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
-    uint8_t value;
-    ERROR_CHECK(sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value));
-    // TODO read offset and add here?
-    *rssi = -value / 2;
+    if (!device->fsk_rssi_available) {
+      *rssi = 0;
+      return SX127X_ERR_NOT_FOUND;
+    }
+    *rssi = device->fsk_rssi;
+    // reset internal rssi storage
+    device->fsk_rssi = 0;
+    device->fsk_rssi_available = false;
   } else {
     return SX127X_ERR_INVALID_ARG;
   }

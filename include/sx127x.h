@@ -5,11 +5,12 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define MAX_PACKET_SIZE 256
 #define MAX_PACKET_SIZE_FSK_FIXED 2047
+
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
 #define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
@@ -221,9 +222,9 @@ typedef enum {
  *
  */
 typedef struct {
-  uint8_t length;            // payload length. Cannot be more than 256 bytes.
-  bool enable_crc;  // Enable or disable CRC.
-  sx127x_cr_t coding_rate;   // Coding rate
+  uint8_t length;           // payload length. Cannot be more than 256 bytes.
+  bool enable_crc;          // Enable or disable CRC.
+  sx127x_cr_t coding_rate;  // Coding rate
 } sx127x_implicit_header_t;
 
 typedef struct {
@@ -268,6 +269,17 @@ typedef enum {
   SX127x_DIO5_MODE_READY = 0b00000000,    // Mode ready
   SX127x_DIO5_CLK_OUT = 0b01000000        // clock out
 } sx127x_dio_mapping2_t;
+
+typedef enum {
+  SX127x_FSK_DIO4_TEMP_CHANGE = 0b00000000,
+  SX127x_FSK_DIO4_PLL_LOCK = 0b01000000,
+  SX127x_FSK_DIO4_TIMEOUT = 0b10000000,
+  SX127x_FSK_DIO4_PREAMBLE_DETECT = 0b11000000,
+  SX127x_FSK_DIO5_CLK_OUT = 0b00000000,
+  SX127x_FSK_DIO5_PLL_LOCK = 0b00010000,
+  SX127x_FSK_DIO5_DATA = 0b00100000,
+  SX127x_FSK_DIO5_MODE_READY = 0b00110000
+} sx127x_fsk_ook_dio_mapping2_t;
 
 /**
  * @brief sx127x chip has 2 pins for TX. Based on the pin below chip can produce different max power.
@@ -517,6 +529,7 @@ int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *p
  * @param rssi RSSI
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_ERR_NOT_FOUND     In FSK/OOK mode RSSI is calculated during PreambleDetect interrupt. If this interrupt was not configured or received anyhow, then RSSI is empty.
  *         - SX127X_OK                on success
  */
 int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi);
@@ -619,12 +632,12 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
 
 /**
  * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
- * 
+ *
  * @param data Packet
  * @param data_length Packet length. Maximum length depend on packet format (sx127x_packet_format_t). VARIABLE format is limited by 254 bytes. FIXED format - 2046 bytes
  * @param address_to Address to send to. Can be Node address or broadcast address
- * @param device 
- * @return int 
+ * @param device
+ * @return int
  */
 int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device);
 
