@@ -30,6 +30,9 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
 }
 
 int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *spi_device) {
+  if (reg == 0) {
+    return sx127x_spi_write_buffer(reg, data, data_length, spi_device);
+  }
   for (size_t i = 0; i < data_length; i++) {
     registers[reg + i] = data[i];
   }
@@ -67,4 +70,5 @@ void spi_assert_write(uint8_t *expected, size_t expected_length) {
 
 void spi_mock_write(int code) {
   expected_write_code = code;
+  actual_request_length = 0;
 }

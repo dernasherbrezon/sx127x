@@ -24,6 +24,40 @@ void cad_callback(sx127x *device, int cad_detected) {
   cad_status = cad_detected;
 }
 
+START_TEST(test_fsk_ook_tx) {
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
+  sx127x_tx_set_callback(tx_callback, device);
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+
+  // 1. Small payload which should fit into FIFO
+  uint8_t payload[512];
+  payload[0] = 63;
+  for (int i = 1; i < (sizeof(payload) - 1); i++) {
+    payload[i] = i - 1;
+  }
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, payload[0] + 1);
+  ck_assert_int_eq(1, transmitted);
+
+  // 2. Max payload
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);  // reset mock buffers
+  payload[0] = 255;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
+  registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
+  // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
+  for (int i = 0; i < 10; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, payload[0] + 1);
+  ck_assert_int_eq(1, transmitted);
+}
+END_TEST
+
 START_TEST(test_lora_tx) {
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   sx127x_tx_set_callback(tx_callback, device);
@@ -288,6 +322,7 @@ Suite *common_suite(void) {
   tcase_add_test(tc_core, test_lora_tx);
   tcase_add_test(tc_core, test_lora_rx);
   tcase_add_test(tc_core, test_lora_cad);
+  tcase_add_test(tc_core, test_fsk_ook_tx);
 
   tcase_add_checked_fixture(tc_core, setup, teardown);
   suite_add_tcase(s, tc_core);
