@@ -1,4 +1,5 @@
 #include <check.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sx127x.h>
 
@@ -8,6 +9,8 @@ sx127x *device = NULL;
 int transmitted = 0;
 int received = 0;
 int cad_status = 0;
+uint8_t *registers = NULL;
+uint8_t registers_length = 255;
 
 void tx_callback(sx127x *device) {
   transmitted = 1;
@@ -21,12 +24,7 @@ void cad_callback(sx127x *device, int cad_detected) {
   cad_status = cad_detected;
 }
 
-START_TEST(test_lora_txrx) {
-  uint8_t registers[255];
-  memset(registers, 0, sizeof(registers));
-  registers[0x42] = 0x12;
-  spi_mock_registers(registers, SX127X_OK);
-  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
+START_TEST(test_lora_tx) {
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   sx127x_tx_set_callback(tx_callback, device);
 
@@ -37,7 +35,6 @@ START_TEST(test_lora_txrx) {
   for (int i = 0; i < sizeof(payload); i++) {
     payload[i] = i;
   }
-  spi_mock_write(SX127X_OK);
   ck_assert_int_eq(SX127X_OK, sx127x_lora_tx_set_for_transmission(payload, sizeof(payload), device));
   ck_assert_int_eq(registers[0x0d], 0x00);
   ck_assert_int_eq(registers[0x22], sizeof(payload));
@@ -47,7 +44,13 @@ START_TEST(test_lora_txrx) {
   registers[0x12] = 0b00001000;  // tx done
   sx127x_handle_interrupt(device);
   ck_assert_int_eq(1, transmitted);
+}
 
+START_TEST(test_lora_rx) {
+  uint8_t payload[255];
+  for (int i = 0; i < sizeof(payload); i++) {
+    payload[i] = i;
+  }
   sx127x_rx_set_callback(rx_callback, device);
   spi_mock_fifo(payload, sizeof(payload), SX127X_OK);
   registers[0x12] = 0b01000000;  // rx done
@@ -73,7 +76,9 @@ START_TEST(test_lora_txrx) {
   ck_assert_int_eq(registers[0x1e], 0b00000100);
   ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_read_payload(device, &payload_result, &payload_length));
   ck_assert_int_eq(header.length, payload_length);
+}
 
+START_TEST(test_lora_cad) {
   sx127x_lora_cad_set_callback(cad_callback, device);
   registers[0x12] = 0b00000101;  // cad detected
   sx127x_handle_interrupt(device);
@@ -86,12 +91,6 @@ START_TEST(test_lora_txrx) {
 END_TEST
 
 START_TEST(test_fsk_ook_rssi) {
-  uint8_t registers[255];
-  memset(registers, 0, sizeof(registers));
-  registers[0x42] = 0x12;
-  spi_mock_registers(registers, SX127X_OK);
-  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
-  spi_mock_write(SX127X_OK);
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
 
   int16_t rssi;
@@ -111,12 +110,6 @@ START_TEST(test_fsk_ook_rssi) {
 END_TEST
 
 START_TEST(test_fsk_ook) {
-  uint8_t registers[255];
-  memset(registers, 0, sizeof(registers));
-  registers[0x42] = 0x12;
-  spi_mock_registers(registers, SX127X_OK);
-  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
-  spi_mock_write(SX127X_OK);
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(registers[0x01], 0b00000000);
   ck_assert_int_eq(SX127X_OK, sx127x_set_frequency(437200012, device));
@@ -185,12 +178,6 @@ START_TEST(test_fsk_ook) {
 END_TEST
 
 START_TEST(test_lora) {
-  uint8_t registers[255];
-  memset(registers, 0, sizeof(registers));
-  registers[0x42] = 0x12;
-  spi_mock_registers(registers, SX127X_OK);
-  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
-  spi_mock_write(SX127X_OK);
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
   ck_assert_int_eq(registers[0x01], 0b10000000);
   ck_assert_int_eq(SX127X_OK, sx127x_set_frequency(437200012, device));
@@ -254,8 +241,6 @@ START_TEST(test_lora) {
 END_TEST
 
 START_TEST(test_init_failure) {
-  uint8_t registers[255];
-  memset(registers, 0, sizeof(registers));
   spi_mock_registers(registers, SX127X_ERR_INVALID_ARG);
   ck_assert_int_eq(SX127X_ERR_INVALID_ARG, sx127x_create(NULL, &device));
   registers[0x42] = 0x13;
@@ -269,10 +254,22 @@ void teardown() {
     sx127x_destroy(device);
     device = NULL;
   }
+  if (registers != NULL) {
+    free(registers);
+    registers = NULL;
+  }
+  cad_status = 0;
+  received = 0;
+  transmitted = 0;
 }
 
 void setup() {
-  // do nothing
+  registers = (uint8_t *)malloc(registers_length * sizeof(uint8_t));
+  memset(registers, 0, registers_length);
+  registers[0x42] = 0x12;
+  spi_mock_registers(registers, SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
+  spi_mock_write(SX127X_OK);
 }
 
 Suite *common_suite(void) {
@@ -284,11 +281,13 @@ Suite *common_suite(void) {
   /* Core test case */
   tc_core = tcase_create("Core");
 
-  tcase_add_test(tc_core, test_init_failure);
   tcase_add_test(tc_core, test_lora);
+  tcase_add_test(tc_core, test_init_failure);
   tcase_add_test(tc_core, test_fsk_ook);
   tcase_add_test(tc_core, test_fsk_ook_rssi);
-  tcase_add_test(tc_core, test_lora_txrx);
+  tcase_add_test(tc_core, test_lora_tx);
+  tcase_add_test(tc_core, test_lora_rx);
+  tcase_add_test(tc_core, test_lora_cad);
 
   tcase_add_checked_fixture(tc_core, setup, teardown);
   suite_add_tcase(s, tc_core);
