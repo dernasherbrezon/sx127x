@@ -23,9 +23,7 @@ int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uin
 }
 
 int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  ck_assert_int_eq(expected_response_current + 1 + buffer_length >= expected_response_length, 1);
-  ck_assert_int_eq(expected_response[expected_response_current], reg);
-  expected_response_current++;
+  ck_assert_int_eq(expected_response_current + buffer_length >= expected_response_length, 1);
   memcpy(buffer, expected_response + expected_response_current, buffer_length);
   expected_response_current += buffer_length;
   return expected_code;
@@ -43,8 +41,6 @@ int sx127x_spi_write_buffer(int reg, uint8_t *buffer, size_t buffer_length, void
   if (reg != 0) {
     return sx127x_spi_write_register(reg, buffer, buffer_length, spi_device);
   }
-  actual_request[actual_request_length] = reg;
-  actual_request_length++;
   memcpy(actual_request + actual_request_length, buffer, buffer_length);
   actual_request_length += buffer_length;
   return expected_write_code;

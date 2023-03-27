@@ -5,6 +5,74 @@
 #include "sx127x_mock_spi.h"
 
 sx127x *device = NULL;
+int transmitted = 0;
+int received = 0;
+int cad_status = 0;
+
+void tx_callback(sx127x *device) {
+  transmitted = 1;
+}
+
+void rx_callback(sx127x *device) {
+  received = 1;
+}
+
+void cad_callback(sx127x *device, int cad_detected) {
+  cad_status = cad_detected;
+}
+
+START_TEST(test_lora_txrx) {
+  uint8_t registers[255];
+  memset(registers, 0, sizeof(registers));
+  registers[0x42] = 0x12;
+  spi_mock_registers(registers, SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_create(NULL, &device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
+  sx127x_tx_set_callback(tx_callback, device);
+
+  transmitted = 0;
+  received = 0;
+
+  uint8_t payload[255];
+  for (int i = 0; i < sizeof(payload); i++) {
+    payload[i] = i;
+  }
+  spi_mock_write(SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_lora_tx_set_for_transmission(payload, sizeof(payload), device));
+  ck_assert_int_eq(registers[0x0d], 0x00);
+  ck_assert_int_eq(registers[0x22], sizeof(payload));
+  spi_assert_write(payload, sizeof(payload));
+
+  // simulate interrupt
+  registers[0x12] = 0b00001000;  // tx done
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(1, transmitted);
+
+  sx127x_rx_set_callback(rx_callback, device);
+  spi_mock_fifo(payload, sizeof(payload), SX127X_OK);
+  registers[0x12] = 0b01000000;  // rx done
+  registers[0x13] = sizeof(payload);
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(1, received);
+
+  uint8_t *payload_result;
+  uint8_t payload_length;
+  ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_read_payload(device, &payload_result, &payload_length));
+  ck_assert_int_eq(sizeof(payload), payload_length);
+  for (int i = 0; i < payload_length; i++) {
+    ck_assert_int_eq(payload[i], payload_result[i]);
+  }
+
+  sx127x_lora_cad_set_callback(cad_callback, device);
+  registers[0x12] = 0b00000101;  // cad detected
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(1, cad_status);
+
+  registers[0x12] = 0b00000100;  // cad not detected
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(0, cad_status);
+}
+END_TEST
 
 START_TEST(test_fsk_ook_rssi) {
   uint8_t registers[255];
@@ -209,6 +277,7 @@ Suite *common_suite(void) {
   tcase_add_test(tc_core, test_lora);
   tcase_add_test(tc_core, test_fsk_ook);
   tcase_add_test(tc_core, test_fsk_ook_rssi);
+  tcase_add_test(tc_core, test_lora_txrx);
 
   tcase_add_checked_fixture(tc_core, setup, teardown);
   suite_add_tcase(s, tc_core);
