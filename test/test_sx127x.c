@@ -63,6 +63,17 @@ START_TEST(test_lora_txrx) {
     ck_assert_int_eq(payload[i], payload_result[i]);
   }
 
+  sx127x_implicit_header_t header = {
+      .coding_rate = SX127x_CR_4_5,
+      .enable_crc = true,
+      .length = 2};
+  ck_assert_int_eq(SX127X_OK, sx127x_lora_set_implicit_header(&header, device));
+  ck_assert_int_eq(registers[0x1d], 0b00000011);
+  ck_assert_int_eq(registers[0x22], header.length);
+  ck_assert_int_eq(registers[0x1e], 0b00000100);
+  ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_read_payload(device, &payload_result, &payload_length));
+  ck_assert_int_eq(header.length, payload_length);
+
   sx127x_lora_cad_set_callback(cad_callback, device);
   registers[0x12] = 0b00000101;  // cad detected
   sx127x_handle_interrupt(device);
