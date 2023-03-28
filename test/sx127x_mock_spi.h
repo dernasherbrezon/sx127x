@@ -1,8 +1,8 @@
 #ifndef sx127x_mock_spi_h
 #define sx127x_mock_spi_h
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 void spi_mock_registers(uint8_t *expected, int code);
 

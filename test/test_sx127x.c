@@ -24,17 +24,146 @@ void cad_callback(sx127x *device, int cad_detected) {
   cad_status = cad_detected;
 }
 
+START_TEST(test_fsk_ook_rx) {
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
+  sx127x_rx_set_callback(rx_callback, device);
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
+
+  uint8_t payload[2048];
+  for (int i = 1; i < (sizeof(payload) - 1); i++) {
+    payload[i] = i - 1;
+  }
+
+  uint8_t *data = NULL;
+  uint16_t data_length = 0;
+
+  // 1. Small payload which should fit into FIFO
+  payload[0] = 63;
+  spi_mock_fifo(payload, 64, SX127X_OK);
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(payload[0], data_length);
+  ck_assert_mem_eq(payload + 1, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 2. Max payload
+  received = 0;
+  payload[0] = 255;
+  spi_mock_fifo(payload, 256, SX127X_OK);
+  registers[0x3f] = 0b00100000;  // fifolevel
+  for (int i = 0; i < 8; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(payload[0], data_length);
+  ck_assert_mem_eq(payload + 1, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 3. Small payload with address
+  received = 0;
+  payload[0] = 63;
+  spi_mock_fifo(payload, 64, SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(payload[0] - 1, data_length);
+  ck_assert_mem_eq(payload + 2, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 4. Max payload with address
+  received = 0;
+  payload[0] = 255;
+  spi_mock_fifo(payload, 256, SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
+  registers[0x3f] = 0b00100000;  // fifolevel
+  for (int i = 0; i < 8; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(payload[0] - 1, data_length);
+  ck_assert_mem_eq(payload + 2, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 5. Fixed packet with small payload
+  uint16_t packet_length = 64;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0x00, 0x00, device));
+  received = 0;
+  spi_mock_fifo(payload, packet_length, SX127X_OK);
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(packet_length, data_length);
+  ck_assert_mem_eq(payload, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 6. Fixed packet with small payload and specific address
+  packet_length = 63;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
+  received = 0;
+  spi_mock_fifo(payload, packet_length + 1, SX127X_OK);
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(packet_length - 1, data_length);
+  ck_assert_mem_eq(payload + 1, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 7. Fixed packet with max payload
+  packet_length = 2047;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0x00, 0x00, device));
+  received = 0;
+  spi_mock_fifo(payload, packet_length, SX127X_OK);
+  registers[0x3f] = 0b00100000;  // fifolevel
+  for (int i = 0; i < 80; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(packet_length, data_length);
+  ck_assert_mem_eq(payload, data, data_length);
+  ck_assert_int_eq(1, received);
+
+  // 8. Fixed packet with max payload and specific address
+  packet_length = 2046;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
+  received = 0;
+  spi_mock_fifo(payload, packet_length, SX127X_OK);
+  registers[0x3f] = 0b00100000;  // fifolevel
+  for (int i = 0; i < 80; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
+  ck_assert_int_eq(packet_length - 1, data_length);
+  ck_assert_mem_eq(payload + 1, data, data_length);
+  ck_assert_int_eq(1, received);
+}
+END_TEST
+
 START_TEST(test_fsk_ook_tx) {
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_tx_set_callback(tx_callback, device);
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
 
-  // 1. Small payload which should fit into FIFO
   uint8_t payload[2048];
-  payload[0] = 63;
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
     payload[i] = i - 1;
   }
+
+  // 1. Small payload which should fit into FIFO
+  payload[0] = 63;
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
@@ -174,9 +303,7 @@ START_TEST(test_lora_rx) {
   uint8_t payload_length;
   ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_read_payload(device, &payload_result, &payload_length));
   ck_assert_int_eq(sizeof(payload), payload_length);
-  for (int i = 0; i < payload_length; i++) {
-    ck_assert_int_eq(payload[i], payload_result[i]);
-  }
+  ck_assert_mem_eq(payload, payload_result, payload_length);
 
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
@@ -186,6 +313,8 @@ START_TEST(test_lora_rx) {
   ck_assert_int_eq(registers[0x1d], 0b00000011);
   ck_assert_int_eq(registers[0x22], header.length);
   ck_assert_int_eq(registers[0x1e], 0b00000100);
+  spi_mock_fifo(payload, sizeof(payload), SX127X_OK);
+  sx127x_handle_interrupt(device);
   ck_assert_int_eq(SX127X_OK, sx127x_lora_rx_read_payload(device, &payload_result, &payload_length));
   ck_assert_int_eq(header.length, payload_length);
 }
@@ -405,6 +534,7 @@ Suite *common_suite(void) {
   tcase_add_test(tc_core, test_lora_rx);
   tcase_add_test(tc_core, test_lora_cad);
   tcase_add_test(tc_core, test_fsk_ook_tx);
+  tcase_add_test(tc_core, test_fsk_ook_rx);
 
   tcase_add_checked_fixture(tc_core, setup, teardown);
   suite_add_tcase(s, tc_core);

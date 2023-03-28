@@ -296,8 +296,13 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
     }
   }
 
-  if (read_batch) {
-    uint8_t batch_size = HALF_MAX_FIFO_THRESHOLD - 1;
+  // safe check
+  if (device->packet_length == device->packet_sent_received) {
+    return;
+  }
+
+  uint8_t batch_size = HALF_MAX_FIFO_THRESHOLD - 1;
+  if (read_batch && device->packet_sent_received + batch_size < device->packet_length) {
     int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->packet_sent_received, batch_size, device->spi_device);
     if (code != SX127X_OK) {
       device->packet_read_code = code;
