@@ -864,10 +864,12 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
   if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_FIXED) {
     return SX127X_ERR_INVALID_ARG;
   }
+  uint8_t remaining_fifo = FIFO_SIZE_FSK;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
     ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, (uint8_t *)&data_length, 1, device->spi_device));
+    remaining_fifo--;
   }
-  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, FIFO_SIZE_FSK - 1, device);
+  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
 }
 
 int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
@@ -877,12 +879,15 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
   if (device->fsk_ook_format == SX127X_FIXED && data_length > (MAX_PACKET_SIZE_FSK_FIXED - 1)) {
     return SX127X_ERR_INVALID_ARG;
   }
+  uint8_t remaining_fifo = FIFO_SIZE_FSK;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
     uint8_t data_length_with_address = data_length + 1;
     ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &data_length_with_address, 1, device->spi_device));
+    remaining_fifo--;
   }
   ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &address_to, 1, device->spi_device));
-  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, FIFO_SIZE_FSK - 2, device);
+  remaining_fifo--;
+  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
 }
 
 void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {

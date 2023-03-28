@@ -30,7 +30,7 @@ START_TEST(test_fsk_ook_tx) {
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
 
   // 1. Small payload which should fit into FIFO
-  uint8_t payload[512];
+  uint8_t payload[2048];
   payload[0] = 63;
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
     payload[i] = i - 1;
@@ -54,6 +54,84 @@ START_TEST(test_fsk_ook_tx) {
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, payload[0] + 1);
+  ck_assert_int_eq(1, transmitted);
+
+  // 3. Small payload with address
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);  // reset mock buffers
+  payload[0] = 62;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
+  registers[0x3f] = 0b00001000;
+  sx127x_handle_interrupt(device);
+  payload[0] = 63;  // the actual sent payload length is 1 more
+  spi_assert_write(payload, payload[0] + 1);
+  ck_assert_int_eq(1, transmitted);
+
+  // 4. Max payload with address
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);
+  payload[0] = 254;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
+  registers[0x3f] = 0b00000000;
+  for (int i = 0; i < 10; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00001000;
+  sx127x_handle_interrupt(device);
+  payload[0] = 255;
+  spi_assert_write(payload, payload[0] + 1);
+  ck_assert_int_eq(1, transmitted);
+
+  // 5. Fixed packet with small payload
+  uint16_t packet_length = 64;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, packet_length);
+  ck_assert_int_eq(1, transmitted);
+
+  // 6. Fixed packet with small payload and specific address
+  transmitted = 0;
+  packet_length = 63;
+  spi_mock_write(SX127X_OK);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, packet_length + 1);
+  ck_assert_int_eq(1, transmitted);
+
+  // 7. Fixed packet with max payload
+  packet_length = 2047;
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, packet_length, device));
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);  // reset mock buffers
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
+  registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
+  // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
+  for (int i = 0; i < 80; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, packet_length);
+  ck_assert_int_eq(1, transmitted);
+
+  // 8. Fixed packet with max payload and specific address
+  packet_length = 2046;
+  transmitted = 0;
+  spi_mock_write(SX127X_OK);  // reset mock buffers
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
+  registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
+  // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
+  for (int i = 0; i < 80; i++) {
+    sx127x_handle_interrupt(device);
+  }
+  registers[0x3f] = 0b00001000;  // packet_sent
+  sx127x_handle_interrupt(device);
+  spi_assert_write(payload, packet_length + 1);
   ck_assert_int_eq(1, transmitted);
 }
 END_TEST
@@ -202,6 +280,10 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(SX127X_OK, sx127x_ook_rx_set_avg_mode(SX127X_2_DB, SX127X_4_PI, device));
   ck_assert_int_eq(registers[0x14], 0b00010000);
   ck_assert_int_eq(registers[0x16], 0b00000110);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
+  ck_assert_int_eq(registers[0x31], 0b00000111);
+  ck_assert_int_eq(registers[0x32], 0xFF);
 
   registers[0x1d] = 0xFF;
   registers[0x1e] = 0xF0;
