@@ -14,9 +14,21 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-    - name: example - receive
+    - name: example - receive_lora
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v4.4
         target: esp32
         path: 'examples/receive_lora'
+    - name: example - receive_fsk_filtered
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v4.4
+        target: esp32
+        path: 'examples/receive_fsk_filtered'
+    - name: example - receive_fsk
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v4.4
+        target: esp32
+        path: 'examples/receive_fsk'
