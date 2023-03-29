@@ -62,3 +62,4 @@ build_mac/
 **/cmake-build-debug/
 .idea/
 dist/
+debug/

@@ -11,7 +11,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    env:
+      SONAR_SCANNER_VERSION: 4.7.0.2747 # Find the latest version in the "Linux" link on this page:
+      # https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }} # Value stored in a Github secret
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
@@ -33,3 +37,47 @@ jobs:
         esp_idf_version: v4.4
         target: esp32
         path: 'examples/receive_fsk'
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Cache SonarQube packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Download and set up sonar-scanner
+      env:
+        SONAR_SCANNER_DOWNLOAD_URL: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${{ env.SONAR_SCANNER_VERSION }}-linux.zip
+      run: |
+        mkdir -p $HOME/.sonar
+        curl -sSLo $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }}
+        unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
+        echo "$HOME/.sonar/sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}-linux/bin" >> $GITHUB_PATH
+    - name: Download and set up build-wrapper
+      env:
+        BUILD_WRAPPER_DOWNLOAD_URL: ${{ env.SONAR_HOST_URL }}/static/cpp/build-wrapper-linux-x86.zip
+      run: |
+        curl -sSLo $HOME/.sonar/build-wrapper-linux-x86.zip ${{ env.BUILD_WRAPPER_DOWNLOAD_URL }}
+        unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/
+        echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind check cmake pkg-config
+    - name: Run build-wrapper
+      run: |
+        cd test
+        mkdir debug
+        cmake -DCMAKE_BUILD_TYPE=Debug -S . -B debug
+        build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build debug/ --config Debug
+        cd debug
+        make test
+        make coverage
+    - name: Run sonar-scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+      run: |
+        sonar-scanner --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
