@@ -158,11 +158,10 @@ struct sx127x_t {
   void (*cad_callback)(sx127x *, int);
 
   uint8_t packet[MAX_PACKET_SIZE_FSK_FIXED];
-  // FIXME add FSK prefix
-  uint16_t packet_length;
-  uint16_t packet_sent_received;
-  int packet_read_code;
-  uint8_t mode;
+  uint16_t fsk_ook_packet_length;
+  uint16_t fsk_ook_packet_sent_received;
+  int fsk_ook_packet_read_code;
+  uint8_t fsk_ook_mode;
   bool fsk_rssi_available;
   int16_t fsk_rssi;
 
@@ -268,32 +267,32 @@ int sx127x_fsk_ook_is_address_filtered(sx127x *device, bool *address_filtered) {
 // ignore status code here. it will be returned in the read_payload function
 void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   uint8_t remaining_fifo = FIFO_SIZE_FSK;
-  if (device->packet_length == 0) {
+  if (device->fsk_ook_packet_length == 0) {
     uint16_t packet_length;
     if (device->fsk_ook_format == SX127X_FIXED) {
       int code = sx127x_fsk_ook_read_fixed_packet_length(device, &packet_length);
       if (code != SX127X_OK) {
-        device->packet_read_code = code;
+        device->fsk_ook_packet_read_code = code;
         return;
       }
     } else if (device->fsk_ook_format == SX127X_VARIABLE) {
       uint8_t value;
       int code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
       if (code != SX127X_OK) {
-        device->packet_read_code = code;
+        device->fsk_ook_packet_read_code = code;
         return;
       }
       packet_length = value;
       remaining_fifo--;
     } else {
-      device->packet_read_code = SX127X_ERR_INVALID_ARG;
+      device->fsk_ook_packet_read_code = SX127X_ERR_INVALID_ARG;
       return;
     }
-    device->packet_length = packet_length;
+    device->fsk_ook_packet_length = packet_length;
     bool address_filtered;
     int code = sx127x_fsk_ook_is_address_filtered(device, &address_filtered);
     if (code != SX127X_OK) {
-      device->packet_read_code = code;
+      device->fsk_ook_packet_read_code = code;
       return;
     }
     // if node filtering is enabled, then skip next byte because it will be node id
@@ -301,36 +300,36 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
       uint8_t value;
       code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
       if (code != SX127X_OK) {
-        device->packet_read_code = code;
+        device->fsk_ook_packet_read_code = code;
         return;
       }
-      device->packet_length--;
+      device->fsk_ook_packet_length--;
       remaining_fifo--;
     }
   }
 
   // safe check
-  if (device->packet_length == device->packet_sent_received) {
+  if (device->fsk_ook_packet_length == device->fsk_ook_packet_sent_received) {
     return;
   }
 
   uint8_t batch_size = HALF_MAX_FIFO_THRESHOLD - 1;
-  if (read_batch && device->packet_sent_received + batch_size < device->packet_length) {
-    int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->packet_sent_received, batch_size, device->spi_device);
+  if (read_batch && device->fsk_ook_packet_sent_received + batch_size < device->fsk_ook_packet_length) {
+    int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, batch_size, device->spi_device);
     if (code != SX127X_OK) {
-      device->packet_read_code = code;
+      device->fsk_ook_packet_read_code = code;
       return;
     }
-    device->packet_sent_received += batch_size;
+    device->fsk_ook_packet_sent_received += batch_size;
   } else {
     // shortcut here for packets less than max fifo size
-    if (device->packet_sent_received == 0 && device->packet_length <= remaining_fifo) {
-      int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->packet_length, device->spi_device);
+    if (device->fsk_ook_packet_sent_received == 0 && device->fsk_ook_packet_length <= remaining_fifo) {
+      int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->fsk_ook_packet_length, device->spi_device);
       if (code != SX127X_OK) {
-        device->packet_read_code = code;
+        device->fsk_ook_packet_read_code = code;
         return;
       }
-      device->packet_sent_received = device->packet_length;
+      device->fsk_ook_packet_sent_received = device->fsk_ook_packet_length;
     } else {
       // else read remaining bytes one by one and check FIFO_EMPTY irq
       uint8_t irq;
@@ -338,21 +337,21 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
         uint8_t value;
         int code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
         if (code != SX127X_OK) {
-          device->packet_read_code = code;
+          device->fsk_ook_packet_read_code = code;
           return;
         }
-        device->packet[device->packet_sent_received] = value;
-        device->packet_sent_received++;
+        device->packet[device->fsk_ook_packet_sent_received] = value;
+        device->fsk_ook_packet_sent_received++;
         code = sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq);
         if (code != SX127X_OK) {
-          device->packet_read_code = code;
+          device->fsk_ook_packet_read_code = code;
           return;
         }
       } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0);
     }
   }
   // even if data was not fully read
-  device->packet_read_code = SX127X_OK;
+  device->fsk_ook_packet_read_code = SX127X_OK;
 }
 
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
@@ -380,26 +379,26 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     }
     return;
   }
-  if (device->mode == MODE_TX) {
+  if (device->fsk_ook_mode == MODE_TX) {
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) == 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       uint8_t to_send;
-      if (device->packet_length - device->packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
+      if (device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
         to_send = HALF_MAX_FIFO_THRESHOLD - 1;
       } else {
-        to_send = device->packet_length - device->packet_sent_received;
+        to_send = device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received;
       }
       // safe check
       if (to_send == 0) {
         return;
       }
-      code = sx127x_spi_write_buffer(REG_FIFO, device->packet + device->packet_sent_received, to_send, device->spi_device);
+      code = sx127x_spi_write_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, to_send, device->spi_device);
       if (code != SX127X_OK) {
         // remaining bits not written to FIFO but modulator will eventually trigger SX127X_FSK_IRQ_PACKET_SENT
         return;
       }
-      device->packet_sent_received += to_send;
+      device->fsk_ook_packet_sent_received += to_send;
     }
-  } else if (device->mode == MODE_RX) {
+  } else if (device->fsk_ook_mode == MODE_RX) {
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       sx127x_fsk_ook_read_payload_batch(true, device);
     } else {
@@ -489,7 +488,7 @@ int sx127x_create(void *spi_device, sx127x **result) {
   device->active_modem = SX127x_MODULATION_LORA;
   device->fsk_ook_format = SX127X_VARIABLE;
   device->fsk_rssi_available = false;
-  device->mode = MODE_NONE;
+  device->fsk_ook_mode = MODE_NONE;
   *result = device;
   return SX127X_OK;
 }
@@ -510,15 +509,15 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
-      device->mode = MODE_RX;
+      device->fsk_ook_mode = MODE_RX;
     } else if (opmod == SX127x_MODE_TX) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
       // start tx as soon as first byte in FIFO available
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
-      device->mode = MODE_TX;
+      device->fsk_ook_mode = MODE_TX;
     } else {
-      device->mode = MODE_NONE;
+      device->fsk_ook_mode = MODE_NONE;
     }
   } else {
     return SX127X_ERR_INVALID_ARG;
@@ -627,15 +626,15 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
 // FSK/OOK packets can exceed uint8_t, thus separate function
 // They also require batching, because max FIFO for FSK/OOK is only 64 bytes
 int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length) {
-  if (device->packet_read_code != SX127X_OK || device->packet_length == 0) {
+  if (device->fsk_ook_packet_read_code != SX127X_OK || device->fsk_ook_packet_length == 0) {
     *packet_length = 0;
     *packet = NULL;
-    return device->packet_read_code;
+    return device->fsk_ook_packet_read_code;
   }
   *packet = device->packet;
-  *packet_length = device->packet_length;
-  device->packet_length = 0;
-  device->packet_sent_received = 0;
+  *packet_length = device->fsk_ook_packet_length;
+  device->fsk_ook_packet_length = 0;
+  device->fsk_ook_packet_sent_received = 0;
   return SX127X_OK;
 }
 
@@ -757,7 +756,10 @@ int sx127x_dump_registers(sx127x *device) {
   uint8_t length = 0x7F;
   for (int i = 1; i < length; i++) {
     uint8_t value;
-    sx127x_read_register(i, device->spi_device, &value);
+    int code = sx127x_read_register(i, device->spi_device, &value);
+    if (code != SX127X_OK) {
+      continue;
+    }
     printf("0x%2x: 0x%2x\n", i, value);
   }
   return SX127X_OK;
@@ -870,8 +872,8 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint8_t *data, uint16_
   } else {
     to_send = data_length;
   }
-  device->packet_length = data_length;
-  device->packet_sent_received = to_send;
+  device->fsk_ook_packet_length = data_length;
+  device->fsk_ook_packet_sent_received = to_send;
   return sx127x_spi_write_buffer(REG_FIFO, data, to_send, device->spi_device);
 }
 
