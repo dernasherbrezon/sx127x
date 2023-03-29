@@ -33,9 +33,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y valgrind check cmake pkg-config
     - name: Run build-wrapper
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         cd test
         mkdir debug
@@ -44,5 +41,9 @@ jobs:
         cd debug
         make test
         make coverage
-        cd ..
-        sonar-scanner --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
+    - name: Upload sonar results
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        sonar-scanner --define sonar.cfamily.build-wrapper-output="./test/${{ env.BUILD_WRAPPER_OUT_DIR }}"
