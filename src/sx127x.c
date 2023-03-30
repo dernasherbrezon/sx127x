@@ -140,6 +140,14 @@
     }                            \
   } while (0)
 
+#define ERROR_CHECK_NOCODE(x)    \
+  do {                           \
+    int __err_rc = (x);          \
+    if (__err_rc != SX127X_OK) { \
+      return;                    \
+    }                            \
+  } while (0)
+
 typedef enum {
   SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
   SX127x_HEADER_MODE_IMPLICIT = 0b00000001
@@ -356,15 +364,9 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
 
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
-  int code = sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq);
-  if (code != SX127X_OK) {
-    return;
-  }
+  ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
   // clear the irq
-  code = sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device);
-  if (code != SX127X_OK) {
-    return;
-  }
+  ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
     // read remaining of FIFO into the packet
     sx127x_fsk_ook_read_payload_batch(false, device);
@@ -385,17 +387,14 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       if (device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
         to_send = HALF_MAX_FIFO_THRESHOLD - 1;
       } else {
-        to_send = device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received;
+        to_send = (uint8_t)(device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received);
       }
       // safe check
       if (to_send == 0) {
         return;
       }
-      code = sx127x_spi_write_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, to_send, device->spi_device);
-      if (code != SX127X_OK) {
-        // remaining bits not written to FIFO but modulator will eventually trigger SX127X_FSK_IRQ_PACKET_SENT
-        return;
-      }
+      // remaining bits not written to FIFO but modulator will eventually trigger SX127X_FSK_IRQ_PACKET_SENT
+      ERROR_CHECK_NOCODE(sx127x_spi_write_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, to_send, device->spi_device));
       device->fsk_ook_packet_sent_received += to_send;
     }
   } else if (device->fsk_ook_mode == MODE_RX) {
@@ -403,21 +402,12 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       sx127x_fsk_ook_read_payload_batch(true, device);
     } else {
       // if not RX irq, then try preamble detect
-      code = sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq);
-      if (code != SX127X_OK) {
-        return;
-      }
+      ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq));
       // clear the irq
-      code = sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device);
-      if (code != SX127X_OK) {
-        return;
-      }
+      ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
         uint8_t value;
-        code = sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value);
-        if (code != SX127X_OK) {
-          return;
-        }
+        ERROR_CHECK_NOCODE(sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value));
         device->fsk_rssi_available = true;
         device->fsk_rssi = -value / 2;
         // TODO read offset and add here?
@@ -429,14 +419,8 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
 
 void sx127x_lora_handle_interrupt(sx127x *device) {
   uint8_t value;
-  int code = sx127x_read_register(REG_IRQ_FLAGS, device->spi_device, &value);
-  if (code != SX127X_OK) {
-    return;
-  }
-  code = sx127x_spi_write_register(REG_IRQ_FLAGS, &value, 1, device->spi_device);
-  if (code != SX127X_OK) {
-    return;
-  }
+  ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS, device->spi_device, &value));
+  ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS, &value, 1, device->spi_device));
   if ((value & SX127x_IRQ_FLAG_CADDONE) != 0) {
     if (device->cad_callback != NULL) {
       device->cad_callback(device, value & SX127x_IRQ_FLAG_CAD_DETECTED);
