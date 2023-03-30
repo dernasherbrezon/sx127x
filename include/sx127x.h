@@ -428,7 +428,7 @@ int sx127x_lora_set_syncword(uint8_t value, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_set_preamble_length(uint16_t value, sx127x *device);
+int sx127x_set_preamble_length(uint16_t value, sx127x *device);
 
 /**
  * @brief Set implicit header.

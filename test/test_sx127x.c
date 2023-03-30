@@ -266,7 +266,6 @@ START_TEST(test_fsk_ook_tx) {
 END_TEST
 
 START_TEST(test_lora_tx) {
-  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   sx127x_tx_set_callback(tx_callback, device);
 
   transmitted = 0;
@@ -281,6 +280,9 @@ START_TEST(test_lora_tx) {
   ck_assert_int_eq(registers[0x22], sizeof(payload));
   spi_assert_write(payload, sizeof(payload));
 
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
+  ck_assert_int_eq(registers[0x40], 0b01000000);
+
   // simulate interrupt
   registers[0x12] = 0b00001000;  // tx done
   sx127x_handle_interrupt(device);
@@ -288,6 +290,8 @@ START_TEST(test_lora_tx) {
 }
 
 START_TEST(test_lora_rx) {
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  ck_assert_int_eq(registers[0x40], 0b00000000);
   uint8_t payload[255];
   for (int i = 0; i < sizeof(payload); i++) {
     payload[i] = i;
@@ -320,6 +324,8 @@ START_TEST(test_lora_rx) {
 }
 
 START_TEST(test_lora_cad) {
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+  ck_assert_int_eq(registers[0x40], 0b10000000);
   sx127x_lora_cad_set_callback(cad_callback, device);
   registers[0x12] = 0b00000101;  // cad detected
   sx127x_handle_interrupt(device);
@@ -414,6 +420,10 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(registers[0x31], 0b00000111);
   ck_assert_int_eq(registers[0x32], 0xFF);
 
+  ck_assert_int_eq(SX127X_OK, sx127x_set_preamble_length(8, device));
+  ck_assert_int_eq(registers[0x25], 0x00);
+  ck_assert_int_eq(registers[0x26], 0x08);
+
   registers[0x1d] = 0xFF;
   registers[0x1e] = 0xF0;
   int32_t frequency_error;
@@ -436,7 +446,7 @@ START_TEST(test_lora) {
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_implicit_header(NULL, device));
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_syncword(18, device));
-  ck_assert_int_eq(SX127X_OK, sx127x_lora_set_preamble_length(8, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_preamble_length(8, device));
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_low_datarate_optimization(true, device));
   ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_boost_hf(true, device));
   ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));

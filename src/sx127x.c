@@ -584,7 +584,7 @@ int sx127x_lora_set_syncword(uint8_t value, sx127x *device) {
   return sx127x_spi_write_register(REG_SYNC_WORD, &value, 1, device->spi_device);
 }
 
-int sx127x_lora_set_preamble_length(uint16_t value, sx127x *device) {
+int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
   uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
   if (device->active_modem == SX127x_MODULATION_LORA) {
     return sx127x_spi_write_register(REG_PREAMBLE_MSB, data, 2, device->spi_device);

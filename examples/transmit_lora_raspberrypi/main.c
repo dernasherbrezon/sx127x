@@ -123,7 +123,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, device));
   LINUX_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
   LINUX_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_preamble_length(8, device));
+  LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, device));
   sx127x_tx_set_callback(tx_callback, device);
 
   // 4 is OK
