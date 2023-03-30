@@ -1,4 +1,4 @@
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/dernasherbrezon/library/sx127x.svg)](https://registry.platformio.org/libraries/dernasherbrezon/sx127x) [![Component Registry](https://components.espressif.com/components/dernasherbrezon/sx127x/badge.svg)](https://components.espressif.com/components/dernasherbrezon/sx127x)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/dernasherbrezon/library/sx127x.svg)](https://registry.platformio.org/libraries/dernasherbrezon/sx127x) [![Component Registry](https://components.espressif.com/components/dernasherbrezon/sx127x/badge.svg)](https://components.espressif.com/components/dernasherbrezon/sx127x) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dernasherbrezon_sx127x&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dernasherbrezon_sx127x) [![main](https://github.com/dernasherbrezon/sx127x/actions/workflows/main.yml/badge.svg)](https://github.com/dernasherbrezon/sx127x/actions/workflows/main.yml)
 
 # About
 
