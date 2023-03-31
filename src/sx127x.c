@@ -919,7 +919,6 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
 }
 
 void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
-  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   device->cad_callback = cad_callback;
 }
 
