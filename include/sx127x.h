@@ -27,6 +27,7 @@ extern "C" {
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
 #define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
+#define SX127X_ERR_INVALID_STATE 0x103   /*!< Invalid state. Most likely function is not applicable for the selected modem */
 #define SX127X_ERR_NOT_FOUND 0x105       /*!< Requested resource not found */
 #define SX127X_ERR_INVALID_VERSION 0x10A /*!< Version was invalid */
 
