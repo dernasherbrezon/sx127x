@@ -650,10 +650,36 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
  * @param data Packet
  * @param data_length Packet length. Maximum length depend on packet format (sx127x_packet_format_t). VARIABLE format is limited by 254 bytes. FIXED format - 2046 bytes
  * @param address_to Address to send to. Can be Node address or broadcast address
- * @param device
+ * @param device Pointer to variable to hold the device handle
  * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device);
+
+/**
+ * @brief Start transmitting periodic beacon using FSK/OOK modulation. Packet format must be configured as SX127X_FIXED.
+ * 
+ * @param data Data to be transmitted periodically. Can only be changed after beacon stopped.
+ * @param data_length Length of data to be transmitted. Cannot exceed 64 bytes.
+ * @param interval_ms Period for beacon transmittion in milliseconds. Cannot exceed 255 * 2 * 262 ms = 133620 ms = ~ 2.2 min.
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_ERR_INVALID_STATE if configured packet format is not SX127X_FIXED or selected modem is not FSK/OOK
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device);
+
+/**
+ * @brief Stop transmitting periodic beacon.
+ * 
+ * @param device Pointer to variable to hold the device handle
+ * @return int 
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_tx_stop_beacon(sx127x *device);
 
 /**
  * @brief Set callback function for caddone interrupt. int argument is 0 when no CAD detected.

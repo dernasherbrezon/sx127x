@@ -73,7 +73,11 @@
 #define REG_NODE_ADDR 0x33
 #define REG_BROADCAST_ADDR 0x34
 #define REG_FIFO_THRESH 0x35
+#define REG_SEQ_CONFIG1 0x36
 #define REG_DETECTION_THRESHOLD 0x37
+#define REG_TIMER_RESOLUTION 0x38
+#define REG_TIMER1_COEF 0x39
+#define REG_TIMER2_COEF 0x3a
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
 #define REG_IRQ_FLAGS_1 0x3e
@@ -155,11 +159,11 @@
     }                                  \
   } while (0)
 
-#define CHECK_FSK_OOK_MODULATION(x)         \
-  do {                                 \
-    if (x->active_modem != SX127x_MODULATION_FSK && x->active_modem != SX127x_MODULATION_OOK) {        \
-      return SX127X_ERR_INVALID_STATE; \
-    }                                  \
+#define CHECK_FSK_OOK_MODULATION(x)                                                             \
+  do {                                                                                          \
+    if (x->active_modem != SX127x_MODULATION_FSK && x->active_modem != SX127x_MODULATION_OOK) { \
+      return SX127X_ERR_INVALID_STATE;                                                          \
+    }                                                                                           \
   } while (0)
 
 typedef enum {
@@ -916,6 +920,65 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
   ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &address_to, 1, device->spi_device));
   remaining_fifo--;
   return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
+}
+
+int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device) {
+  CHECK_FSK_OOK_MODULATION(device);
+  if (device->fsk_ook_format != SX127X_FIXED) {
+    return SX127X_ERR_INVALID_STATE;
+  }
+  if (data_length > FIFO_SIZE_FSK) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  float min_resolution = 4.1f;
+  int max_resolution = 262;
+  uint8_t timer_resolution = 0b00000000;
+  uint8_t timer1_coefficient = 0;
+  uint8_t timer2_coefficient = 0;
+  // do not support micro seconds here. sending beacon might take more than 64us
+  if (interval_ms / min_resolution < 1) {
+    return SX127X_ERR_INVALID_ARG;
+  } else if (interval_ms / min_resolution < 256) {
+    // enable only timer1
+    timer_resolution += 0b00001000;
+    timer1_coefficient = (uint8_t)(interval_ms / min_resolution);
+  } else if (interval_ms / min_resolution < 512) {
+    // enable both timers with the same coefficient
+    timer_resolution += 0b00001010;
+    timer1_coefficient = (uint8_t)(interval_ms / 2 * min_resolution);
+    timer2_coefficient = timer1_coefficient;
+  } else if (interval_ms / max_resolution < 256) {
+    // enable only timer1
+    timer_resolution += 0b00001100;
+    timer1_coefficient = (uint8_t)(interval_ms / max_resolution);
+  } else if (interval_ms / max_resolution < 512) {
+    // enable both timers with the same coefficient
+    timer_resolution += 0b00001111;
+    timer1_coefficient = (uint8_t)(interval_ms / 2 * max_resolution);
+    timer2_coefficient = timer1_coefficient;
+  } else {
+    return SX127X_ERR_INVALID_ARG;
+  }
+
+  ERROR_CHECK(sx127x_spi_write_register(REG_TIMER1_COEF, &timer1_coefficient, 1, device->spi_device));
+  ERROR_CHECK(sx127x_spi_write_register(REG_TIMER2_COEF, &timer2_coefficient, 1, device->spi_device));
+  ERROR_CHECK(sx127x_spi_write_register(REG_TIMER_RESOLUTION, &timer_resolution, 1, device->spi_device));
+
+  ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission(data, data_length, device));
+  uint8_t value = 0b00001000;  // beacon on
+  ERROR_CHECK(sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device));
+  // start sequencer
+  value = 0b10100100;
+  return sx127x_spi_write_register(REG_SEQ_CONFIG1, &value, 1, device->spi_device);
+}
+
+int sx127x_fsk_ook_tx_stop_beacon(sx127x *device) {
+  CHECK_FSK_OOK_MODULATION(device);
+  // stop sequencer
+  uint8_t value = 0b00000000;
+  ERROR_CHECK(sx127x_spi_write_register(REG_SEQ_CONFIG1, &value, 1, device->spi_device));
+  value = 0b00000000;  // beacon off
+  return sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device);
 }
 
 void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
