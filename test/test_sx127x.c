@@ -25,9 +25,9 @@ void cad_callback(sx127x *device, int cad_detected) {
 }
 
 START_TEST(test_fsk_ook_rx) {
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_rx_set_callback(rx_callback, device);
-  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
 
   uint8_t payload[2048];
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
@@ -153,9 +153,9 @@ START_TEST(test_fsk_ook_rx) {
 END_TEST
 
 START_TEST(test_fsk_ook_tx) {
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_tx_set_callback(tx_callback, device);
-  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
 
   uint8_t payload[2048];
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
@@ -395,11 +395,17 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(registers[0x0f], 10);
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
+  ck_assert_int_eq(registers[0x30], 0b11010100);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
+  ck_assert_int_eq(registers[0x31], 0b00000111);
+  ck_assert_int_eq(registers[0x32], 0xFF);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_OOK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, device));
 
   ck_assert_int_eq(registers[0x0d], 0b10010111);
   ck_assert_int_eq(registers[0x0c], 0b10000000);
-  ck_assert_int_eq(registers[0x30], 0b11010100);
   ck_assert_int_eq(registers[0x27], 0b00110001);
   ck_assert_int_eq(registers[0x0a], 0b01001001);
   ck_assert_int_eq(registers[0x0e], 0b00000010);
@@ -415,10 +421,6 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(SX127X_OK, sx127x_ook_rx_set_avg_mode(SX127X_2_DB, SX127X_4_PI, device));
   ck_assert_int_eq(registers[0x14], 0b00010000);
   ck_assert_int_eq(registers[0x16], 0b00000110);
-
-  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
-  ck_assert_int_eq(registers[0x31], 0b00000111);
-  ck_assert_int_eq(registers[0x32], 0xFF);
 
   ck_assert_int_eq(SX127X_OK, sx127x_set_preamble_length(8, device));
   ck_assert_int_eq(registers[0x25], 0x00);
