@@ -90,7 +90,7 @@ void app_main() {
       .address_bits = 8,
       .dummy_bits = 0,
       .mode = 0};
-  spi_device_handle_t spi_device;
+  spi_device_handle_t spi_device;   
   ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));

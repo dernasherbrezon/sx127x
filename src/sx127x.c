@@ -940,8 +940,9 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
     return SX127X_ERR_INVALID_ARG;
   } else if (interval_ms / min_resolution < 256) {
     // enable only timer1
-    timer_resolution += 0b00001000;
-    timer1_coefficient = (uint8_t)(interval_ms / min_resolution);
+    timer_resolution += 0b00101010;
+    timer1_coefficient = (uint8_t)(interval_ms / min_resolution) / 2;
+    timer2_coefficient = timer1_coefficient;
   } else if (interval_ms / min_resolution < 512) {
     // enable both timers with the same coefficient
     timer_resolution += 0b00001010;
@@ -959,14 +960,18 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
-
   ERROR_CHECK(sx127x_spi_write_register(REG_TIMER1_COEF, &timer1_coefficient, 1, device->spi_device));
   ERROR_CHECK(sx127x_spi_write_register(REG_TIMER2_COEF, &timer2_coefficient, 1, device->spi_device));
   ERROR_CHECK(sx127x_spi_write_register(REG_TIMER_RESOLUTION, &timer_resolution, 1, device->spi_device));
 
+  // start tx as soon as first byte in FIFO available
+  uint8_t value = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
+  ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &value, 1, device->spi_device));
+  value = 0b00010000;
+  ERROR_CHECK(sx127x_spi_write_register(0x3f, &value, 1, device->spi_device));
   ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission(data, data_length, device));
-  uint8_t value = 0b00001000;  // beacon on
-  ERROR_CHECK(sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device));
+   value = 0b00001000;  // beacon on
+  ERROR_CHECK(sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device->spi_device));
   // start sequencer
   value = 0b10100100;
   return sx127x_spi_write_register(REG_SEQ_CONFIG1, &value, 1, device->spi_device);
@@ -975,10 +980,12 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
 int sx127x_fsk_ook_tx_stop_beacon(sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   // stop sequencer
-  uint8_t value = 0b00000000;
+  uint8_t value = 0b01000000;
   ERROR_CHECK(sx127x_spi_write_register(REG_SEQ_CONFIG1, &value, 1, device->spi_device));
+  value = 0b00010000;
+  ERROR_CHECK(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &value, 1, device->spi_device));
   value = 0b00000000;  // beacon off
-  return sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device);
+  return sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device->spi_device);
 }
 
 void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
