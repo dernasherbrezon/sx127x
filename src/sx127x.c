@@ -930,35 +930,63 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
   if (data_length > FIFO_SIZE_FSK) {
     return SX127X_ERR_INVALID_ARG;
   }
-  float min_resolution = 4.1f;
-  int max_resolution = 262;
-  uint8_t timer_resolution = 0b00000000;
+
+  float p1 = 0.064f;
+  float p2 = 4.1f;
+  float p3 = 262;
+
+  float timer1_resolution = 0.0f;
   uint8_t timer1_coefficient = 0;
+  float timer2_resolution = 0.0f;
   uint8_t timer2_coefficient = 0;
-  // do not support micro seconds here. sending beacon might take more than 64us
-  if (interval_ms / min_resolution < 1) {
-    return SX127X_ERR_INVALID_ARG;
-  } else if (interval_ms / min_resolution < 256) {
-    // enable only timer1
-    timer_resolution += 0b00101010;
-    timer1_coefficient = (uint8_t)(interval_ms / min_resolution) / 2;
-    timer2_coefficient = timer1_coefficient;
-  } else if (interval_ms / min_resolution < 512) {
-    // enable both timers with the same coefficient
-    timer_resolution += 0b00001010;
-    timer1_coefficient = (uint8_t)(interval_ms / 2 * min_resolution);
-    timer2_coefficient = timer1_coefficient;
-  } else if (interval_ms / max_resolution < 256) {
-    // enable only timer1
-    timer_resolution += 0b00001100;
-    timer1_coefficient = (uint8_t)(interval_ms / max_resolution);
-  } else if (interval_ms / max_resolution < 512) {
-    // enable both timers with the same coefficient
-    timer_resolution += 0b00001111;
-    timer1_coefficient = (uint8_t)(interval_ms / 2 * max_resolution);
-    timer2_coefficient = timer1_coefficient;
+
+  if (interval_ms <= 255 * p1) {
+    timer1_resolution = p1;
+    timer1_coefficient = (int)(interval_ms / p1);
+  } else if (interval_ms <= 255 * p1 * 2) {
+    timer1_resolution = p1;
+    timer2_resolution = p1;
+    timer1_coefficient = (int)(interval_ms / p1 / 2);
+  } else if (interval_ms <= (255 * p2 + 255 * p1)) {
+    timer1_resolution = p2;
+    timer2_resolution = p1;
+    timer1_coefficient = (int)(interval_ms / p2);
+  } else if (interval_ms <= 255 * p2 * 2) {
+    timer1_resolution = p2;
+    timer2_resolution = p2;
+    timer1_coefficient = (int)(interval_ms / p2 / 2);
+  } else if (interval_ms <= (255 * p3 + 255 * p1)) {
+    timer1_resolution = p3;
+    timer2_resolution = p1;
+    timer1_coefficient = (int)(interval_ms / p3);
+  } else if (interval_ms <= (255 * p3 + 255 * p2)) {
+    timer1_resolution = p3;
+    timer2_resolution = p2;
+    timer1_coefficient = (int)(interval_ms / p3);
   } else {
-    return SX127X_ERR_INVALID_ARG;
+    timer1_resolution = p3;
+    timer2_resolution = p3;
+    timer1_coefficient = (int)(interval_ms / p3 / 2);
+  }
+
+  if (timer2_resolution != 0) {
+    timer2_coefficient = (int)((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
+  }
+
+  uint8_t timer_resolution = 0b00000000;
+  if (timer1_resolution == p1) {
+    timer_resolution = 0b00000100;
+  } else if (timer1_resolution == p2) {
+    timer_resolution = 0b00001000;
+  } else {
+    timer_resolution = 0b00001100;
+  }
+  if (timer2_resolution == p1) {
+    timer_resolution += 0b00000001;
+  } else if (timer2_resolution == p2) {
+    timer_resolution += 0b00000010;
+  } else {
+    timer_resolution += 0b00000011;
   }
   ERROR_CHECK(sx127x_spi_write_register(REG_TIMER1_COEF, &timer1_coefficient, 1, device->spi_device));
   ERROR_CHECK(sx127x_spi_write_register(REG_TIMER2_COEF, &timer2_coefficient, 1, device->spi_device));
@@ -970,7 +998,7 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
   value = 0b00010000;
   ERROR_CHECK(sx127x_spi_write_register(0x3f, &value, 1, device->spi_device));
   ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission(data, data_length, device));
-   value = 0b00001000;  // beacon on
+  value = 0b00001000;  // beacon on
   ERROR_CHECK(sx127x_append_register(REG_PACKET_CONFIG2, value, 0b11110111, device->spi_device));
   // start sequencer
   value = 0b10100100;
