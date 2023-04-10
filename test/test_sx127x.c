@@ -126,6 +126,27 @@ START_TEST(test_fsk_ook_rx) {
   sx127x_handle_interrupt(device);
   ck_assert_int_eq(packet_length - 1, rx_callback_data_length);
   ck_assert_mem_eq(payload + 1, rx_callback_data, rx_callback_data_length);
+
+  // 9. Small payload with failed CRC
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0x00, 0x00, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
+  rx_callback_data_length = 0;
+  payload[0] = 63;
+  spi_mock_fifo(payload, 64, SX127X_OK);
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(registers[0x3f], 0b00010000); // fifo_overrun
+  ck_assert_int_eq(0, rx_callback_data_length);
+
+  // 10. Small payload with ignored CRC
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_crc(SX127X_CRC_NONE, device));
+  payload[0] = 63;
+  spi_mock_fifo(payload, 64, SX127X_OK);
+  registers[0x3f] = 0b00000100;  // payload_ready
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(payload[0], rx_callback_data_length);
+  ck_assert_mem_eq(payload + 1, rx_callback_data, rx_callback_data_length);
 }
 END_TEST
 
