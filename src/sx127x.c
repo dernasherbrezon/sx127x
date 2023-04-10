@@ -174,10 +174,9 @@ typedef enum {
 struct sx127x_t {
   void *spi_device;
   sx127x_implicit_header_t *header;
-  uint8_t version;
   uint64_t frequency;
 
-  void (*rx_callback)(sx127x *);
+  void (*rx_callback)(sx127x *, uint8_t *, uint16_t);
 
   void (*tx_callback)(sx127x *);
 
@@ -398,8 +397,10 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     // read remaining of FIFO into the packet
     sx127x_fsk_ook_read_payload_batch(false, device);
     if (device->rx_callback != NULL) {
-      device->rx_callback(device);
+      device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
     }
+    device->fsk_ook_packet_length = 0;
+    device->fsk_ook_packet_sent_received = 0;
     return;
   }
   if ((irq & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
@@ -444,6 +445,22 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   }
 }
 
+int sx127x_lora_rx_read_payload(sx127x *device) {
+  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
+  uint8_t length;
+  if (device->header == NULL) {
+    ERROR_CHECK(sx127x_read_register(REG_RX_NB_BYTES, device->spi_device, &length));
+  } else {
+    length = device->header->length;
+  }
+  device->fsk_ook_packet_length = length;
+
+  uint8_t current;
+  ERROR_CHECK(sx127x_read_register(REG_FIFO_RX_CURRENT_ADDR, device->spi_device, &current));
+  ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_ADDR_PTR, &current, 1, device->spi_device));
+  return sx127x_spi_read_buffer(REG_FIFO, device->packet, device->fsk_ook_packet_length, device->spi_device);
+}
+
 void sx127x_lora_handle_interrupt(sx127x *device) {
   uint8_t value;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS, device->spi_device, &value));
@@ -458,8 +475,9 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
     return;
   }
   if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
+    ERROR_CHECK_NOCODE(sx127x_lora_rx_read_payload(device));
     if (device->rx_callback != NULL) {
-      device->rx_callback(device);
+      device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
     }
     return;
   }
@@ -487,12 +505,13 @@ int sx127x_create(void *spi_device, sx127x **result) {
   *device = (struct sx127x_t){0};
   device->spi_device = spi_device;
 
-  int code = sx127x_read_register(REG_VERSION, device->spi_device, &device->version);
+  uint8_t version;
+  int code = sx127x_read_register(REG_VERSION, device->spi_device, &version);
   if (code != SX127X_OK) {
     sx127x_destroy(device);
     return code;
   }
-  if (device->version != SX127x_VERSION) {
+  if (version != SX127x_VERSION) {
     sx127x_destroy(device);
     return SX127X_ERR_INVALID_VERSION;
   }
@@ -606,7 +625,7 @@ int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device)
   return sx127x_reload_low_datarate_optimization(device);
 }
 
-void sx127x_rx_set_callback(void (*rx_callback)(sx127x *), sx127x *device) {
+void sx127x_rx_set_callback(void (*rx_callback)(sx127x *, uint8_t *, uint16_t), sx127x *device) {
   device->rx_callback = rx_callback;
 }
 
@@ -637,63 +656,6 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
     uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
     return sx127x_append_register(REG_MODEM_CONFIG_2, value, 0b11111011, device->spi_device);
   }
-}
-
-// FSK/OOK packets can exceed uint8_t, thus separate function
-// They also require batching, because max FIFO for FSK/OOK is only 64 bytes
-int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length) {
-  if (device->fsk_ook_packet_read_code != SX127X_OK || device->fsk_ook_packet_length == 0) {
-    *packet_length = 0;
-    *packet = NULL;
-    return device->fsk_ook_packet_read_code;
-  }
-  *packet = device->packet;
-  *packet_length = device->fsk_ook_packet_length;
-  device->fsk_ook_packet_length = 0;
-  device->fsk_ook_packet_sent_received = 0;
-  return SX127X_OK;
-}
-
-// max lora packet is 255 bytes which can be stored fully in FIFO
-// thus delayed read
-int sx127x_lora_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length) {
-  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-  uint8_t length;
-  if (device->header == NULL) {
-    int code = sx127x_read_register(REG_RX_NB_BYTES, device->spi_device, &length);
-    if (code != SX127X_OK) {
-      *packet_length = 0;
-      *packet = NULL;
-      return code;
-    }
-  } else {
-    length = device->header->length;
-  }
-
-  uint8_t current;
-  int code = sx127x_read_register(REG_FIFO_RX_CURRENT_ADDR, device->spi_device, &current);
-  if (code != SX127X_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return code;
-  }
-  code = sx127x_spi_write_register(REG_FIFO_ADDR_PTR, &current, 1, device->spi_device);
-  if (code != SX127X_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return code;
-  }
-
-  code = sx127x_spi_read_buffer(REG_FIFO, device->packet, length, device->spi_device);
-  if (code != SX127X_OK) {
-    *packet_length = 0;
-    *packet = NULL;
-    return code;
-  }
-
-  *packet = device->packet;
-  *packet_length = length;
-  return SX127X_OK;
 }
 
 int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi) {

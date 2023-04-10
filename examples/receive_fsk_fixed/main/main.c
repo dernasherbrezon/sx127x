@@ -38,14 +38,7 @@ void handle_interrupt_task(void *arg) {
   }
 }
 
-void rx_callback(sx127x *device) {
-  uint8_t *data = NULL;
-  uint16_t data_length = 0;
-  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_read_payload(device, &data, &data_length));
-  if (data_length == 0) {
-    // no message received
-    return;
-  }
+void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
   uint8_t payload[2090 * 2];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
@@ -57,9 +50,7 @@ void rx_callback(sx127x *device) {
 
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
-
   ESP_LOGI(TAG, "received: %d %s freq_error: %" PRId32, data_length, payload, frequency_error);
-
   total_packets_received++;
 }
 

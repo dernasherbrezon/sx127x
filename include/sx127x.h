@@ -510,31 +510,7 @@ int sx127x_rx_set_lna_boost_hf(bool value, sx127x *device);
  * @param rx_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_rx_set_callback(void (*rx_callback)(sx127x *), sx127x *device);
-
-/**
- * @brief Read payload from sx127x's internal FIFO.
- *
- * @param device Pointer to variable to hold the device handle
- * @param packet Output buffer
- * @param packet_length Output buffer length
- * @return
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_lora_rx_read_payload(sx127x *device, uint8_t **packet, uint8_t *packet_length);
-
-/**
- * @brief Read payload from sx127x's internal FIFO.
- *
- * @param device Pointer to variable to hold the device handle
- * @param packet Output buffer
- * @param packet_length Output buffer length
- * @return
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_fsk_ook_rx_read_payload(sx127x *device, uint8_t **packet, uint16_t *packet_length);
+void sx127x_rx_set_callback(void (*rx_callback)(sx127x *, uint8_t *, uint16_t), sx127x *device);
 
 /**
  * @brief RSSI of the latest packet received (dBm)
