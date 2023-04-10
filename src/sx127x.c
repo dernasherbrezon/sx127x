@@ -388,6 +388,13 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   // clear the irq
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
+    if ((irq & SX127X_FSK_IRQ_CRC_OK) == 0) {
+      irq = 0b00010000;
+      ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
+      device->fsk_ook_packet_length = 0;
+      device->fsk_ook_packet_sent_received = 0;
+      return;
+    }
     // read remaining of FIFO into the packet
     sx127x_fsk_ook_read_payload_batch(false, device);
     if (device->rx_callback != NULL) {
@@ -509,7 +516,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
     }
   } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_CRC_OK | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PAYLOAD_READY | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));

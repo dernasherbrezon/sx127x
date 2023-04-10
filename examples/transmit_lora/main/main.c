@@ -73,7 +73,7 @@ void app_main() {
   };
   ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &config, 1));
   spi_device_interface_config_t dev_cfg = {
-      .clock_speed_hz = 8E6,
+      .clock_speed_hz = 3E6,
       .spics_io_num = SS,
       .queue_size = 16,
       .command_bits = 0,

@@ -134,8 +134,8 @@ typedef enum {
 
 typedef enum {
   SX127X_CRC_NONE = 0b00001000,   // CrcOff + Do not clear FIFO
-  SX127X_CRC_CCITT = 0b00010000,  // CrcOn + CrcWhiteningType. Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
-  SX127X_CRC_IBM = 0b00010001     // CrcOn + CrcWhiteningType. Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
+  SX127X_CRC_CCITT = 0b00011000,  // CrcOn + CrcWhiteningType. Polynomial X16 + X12 + X5 + 1 Seed Value 0x1D0F
+  SX127X_CRC_IBM = 0b00011001     // CrcOn + CrcWhiteningType. Polynomial X16 + X15 + X2 + 1 Seed Value 0xFFFF
 } sx127x_crc_type_t;
 
 typedef enum {
