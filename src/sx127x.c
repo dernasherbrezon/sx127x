@@ -114,6 +114,7 @@
 #define SX127X_FSK_IRQ_CRC_OK 0b00000010
 #define SX127X_FSK_IRQ_LOW_BATTERY 0b00000001
 #define SX127X_FSK_IRQ_PREAMBLE_DETECT 0b00000010
+#define SX127X_FSK_IRQ_SYNC_ADDRESS_MATCH 0b00000001
 
 #define RF_MID_BAND_THRESHOLD 525E6
 #define RSSI_OFFSET_HF_PORT 157
@@ -382,6 +383,15 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   device->fsk_ook_packet_read_code = SX127X_OK;
 }
 
+int sx127x_fsk_ook_get_rssi(sx127x *device) {
+  uint8_t value;
+  ERROR_CHECK(sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value));
+  device->fsk_rssi_available = true;
+  device->fsk_rssi = -value / 2;
+  // TODO read offset and add here?
+  return SX127X_OK;
+}
+
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
@@ -433,11 +443,12 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       // clear the irq
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
-        uint8_t value;
-        ERROR_CHECK_NOCODE(sx127x_read_register(REG_RSSI_VALUE_FSK, device->spi_device, &value));
-        device->fsk_rssi_available = true;
-        device->fsk_rssi = -value / 2;
-        // TODO read offset and add here?
+        sx127x_fsk_ook_get_rssi(device);
+        return;
+      }
+      // if preamble dio not attached, then try sync_address match
+      if ((irq & SX127X_FSK_IRQ_SYNC_ADDRESS_MATCH) != 0 && !device->fsk_rssi_available) {
+        sx127x_fsk_ook_get_rssi(device);
         return;
       }
     }
@@ -541,7 +552,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       device->fsk_ook_mode = MODE_RX;
     } else if (opmod == SX127x_MODE_TX) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_SYNCADDRESS, 0b00000011, device->spi_device));
       // start tx as soon as first byte in FIFO available
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));

@@ -136,7 +136,7 @@ START_TEST(test_fsk_ook_rx) {
   spi_mock_fifo(payload, 64, SX127X_OK);
   registers[0x3f] = 0b00000100;  // payload_ready
   sx127x_handle_interrupt(device);
-  ck_assert_int_eq(registers[0x3f], 0b00010000); // fifo_overrun
+  ck_assert_int_eq(registers[0x3f], 0b00010000);  // fifo_overrun
   ck_assert_int_eq(0, rx_callback_data_length);
 
   // 10. Small payload with ignored CRC
@@ -342,7 +342,23 @@ START_TEST(test_fsk_ook_rssi) {
   registers[0x3e] = 0b00000010;
   registers[0x11] = 30;
   sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_rx_get_packet_rssi(device, &rssi));
+  ck_assert_int_eq(-15, rssi);
 
+  // test sync address won't override rssi from preamble
+  registers[0x3e] = 0b00000010;
+  registers[0x11] = 30;
+  sx127x_handle_interrupt(device);
+  registers[0x3e] = 0b00000001;
+  registers[0x11] = 33;
+  sx127x_handle_interrupt(device);
+  ck_assert_int_eq(SX127X_OK, sx127x_rx_get_packet_rssi(device, &rssi));
+  ck_assert_int_eq(-15, rssi);
+
+  // test sync address can also be used to measure rssi
+  registers[0x3e] = 0b00000001;
+  registers[0x11] = 30;
+  sx127x_handle_interrupt(device);
   ck_assert_int_eq(SX127X_OK, sx127x_rx_get_packet_rssi(device, &rssi));
   ck_assert_int_eq(-15, rssi);
 }
