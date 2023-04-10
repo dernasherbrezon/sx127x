@@ -192,6 +192,7 @@ struct sx127x_t {
 
   sx127x_modulation_t active_modem;
   sx127x_packet_format_t fsk_ook_format;
+  sx127x_crc_type_t fsk_crc_type;
 };
 
 int sx127x_read_register(int reg, void *spi_device, uint8_t *result) {
@@ -387,17 +388,15 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   // clear the irq
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
-    if ((irq & SX127X_FSK_IRQ_CRC_OK) == 0) {
-      irq = 0b00010000;
+    if (device->fsk_crc_type != SX127X_CRC_NONE && (irq & SX127X_FSK_IRQ_CRC_OK) == 0) {
+      irq = SX127X_FSK_IRQ_FIFO_OVERRUN;
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
-      device->fsk_ook_packet_length = 0;
-      device->fsk_ook_packet_sent_received = 0;
-      return;
-    }
-    // read remaining of FIFO into the packet
-    sx127x_fsk_ook_read_payload_batch(false, device);
-    if (device->rx_callback != NULL) {
-      device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
+    } else {
+      // read remaining of FIFO into the packet
+      sx127x_fsk_ook_read_payload_batch(false, device);
+      if (device->rx_callback != NULL) {
+        device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
+      }
     }
     device->fsk_ook_packet_length = 0;
     device->fsk_ook_packet_sent_received = 0;
@@ -519,6 +518,7 @@ int sx127x_create(void *spi_device, sx127x **result) {
   device->fsk_ook_format = SX127X_VARIABLE;
   device->fsk_rssi_available = false;
   device->fsk_ook_mode = MODE_NONE;
+  device->fsk_crc_type = SX127X_CRC_CCITT;
   *result = device;
   return SX127X_OK;
 }
@@ -1120,7 +1120,11 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  return sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11100110, device->spi_device);
+  int result = sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11100110, device->spi_device);
+  if (result == SX127X_OK) {
+    device->fsk_crc_type = crc_type;
+  }
+  return result;
 }
 
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device) {
