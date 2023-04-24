@@ -1,6 +1,7 @@
 #include <esp_log.h>
 #include <unity.h>
 #include <unity_test_runner.h>
+#include <string.h>
 
 #include "sx127x_fixture.h"
 
@@ -19,17 +20,21 @@ void tx_callback(sx127x *device) {
 }
 
 void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
-  sx127x_fixture_rx_callback(device, data, data_length);
+  memcpy(fixture->rx_data, data, data_length);
+  fixture->rx_data_length = data_length;
   xSemaphoreGive(fixture->rx_done);
 }
 
-void sx127x_test_lora_rx_explicit_header() {
+TEST_CASE("sx127x_test_lora_rx_explicit_header", "[lora]") {
   sx127x_rx_set_callback(rx_callback, fixture->device);
   sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device);
   xSemaphoreTake(fixture->rx_done, portMAX_DELAY);
+  uint8_t expected[] = {0xCA, 0xFE};
+  TEST_ASSERT_EQUAL_UINT16(sizeof(expected), fixture->rx_data_length);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(expected, fixture->rx_data, sizeof(expected));
 }
 
-void sx127x_test_lora_tx_explicit_header() {
+TEST_CASE("sx127x_test_lora_tx_explicit_header", "[lora]") {
   sx127x_tx_set_callback(tx_callback, fixture->device);
   sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, fixture->device);
   sx127x_tx_header_t header = {
@@ -42,8 +47,6 @@ void sx127x_test_lora_tx_explicit_header() {
   ESP_LOGI("sx127x_test", "done. waiting for message");
   xSemaphoreTake(fixture->tx_done, portMAX_DELAY);
 }
-
-TEST_CASE_MULTIPLE_DEVICES("lora_rx", "[lora]", sx127x_test_lora_rx_explicit_header, sx127x_test_lora_tx_explicit_header);
 
 void setUp() {
   // FIXME verify return code

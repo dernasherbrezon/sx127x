@@ -12,15 +12,10 @@ def test_single(dut: Tuple[Dut, Dut]) -> None:
     dut_tx = dut[1]
 
     dut_rx.expect('Press ENTER to see the list of tests')
-    dut_rx.write('"lora_rx"')
-    dut_rx.expect('(1)')
-    dut_rx.write("1")
+    dut_rx.write('"sx127x_test_lora_rx_explicit_header"')
 
     dut_tx.expect('Press ENTER to see the list of tests')
-    dut_tx.write('"lora_rx"')
-    dut_tx.expect('(2)')
-    dut_tx.write("2")
+    dut_tx.write('"sx127x_test_lora_tx_explicit_header"')
     dut_tx.expect_unity_test_output()
 
-    dut_rx.expect("CAFE")
     dut_rx.expect_unity_test_output()

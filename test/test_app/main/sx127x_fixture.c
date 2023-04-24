@@ -2,7 +2,6 @@
 
 #include <driver/gpio.h>
 #include <driver/spi_common.h>
-#include <driver/spi_master.h>
 #include <esp_err.h>
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
@@ -112,6 +111,7 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
   result->tx_done = xSemaphoreCreateBinary();
   result->rx_done = xSemaphoreCreateBinary();
   result->cad_done = xSemaphoreCreateBinary();
+  result->spi_device = spi_device;
 
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &(result->handle_interrupt), xPortGetCoreID());
   if (task_code != pdPASS) {
@@ -134,5 +134,11 @@ void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
     sx127x_destroy(fixture->device);
     fixture->device = NULL;
   }
+  gpio_uninstall_isr_service();
+  if( fixture->spi_device != NULL ) {
+    spi_bus_remove_device(fixture->spi_device);
+  }
+  spi_bus_free(HSPI_HOST);
   vTaskDelete(fixture->handle_interrupt);
+  free(fixture);
 }
