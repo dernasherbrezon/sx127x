@@ -20,22 +20,22 @@
 static const char *TAG = "sx127x_test";
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
-  xTaskResumeFromISR(((sx127x_fixture_t *)arg)->handle_interrupt);
+    xTaskResumeFromISR(((sx127x_fixture_t *) arg)->handle_interrupt);
 }
 
 void handle_interrupt_task(void *arg) {
-  while (1) {
-    vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *)arg);
-  }
+    while (1) {
+        vTaskSuspend(NULL);
+        sx127x_handle_interrupt((sx127x *) arg);
+    }
 }
 
 void setup_gpio_interrupts(gpio_num_t gpio, sx127x_fixture_t *fixture) {
-  gpio_set_direction(gpio, GPIO_MODE_INPUT);
-  gpio_pulldown_en(gpio);
-  gpio_pullup_dis(gpio);
-  gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
-  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)fixture);
+    gpio_set_direction(gpio, GPIO_MODE_INPUT);
+    gpio_pulldown_en(gpio);
+    gpio_pullup_dis(gpio);
+    gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
+    gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) fixture);
 }
 
 int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture) {
@@ -66,7 +66,7 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
     if (result == NULL) {
         return SX127X_ERR_NO_MEM;
     }
-    *result = (sx127x_fixture_t){0};
+    *result = (sx127x_fixture_t) {0};
     result->device = device;
     result->tx_done = xSemaphoreCreateBinary();
     result->rx_done = xSemaphoreCreateBinary();
@@ -81,44 +81,83 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
 int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture) {
     sx127x_fixture_t *result = NULL;
     ERROR_CHECK(sx127x_fixture_create_base(config, &result));
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, result->device));
-  ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
-  ERROR_CHECK(sx127x_lora_reset_fifo(result->device));
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, result->device));
-  ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, result->device));
-  ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, result->device));
-  ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, result->device));
-  ERROR_CHECK(sx127x_lora_set_syncword(18, result->device));
-  ERROR_CHECK(sx127x_set_preamble_length(8, result->device));
+    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, config->modulation, result->device));
+    ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
+    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, config->modulation, result->device));
+    if (config->modulation == SX127x_MODULATION_LORA) {
+        ERROR_CHECK(sx127x_lora_reset_fifo(result->device));
+        ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, result->device));
+        ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, result->device));
+        ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, result->device));
+        ERROR_CHECK(sx127x_lora_set_syncword(18, result->device));
+        ERROR_CHECK(sx127x_set_preamble_length(8, result->device));
+    } else if (config->modulation == SX127x_MODULATION_FSK) {
+        ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
+        ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, result->device));
+        uint8_t syncWord[] = {0x12, 0xAD};
+        ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, result->device));
+        ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, result->device));
+    } else if (config->modulation == SX127x_MODULATION_OOK) {
+        ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, result->device));
+        uint8_t syncWord[] = {0x12, 0xAD};
+        ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, result->device));
+        ERROR_CHECK(sx127x_ook_set_data_shaping(SX127X_1_BIT_RATE, SX127X_PA_RAMP_10, result->device));
+        ERROR_CHECK(sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, result->device));
+    } else {
+        return SX127X_ERR_INVALID_ARG;
+    }
 
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, result->device, 2, &(result->handle_interrupt), xPortGetCoreID());
-  if (task_code != pdPASS) {
-    ESP_LOGE(TAG, "can't create task %d", task_code);
-    sx127x_fixture_destroy(result);
-    return SX127X_ERR_INVALID_ARG;
-  }
-  gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)config->dio0, result);
+    BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, result->device, 2, &(result->handle_interrupt), xPortGetCoreID());
+    if (task_code != pdPASS) {
+        ESP_LOGE(TAG, "can't create task %d", task_code);
+        sx127x_fixture_destroy(result);
+        return SX127X_ERR_INVALID_ARG;
+    }
+    gpio_install_isr_service(0);
+    //FIXME FSK TX has different interrupts
+    setup_gpio_interrupts((gpio_num_t) config->dio0, result);
+    setup_gpio_interrupts((gpio_num_t) config->dio1, result);
+    setup_gpio_interrupts((gpio_num_t) config->dio2, result);
 
-  *fixture = result;
-  return SX127X_OK;
+    *fixture = result;
+    return SX127X_OK;
 }
 
 void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
-  if (fixture == NULL) {
-    return;
-  }
-  if (fixture->device != NULL) {
-    sx127x_destroy(fixture->device);
-    fixture->device = NULL;
-  }
-  gpio_uninstall_isr_service();
-  if( fixture->spi_device != NULL ) {
-    spi_bus_remove_device(fixture->spi_device);
-  }
-  spi_bus_free(HSPI_HOST);
-  if( fixture->handle_interrupt != NULL ) {
-      vTaskDelete(fixture->handle_interrupt);
-  }
-  free(fixture);
+    if (fixture == NULL) {
+        return;
+    }
+    if (fixture->device != NULL) {
+        sx127x_destroy(fixture->device);
+        fixture->device = NULL;
+    }
+    gpio_uninstall_isr_service();
+    if (fixture->spi_device != NULL) {
+        spi_bus_remove_device(fixture->spi_device);
+    }
+    spi_bus_free(HSPI_HOST);
+    if (fixture->handle_interrupt != NULL) {
+        vTaskDelete(fixture->handle_interrupt);
+    }
+    free(fixture);
 }
