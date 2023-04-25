@@ -32,8 +32,8 @@ typedef struct {
 
 int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
 
-void sx127x_fixture_destroy(sx127x_fixture_t *fixture);
+int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
 
-void sx127x_fixture_rx_callback(sx127x *device, uint8_t *data, uint16_t data_length);
+void sx127x_fixture_destroy(sx127x_fixture_t *fixture);
 
 #endif  // SX127X_FIXTURE_H
