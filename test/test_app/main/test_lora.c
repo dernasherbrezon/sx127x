@@ -69,6 +69,7 @@ TEST_CASE("sx127x_test_lora_rx_deepsleep_verify", "[lora]") {
 
 TEST_CASE("sx127x_test_lora_rx_deepsleep", "[lora]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&lora_rx_fixture_config, &fixture));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_set_direction((gpio_num_t) lora_rx_fixture_config.dio0, RTC_GPIO_MODE_INPUT_ONLY));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_pulldown_en((gpio_num_t) lora_rx_fixture_config.dio0));
     ESP_LOGI("sx127x_test", "entering deep sleep");

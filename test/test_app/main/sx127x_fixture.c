@@ -1,6 +1,5 @@
 #include "sx127x_fixture.h"
 
-#include <driver/gpio.h>
 #include <driver/spi_common.h>
 #include <esp_err.h>
 #include <esp_intr_alloc.h>
@@ -30,11 +29,11 @@ void handle_interrupt_task(void *arg) {
     }
 }
 
-void setup_gpio_interrupts(gpio_num_t gpio, sx127x_fixture_t *fixture) {
+void setup_gpio_interrupts(gpio_num_t gpio, sx127x_fixture_t *fixture, gpio_int_type_t type) {
     gpio_set_direction(gpio, GPIO_MODE_INPUT);
     gpio_pulldown_en(gpio);
     gpio_pullup_dis(gpio);
-    gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(gpio, type);
     gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) fixture);
 }
 
@@ -70,7 +69,6 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
     result->device = device;
     result->tx_done = xSemaphoreCreateBinary();
     result->rx_done = xSemaphoreCreateBinary();
-    result->cad_done = xSemaphoreCreateBinary();
     result->spi_device = spi_device;
     result->handle_interrupt = NULL;
 
@@ -135,9 +133,9 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
     }
     gpio_install_isr_service(0);
     //FIXME FSK TX has different interrupts
-    setup_gpio_interrupts((gpio_num_t) config->dio0, result);
-    setup_gpio_interrupts((gpio_num_t) config->dio1, result);
-    setup_gpio_interrupts((gpio_num_t) config->dio2, result);
+    setup_gpio_interrupts((gpio_num_t) config->dio0, result, GPIO_INTR_POSEDGE);
+    setup_gpio_interrupts((gpio_num_t) config->dio1, result, GPIO_INTR_POSEDGE);
+    setup_gpio_interrupts((gpio_num_t) config->dio2, result, GPIO_INTR_POSEDGE);
 
     *fixture = result;
     return SX127X_OK;
@@ -158,6 +156,12 @@ void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
     spi_bus_free(HSPI_HOST);
     if (fixture->handle_interrupt != NULL) {
         vTaskDelete(fixture->handle_interrupt);
+    }
+    if (fixture->tx_done != NULL) {
+        vSemaphoreDelete(fixture->tx_done);
+    }
+    if (fixture->rx_done != NULL) {
+        vSemaphoreDelete(fixture->rx_done);
     }
     free(fixture);
 }

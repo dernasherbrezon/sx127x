@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sx127x_spi.h>
+#include <esp_log.h>
 
 // registers
 #define REG_FIFO 0x00
@@ -344,6 +345,7 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
 
   uint8_t batch_size = HALF_MAX_FIFO_THRESHOLD - 1;
   if (read_batch && device->fsk_ook_packet_sent_received + batch_size < device->fsk_ook_packet_length) {
+      //ESP_LOGI("sx127x", "reading: %d", batch_size);
     int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, batch_size, device->spi_device);
     if (code != SX127X_OK) {
       device->fsk_ook_packet_read_code = code;
@@ -353,6 +355,7 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   } else {
     // shortcut here for packets less than max fifo size
     if (device->fsk_ook_packet_sent_received == 0 && device->fsk_ook_packet_length <= remaining_fifo) {
+        //ESP_LOGI("sx127x", "reading: %d", device->fsk_ook_packet_length);
       int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->fsk_ook_packet_length, device->spi_device);
       if (code != SX127X_OK) {
         device->fsk_ook_packet_read_code = code;
@@ -377,6 +380,7 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
           return;
         }
       } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0);
+       // ESP_LOGI("sx127x", "read all. total: %d", device->fsk_ook_packet_sent_received);
     }
   }
   // even if data was not fully read
@@ -396,6 +400,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
   // clear the irq
+  //ESP_LOGI("sx127x", "irq: %d", irq);
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
     if (device->fsk_crc_type != SX127X_CRC_NONE && (irq & SX127X_FSK_IRQ_CRC_OK) != SX127X_FSK_IRQ_CRC_OK) {
@@ -440,6 +445,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     } else {
       // if not RX irq, then try preamble detect
       ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq));
+      //ESP_LOGI("sx127x", "second irq: %d", irq);
       // clear the irq
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
@@ -546,13 +552,13 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
     }
   } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PAYLOAD_READY | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PAYLOAD_READY | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_SYNCADDRESS, 0b00000011, device->spi_device));
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       device->fsk_ook_mode = MODE_RX;
     } else if (opmod == SX127x_MODE_TX) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_SYNCADDRESS, 0b00000011, device->spi_device));
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
       // start tx as soon as first byte in FIFO available
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sx127x.h>
 #include <stdint.h>
+#include <driver/gpio.h>
 
 typedef struct {
     int sck;
@@ -26,7 +27,6 @@ typedef struct {
     spi_device_handle_t spi_device;
     SemaphoreHandle_t tx_done;
     SemaphoreHandle_t rx_done;
-    SemaphoreHandle_t cad_done;
 
     TaskHandle_t handle_interrupt;
     uint8_t rx_data[2048];
@@ -38,5 +38,7 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
 int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
 
 void sx127x_fixture_destroy(sx127x_fixture_t *fixture);
+
+void setup_gpio_interrupts(gpio_num_t gpio, sx127x_fixture_t *fixture, gpio_int_type_t type);
 
 #endif  // SX127X_FIXTURE_H

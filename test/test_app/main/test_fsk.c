@@ -1,9 +1,6 @@
 #include <esp_log.h>
 #include <unity.h>
 #include <unity_test_runner.h>
-#include <string.h>
-#include <driver/rtc_io.h>
-#include <esp_sleep.h>
 
 #include "sx127x_fixture.h"
 
@@ -40,39 +37,43 @@ uint8_t fsk_max_variable[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x
                               0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf, 0xe0,
                               0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe};
 
+TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&fsk_rx_fixture_config, &fixture));
+    sx127x_dump_registers(fixture->device);
+}
+
 TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_rx_fixture_config, &fixture));
     sx127x_rx_set_callback(rx_callback, fixture->device);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->rx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "received: %d", fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
     xSemaphoreTake(fixture->rx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "received: %d", fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_single_batch), fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_single_batch, fixture->rx_data, sizeof(fsk_max_single_batch));
     xSemaphoreTake(fixture->rx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "received: %d", fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_variable), fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_variable, fixture->rx_data, sizeof(fsk_max_variable));
 }
 
-void sx127x_test_send_variable(uint8_t *data, size_t data_length) {
+TEST_CASE("sx127x_test_fsk_tx_variable_length", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_tx_fixture_config, &fixture));
+    setup_gpio_interrupts((gpio_num_t)fsk_tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, fixture->device));
     sx127x_tx_set_callback(tx_callback, fixture->device);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(data, data_length, fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_small_message));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture->device));
+    xSemaphoreTake(fixture->tx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_max_single_batch));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture->device));
+    xSemaphoreTake(fixture->tx_done, TIMEOUT);
+    ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_max_variable));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
-}
-
-TEST_CASE("sx127x_test_fsk_tx_var_small", "[fsk]") {
-    sx127x_test_send_variable(fsk_small_message, sizeof(fsk_small_message));
-}
-
-TEST_CASE("sx127x_test_fsk_tx_var_single", "[fsk]") {
-    sx127x_test_send_variable(fsk_max_single_batch, sizeof(fsk_max_single_batch));
-}
-
-TEST_CASE("sx127x_test_fsk_tx_var_max", "[fsk]") {
-    sx127x_test_send_variable(fsk_max_variable, sizeof(fsk_max_variable));
 }
