@@ -13,13 +13,13 @@
 // limitations under the License.
 #include "sx127x.h"
 
+#include <esp_log.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sx127x_spi.h>
-#include <esp_log.h>
 
 // registers
 #define REG_FIFO 0x00
@@ -134,10 +134,6 @@
 #define MAX_FIFO_THRESHOLD 0b00111111
 #define HALF_MAX_FIFO_THRESHOLD (MAX_FIFO_THRESHOLD >> 1)
 
-#define MODE_RX 1
-#define MODE_TX 2
-#define MODE_NONE 3
-
 #define ERROR_CHECK(x)           \
   do {                           \
     int __err_rc = (x);          \
@@ -188,11 +184,11 @@ struct sx127x_t {
   uint16_t fsk_ook_packet_length;
   uint16_t fsk_ook_packet_sent_received;
   int fsk_ook_packet_read_code;
-  uint8_t fsk_ook_mode;
   bool fsk_rssi_available;
   int16_t fsk_rssi;
 
   sx127x_modulation_t active_modem;
+  sx127x_mode_t opmod;
   sx127x_packet_format_t fsk_ook_format;
   sx127x_crc_type_t fsk_crc_type;
 };
@@ -423,7 +419,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     }
     return;
   }
-  if (device->fsk_ook_mode == MODE_TX) {
+  if (device->opmod == SX127x_MODE_TX) {
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) == 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       uint8_t to_send;
       if (device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
@@ -439,7 +435,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       ERROR_CHECK_NOCODE(sx127x_spi_write_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, to_send, device->spi_device));
       device->fsk_ook_packet_sent_received += to_send;
     }
-  } else if (device->fsk_ook_mode == MODE_RX) {
+  } else if (device->opmod == SX127x_MODE_RX_CONT || device->opmod == SX127x_MODE_RX_SINGLE) {
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) != 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       sx127x_fsk_ook_read_payload_batch(true, device);
     } else {
@@ -534,7 +530,7 @@ int sx127x_create(void *spi_device, sx127x **result) {
   device->active_modem = SX127x_MODULATION_LORA;
   device->fsk_ook_format = SX127X_VARIABLE;
   device->fsk_rssi_available = false;
-  device->fsk_ook_mode = MODE_NONE;
+  device->opmod = SX127x_MODE_STANDBY;
   device->fsk_crc_type = SX127X_CRC_CCITT;
   *result = device;
   return SX127X_OK;
@@ -556,15 +552,11 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
-      device->fsk_ook_mode = MODE_RX;
     } else if (opmod == SX127x_MODE_TX) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
       // start tx as soon as first byte in FIFO available
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
-      device->fsk_ook_mode = MODE_TX;
-    } else {
-      device->fsk_ook_mode = MODE_NONE;
     }
   } else {
     return SX127X_ERR_INVALID_ARG;
@@ -573,6 +565,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   int result = sx127x_spi_write_register(REG_OP_MODE, &value, 1, device->spi_device);
   if (result == SX127X_OK) {
     device->active_modem = modulation;
+    device->opmod = opmod;
   }
   return result;
 }
