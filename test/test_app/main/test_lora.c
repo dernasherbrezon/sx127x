@@ -101,7 +101,6 @@ TEST_CASE("sx127x_test_lora_rx_explicit_header", "[lora]") {
 TEST_CASE("sx127x_test_lora_tx_explicit_header", "[lora]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&lora_tx_fixture_config, &fixture));
     sx127x_tx_set_callback(tx_callback, fixture->device);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, fixture->device));
     sx127x_tx_header_t header = {
             .enable_crc = true,
             .coding_rate = SX127x_CR_4_5};
@@ -126,7 +125,6 @@ TEST_CASE("sx127x_test_lora_rx_implicit_header", "[lora]") {
 TEST_CASE("sx127x_test_lora_tx_implicit_header", "[lora]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&lora_tx_fixture_config, &fixture));
     sx127x_tx_set_callback(tx_callback, fixture->device);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(&explicit_header, fixture->device));
     uint8_t data[] = {0xCA, 0xFE};
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_for_transmission(data, sizeof(data), fixture->device));

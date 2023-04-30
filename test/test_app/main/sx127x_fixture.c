@@ -7,6 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <rom/ets_sys.h>
 
 #define ERROR_CHECK(x)           \
   do {                           \
@@ -77,11 +78,20 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
 }
 
 int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture) {
+    // reset the chip
+    gpio_set_direction((gpio_num_t) config->rst, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t) config->rst, 0);
+    ets_delay_us(100);
+    gpio_set_level((gpio_num_t) config->rst, 1);
+    vTaskDelay(pdMS_TO_TICKS(5));
+
     sx127x_fixture_t *result = NULL;
     ERROR_CHECK(sx127x_fixture_create_base(config, &result));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, config->modulation, result->device));
-    ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, config->modulation, result->device));
+    ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
+    ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G6, result->device));
+    ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 2, result->device));
     if (config->modulation == SX127x_MODULATION_LORA) {
         ERROR_CHECK(sx127x_lora_reset_fifo(result->device));
         ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, result->device));
@@ -92,8 +102,8 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
     } else if (config->modulation == SX127x_MODULATION_FSK) {
         ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
         ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, result->device));
-        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
-        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, result->device));
+        //ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(10000.0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, result->device));
         uint8_t syncWord[] = {0x12, 0xAD};
         ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, result->device));
@@ -132,7 +142,6 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
         return SX127X_ERR_INVALID_ARG;
     }
     gpio_install_isr_service(0);
-    //FIXME FSK TX has different interrupts
     setup_gpio_interrupts((gpio_num_t) config->dio0, result, GPIO_INTR_POSEDGE);
     setup_gpio_interrupts((gpio_num_t) config->dio1, result, GPIO_INTR_POSEDGE);
     setup_gpio_interrupts((gpio_num_t) config->dio2, result, GPIO_INTR_POSEDGE);
