@@ -19,7 +19,6 @@ typedef struct {
     int dio0;
     int dio1;
     int dio2;
-    sx127x_modulation_t modulation;
 } sx127x_fixture_config_t;
 
 typedef struct {
@@ -33,7 +32,7 @@ typedef struct {
     uint16_t rx_data_length;
 } sx127x_fixture_t;
 
-int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
+int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t modulation, sx127x_fixture_t **fixture);
 
 int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
 

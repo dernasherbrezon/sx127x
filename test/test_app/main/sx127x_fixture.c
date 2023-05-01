@@ -76,7 +76,7 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
     return SX127X_OK;
 }
 
-int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture) {
+int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t modulation, sx127x_fixture_t **fixture) {
     // reset the chip
     gpio_set_direction((gpio_num_t) config->rst, GPIO_MODE_OUTPUT);
     gpio_set_level((gpio_num_t) config->rst, 1);
@@ -88,19 +88,19 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
 
     sx127x_fixture_t *result = NULL;
     ERROR_CHECK(sx127x_fixture_create_base(config, &result));
-    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, config->modulation, result->device));
-    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, config->modulation, result->device));
+    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, modulation, result->device));
+    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, modulation, result->device));
     ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
     ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G6, result->device));
-    ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 2, result->device));
-    if (config->modulation == SX127x_MODULATION_LORA) {
+    ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, result->device));
+    if (modulation == SX127x_MODULATION_LORA) {
         ERROR_CHECK(sx127x_lora_reset_fifo(result->device));
         ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, result->device));
         ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, result->device));
         ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, result->device));
         ERROR_CHECK(sx127x_lora_set_syncword(18, result->device));
         ERROR_CHECK(sx127x_set_preamble_length(8, result->device));
-    } else if (config->modulation == SX127x_MODULATION_FSK) {
+    } else if (modulation == SX127x_MODULATION_FSK) {
         ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
         ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
@@ -116,10 +116,10 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
         ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_PREAMBLE, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, result->device));
-    } else if (config->modulation == SX127x_MODULATION_OOK) {
+    } else if (modulation == SX127x_MODULATION_OOK) {
         ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
-        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(10000.0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, result->device));
         uint8_t syncWord[] = {0x12, 0xAD};
         ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, result->device));

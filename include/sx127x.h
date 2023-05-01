@@ -48,7 +48,7 @@ typedef enum {
 typedef enum {
   SX127x_MODULATION_LORA = 0b10000000,
   SX127x_MODULATION_FSK = 0b00000000,
-  SX127x_MODULATION_OOK = 0b01000000
+  SX127x_MODULATION_OOK = 0b00100000
 } sx127x_modulation_t;
 
 /**
@@ -56,7 +56,7 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127X_0_5_DB = 0b00000000,  // 0.5db
+  SX127X_0_5_DB = 0b00000000,  // 0.5db (default)
   SX127X_1_0_DB = 0b00000001,  // 1.0db
   SX127X_1_5_DB = 0b00000010,  // 1.5db
   SX127X_2_0_DB = 0b00000011,  // 2.0db
@@ -93,7 +93,7 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127X_1_1_CHIP = 0b00000000,  // once per chip
+  SX127X_1_1_CHIP = 0b00000000,  // once per chip (default)
   SX127X_1_2_CHIP = 0b00100000,  // once every 2 chips
   SX127X_1_4_CHIP = 0b01000000,  // once every 4 chips
   SX127X_1_8_CHIP = 0b01100000,  // once every 8 chips
@@ -167,7 +167,7 @@ typedef enum {
 } sx127x_fsk_data_shaping_t;
 
 typedef enum {
-  SX127X_OOK_SHAPING_NONE = 0b00000000,  // no shaping
+  SX127X_OOK_SHAPING_NONE = 0b00000000,  // no shaping (default)
   SX127X_1_BIT_RATE = 0b00100000,        // filtering with fcutoff = bit_rate
   SX127X_2_BIT_RATE = 0b01000000         // filtering with fcutoff = 2*bit_rate (for bit_rate < 125 kb/s)
 } sx127x_ook_data_shaping_t;
