@@ -30,12 +30,12 @@ sx127x_fixture_config_t fsk_tx_fixture_config = {
         .dio2 = 32,
         .modulation = SX127x_MODULATION_FSK};
 
-int rx_counter = 0;
+int message_counter = 0;
 
 
 void rx_callback_with_counter(sx127x *device, uint8_t *data, uint16_t data_length) {
-    rx_counter++;
-    if (rx_counter >= MAX_BEACONS_EXPECTED) {
+    message_counter++;
+    if (message_counter >= MAX_BEACONS_EXPECTED) {
         xSemaphoreGive(fixture->rx_done);
     }
 }
@@ -97,17 +97,17 @@ TEST_CASE("sx127x_test_fsk_rx_beacons", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_rx_fixture_config, &fixture));
     TEST_ASSERT_EQUAL_INT(SX127X_OK,sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));
     sx127x_rx_set_callback(rx_callback_with_counter, fixture->device);
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->rx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(MAX_BEACONS_EXPECTED, rx_counter);
+    TEST_ASSERT_EQUAL_INT(MAX_BEACONS_EXPECTED, message_counter);
 }
 
 TEST_CASE("sx127x_test_fsk_tx_beacons", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_rx_fixture_config, &fixture));
     TEST_ASSERT_EQUAL_INT(SX127X_OK,sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));
-    setup_gpio_interrupts((gpio_num_t) fsk_tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(fsk_small_message, sizeof(fsk_small_message), BEACON_INTERVAL, fixture->device));
-    vTaskDelay(pdMS_TO_TICKS((MAX_BEACONS_EXPECTED + 1) * BEACON_INTERVAL));
-    TEST_ASSERT_EQUAL_INT(SX127X_OK,sx127x_fsk_ook_tx_stop_beacon(fixture->device));
+    vTaskDelay(pdMS_TO_TICKS((MAX_BEACONS_EXPECTED + 0.5f) * BEACON_INTERVAL));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_stop_beacon(fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_fixed_small", "[fsk]") {
@@ -155,22 +155,24 @@ TEST_CASE("sx127x_test_fsk_rx_fixed_max", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->rx_done, TIMEOUT);
     TEST_ASSERT_EQUAL_UINT16(FIXED_MAX_LENGTH, fixture->rx_data_length);
-    uint8_t expected[FIXED_MAX_LENGTH];
+    uint8_t *expected = malloc(FIXED_MAX_LENGTH);
     for (int i = 0; i < FIXED_MAX_LENGTH; i++) {
         expected[i] = (i % 10);
     }
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expected, fixture->rx_data, FIXED_MAX_LENGTH);
+    free(expected);
 }
 TEST_CASE("sx127x_test_fsk_tx_fixed_max", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_rx_fixture_config, &fixture));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, FIXED_MAX_LENGTH, fixture->device));
     setup_gpio_interrupts((gpio_num_t) fsk_tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
     sx127x_tx_set_callback(tx_callback, fixture->device);
-    uint8_t expected[FIXED_MAX_LENGTH];
+    uint8_t *expected = malloc(FIXED_MAX_LENGTH);
     for (int i = 0; i < FIXED_MAX_LENGTH; i++) {
         expected[i] = (i % 10);
     }
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(expected, sizeof(expected), fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(expected, FIXED_MAX_LENGTH, fixture->device));
+    free(expected);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
