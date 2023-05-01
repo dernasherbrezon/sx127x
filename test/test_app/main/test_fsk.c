@@ -75,7 +75,6 @@ TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
     TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_variable), fixture->rx_data_length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_variable, fixture->rx_data, sizeof(fsk_max_variable));
 }
-
 TEST_CASE("sx127x_test_fsk_tx_variable_length", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_tx_fixture_config, &fixture));
     setup_gpio_interrupts((gpio_num_t) fsk_tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
@@ -111,7 +110,6 @@ TEST_CASE("sx127x_test_fsk_tx_beacons", "[fsk]") {
     vTaskDelay(pdMS_TO_TICKS((MAX_BEACONS_EXPECTED + 0.5f) * BEACON_INTERVAL));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_stop_beacon(fixture->device));
 }
-
 TEST_CASE("sx127x_test_fsk_rx_fixed_small", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&fsk_rx_fixture_config, &fixture));
     TEST_ASSERT_EQUAL_INT(SX127X_OK,sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));
