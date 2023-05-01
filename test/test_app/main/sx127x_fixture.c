@@ -81,13 +81,13 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_fixture_t **fi
     gpio_set_direction((gpio_num_t) config->rst, GPIO_MODE_OUTPUT);
     gpio_set_level((gpio_num_t) config->rst, 1);
     gpio_set_level((gpio_num_t) config->rst, 0);
+    // a little bit more to reset than in specs. using 100 microsecond either not precise or not enough
     vTaskDelay(pdMS_TO_TICKS(5));
     gpio_set_level((gpio_num_t) config->rst, 1);
     vTaskDelay(pdMS_TO_TICKS(5));
 
     sx127x_fixture_t *result = NULL;
     ERROR_CHECK(sx127x_fixture_create_base(config, &result));
-    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, config->modulation, result->device));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, config->modulation, result->device));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, config->modulation, result->device));
     ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
