@@ -84,9 +84,11 @@ TEST_CASE("sx127x_test_fsk_tx_variable_length", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_small_message));
+    vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_max_single_batch));
+    vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     ESP_LOGI("sx127x_test", "sent: %zu", sizeof(fsk_max_variable));

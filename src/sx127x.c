@@ -13,7 +13,6 @@
 // limitations under the License.
 #include "sx127x.h"
 
-#include <esp_log.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -341,7 +340,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
 
   uint8_t batch_size = HALF_MAX_FIFO_THRESHOLD - 1;
   if (read_batch && device->fsk_ook_packet_sent_received + batch_size < device->fsk_ook_packet_length) {
-      //ESP_LOGI("sx127x", "reading: %d", batch_size);
     int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, batch_size, device->spi_device);
     if (code != SX127X_OK) {
       device->fsk_ook_packet_read_code = code;
@@ -351,7 +349,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   } else {
     // shortcut here for packets less than max fifo size
     if (device->fsk_ook_packet_sent_received == 0 && device->fsk_ook_packet_length <= remaining_fifo) {
-        //ESP_LOGI("sx127x", "reading: %d", device->fsk_ook_packet_length);
       int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->fsk_ook_packet_length, device->spi_device);
       if (code != SX127X_OK) {
         device->fsk_ook_packet_read_code = code;
@@ -376,7 +373,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
           return;
         }
       } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0);
-       // ESP_LOGI("sx127x", "read all. total: %d", device->fsk_ook_packet_sent_received);
     }
   }
   // even if data was not fully read
@@ -396,7 +392,6 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
   // clear the irq
-  //ESP_LOGI("sx127x", "irq: %d", irq);
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
     if (device->fsk_crc_type != SX127X_CRC_NONE && (irq & SX127X_FSK_IRQ_CRC_OK) != SX127X_FSK_IRQ_CRC_OK) {
@@ -596,6 +591,7 @@ int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
     if (gain == SX127x_LNA_GAIN_AUTO) {
       return sx127x_append_register(REG_RX_CONFIG, 0b00001000, 0b11110111, device->spi_device);
     }
+    // gain manual
     ERROR_CHECK(sx127x_append_register(REG_RX_CONFIG, 0b00000000, 0b11110111, device->spi_device));
     return sx127x_append_register(REG_LNA, gain, 0b00011111, device->spi_device);
   } else {
@@ -1109,8 +1105,8 @@ int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx12
       return SX127X_ERR_INVALID_ARG;
     }
   }
-  // SYNC_ON
-  ERROR_CHECK(sx127x_append_register(REG_SYNC_CONFIG, 0b00010000 | (syncword_length - 1), 0b11101000, device->spi_device));
+  // SYNC_ON + On, without waiting for the PLL to re-lock
+  ERROR_CHECK(sx127x_append_register(REG_SYNC_CONFIG, 0b01010000 | (syncword_length - 1), 0b00101000, device->spi_device));
   return sx127x_spi_write_buffer(REG_SYNC_VALUE1, syncword, syncword_length, device->spi_device);
 }
 
