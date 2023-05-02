@@ -118,8 +118,8 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
         ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, result->device));
     } else if (modulation == SX127x_MODULATION_OOK) {
         ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, result->device));
-        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, result->device));
-        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(10000.0, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(false, result->device));
+        ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(5000.0, result->device));
         ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, result->device));
         uint8_t syncWord[] = {0x12, 0xAD};
         ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, result->device));
