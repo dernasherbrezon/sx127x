@@ -409,6 +409,10 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     return;
   }
   if ((irq & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
+    // turn off TX mode as soon as possible to reduce power consumption
+    // FSK modem by default keep sending preamble after manual shutdown
+    // ignore status code
+    sx127x_set_opmod(SX127x_MODE_STANDBY, device->active_modem, device);
     if (device->tx_callback != NULL) {
       device->tx_callback(device);
     }
@@ -436,8 +440,8 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     } else {
       // if not RX irq, then try preamble detect
       ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq));
-      //ESP_LOGI("sx127x", "second irq: %d", irq);
-      // clear the irq
+      // ESP_LOGI("sx127x", "second irq: %d", irq);
+      //  clear the irq
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
         sx127x_fsk_ook_get_rssi(device);
@@ -552,6 +556,10 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       // start tx as soon as first byte in FIFO available
       uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
+      // use sequencer to send the message. This will reduce 010101 at the end of tx
+      //        data = 0b10011000;
+      //        // TX mode request shouldn't change modem. Eventually sequencer will change state back to IDLE / standby
+      //        return  sx127x_spi_write_register(REG_SEQ_CONFIG1, &data, 1, device->spi_device);
     }
   } else {
     return SX127X_ERR_INVALID_ARG;

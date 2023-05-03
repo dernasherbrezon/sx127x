@@ -63,6 +63,16 @@ void tx_callback(sx127x *device) {
 }
 
 void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+    //FIXME test frequency error
+//    int32_t frequency_error = 0;
+//    ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
+//    ESP_LOGI("sx127x_test", "received: %d freq error: %ld", data_length, frequency_error);
+
+    //FIXME test RSSI
+//    int16_t rssi = 0;
+//    ESP_ERROR_CHECK(sx127x_rx_get_packet_rssi(device, &rssi));
+//    ESP_LOGI("sx127x_test", "received: %d rssi: %d", data_length, rssi);
+
     ESP_LOGI("sx127x_test", "received: %d", data_length);
     memcpy(fixture->rx_data, data, data_length);
     fixture->rx_data_length = data_length;
@@ -115,11 +125,12 @@ TEST_CASE("sx127x_test_fsk_tx_variable_length", "[fsk]") {
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_beacons", "[fsk]") {
@@ -157,7 +168,6 @@ TEST_CASE("sx127x_test_fsk_tx_fixed_small", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_fixed_batch", "[fsk]") {
@@ -178,7 +188,6 @@ TEST_CASE("sx127x_test_fsk_tx_fixed_batch", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch_fixed, sizeof(fsk_max_single_batch_fixed), fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_fixed_max", "[fsk]") {
@@ -209,7 +218,6 @@ TEST_CASE("sx127x_test_fsk_tx_fixed_max", "[fsk]") {
     free(expected);
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
@@ -235,7 +243,6 @@ TEST_CASE("sx127x_test_fsk_tx_max_baud", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture->device));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
 }
 
 TEST_CASE("sx127x_test_fsk_rx_filtered", "[fsk]") {
@@ -256,10 +263,11 @@ TEST_CASE("sx127x_test_fsk_tx_filtered", "[fsk]") {
         if (i != 0) {
             vTaskDelay(pdMS_TO_TICKS(50));
         }
+        //FIXME Test different frequency offsets
+//        TEST_ASSERT_EQUAL_INT(SX127X_OK,sx127x_set_frequency(437200012 + 1000 * i, fixture->device));
         TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(fsk_small_message, sizeof(fsk_small_message), addresses[i], fixture->device));
         TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device));
         xSemaphoreTake(fixture->tx_done, TIMEOUT);
-        TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, fixture->device));
     }
 }
 
@@ -357,11 +365,12 @@ TEST_CASE("sx127x_test_ook_tx_variable_length", "[ook]") {
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
     vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture->device));
+    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, fixture->device));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
-    TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_OOK, fixture->device));
 }
 
 void tearDown() {
