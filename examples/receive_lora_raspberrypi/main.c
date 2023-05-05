@@ -89,14 +89,18 @@ int setup_and_wait_for_interrupt(sx127x *device) {
   pfd.fd = rq.fd;
   pfd.events = POLLIN;
   fprintf(stdout, "waiting for packets...\n");
+  char buffer[32] = {0};
   while (1) {
     code = poll(&pfd, 1, GPIO_POLL_TIMEOUT);
     if (code < 0) {
       perror("unable to receive gpio interrupt");
       break;
-    } else if (pfd.events & POLLIN) {
-      sx127x_handle_interrupt(device);
     }
+    if (pfd.events & POLLIN) {
+      // discard data
+      read(pfd.fd, buffer, 32);
+    }
+    sx127x_handle_interrupt(device);
   }
   close(rq.fd);
   return EXIT_SUCCESS;
