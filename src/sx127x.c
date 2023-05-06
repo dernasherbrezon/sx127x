@@ -80,6 +80,7 @@
 #define REG_TIMER2_COEF 0x3a
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
+#define REG_IMAGE_CAL 0x3b
 #define REG_IRQ_FLAGS_1 0x3e
 #define REG_IRQ_FLAGS_2 0x3f
 #define REG_DIO_MAPPING_1 0x40
@@ -132,6 +133,8 @@
 #define FIFO_SIZE_FSK 64
 #define MAX_FIFO_THRESHOLD 0b00111111
 #define HALF_MAX_FIFO_THRESHOLD (MAX_FIFO_THRESHOLD >> 1)
+#define TX_START_CONDITION_FIFO_LEVEL 0b00000000
+#define TX_START_CONDITION_FIFO_EMPTY 0b10000000
 
 #define ERROR_CHECK(x)           \
   do {                           \
@@ -195,7 +198,7 @@ struct sx127x_t {
 int sx127x_read_register(int reg, void *spi_device, uint8_t *result) {
   uint32_t value;
   ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device, 1, &value));
-  *result = (uint8_t)value;
+  *result = (uint8_t) value;
   return SX127X_OK;
 }
 
@@ -388,9 +391,17 @@ int sx127x_fsk_ook_get_rssi(sx127x *device) {
   return SX127X_OK;
 }
 
+void sx127x_fsk_ook_reset_state(sx127x *device) {
+  device->fsk_ook_packet_length = 0;
+  device->fsk_ook_packet_sent_received = 0;
+  device->fsk_rssi = 0;
+  device->fsk_rssi_available = false;
+}
+
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
+  //printf("irq: %d\n", irq);
   // clear the irq
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
@@ -404,8 +415,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
         device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
       }
     }
-    device->fsk_ook_packet_length = 0;
-    device->fsk_ook_packet_sent_received = 0;
+    sx127x_fsk_ook_reset_state(device);
     return;
   }
   if ((irq & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
@@ -416,6 +426,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     if (device->tx_callback != NULL) {
       device->tx_callback(device);
     }
+    sx127x_fsk_ook_reset_state(device);
     return;
   }
   if (device->opmod == SX127x_MODE_TX) {
@@ -424,7 +435,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       if (device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
         to_send = HALF_MAX_FIFO_THRESHOLD - 1;
       } else {
-        to_send = (uint8_t)(device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received);
+        to_send = (uint8_t) (device->fsk_ook_packet_length - device->fsk_ook_packet_sent_received);
       }
       // safe check
       if (to_send == 0) {
@@ -443,12 +454,16 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       // ESP_LOGI("sx127x", "second irq: %d", irq);
       //  clear the irq
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
-      if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0) {
+      if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0 && !device->fsk_rssi_available) {
         sx127x_fsk_ook_get_rssi(device);
+        //     int32_t frequency_error;
+        //     sx127x_rx_get_frequency_error(device, &frequency_error);
+        //     printf("preamble interrupt %d %ld\n", irq, frequency_error);
         return;
       }
       // if preamble dio not attached, then try sync_address match
       if ((irq & SX127X_FSK_IRQ_SYNC_ADDRESS_MATCH) != 0 && !device->fsk_rssi_available) {
+        //printf("syncaddress interrupt %d\n", irq);
         sx127x_fsk_ook_get_rssi(device);
         return;
       }
@@ -513,7 +528,7 @@ int sx127x_create(void *spi_device, sx127x **result) {
   if (device == NULL) {
     return SX127X_ERR_NO_MEM;
   }
-  *device = (struct sx127x_t){0};
+  *device = (struct sx127x_t) {0};
   device->spi_device = spi_device;
 
   uint8_t version;
@@ -548,18 +563,15 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   } else if (modulation == SX127x_MODULATION_FSK || modulation == SX127x_MODULATION_OOK) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PAYLOAD_READY | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_SYNCADDRESS, 0b00000011, device->spi_device));
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT, 0b00111111, device->spi_device));
-      uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
+      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_2, SX127x_FSK_DIO4_PREAMBLE_DETECT | 0b00000001, 0b00111110, device->spi_device));
+      // configure fifo level threshold for rx
+      uint8_t data = HALF_MAX_FIFO_THRESHOLD;
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
     } else if (opmod == SX127x_MODE_TX) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
       // start tx as soon as first byte in FIFO available
-      uint8_t data = (0b10000000 | HALF_MAX_FIFO_THRESHOLD);
+      uint8_t data = (TX_START_CONDITION_FIFO_EMPTY | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
-      // use sequencer to send the message. This will reduce 010101 at the end of tx
-      //        data = 0b10011000;
-      //        // TX mode request shouldn't change modem. Eventually sequencer will change state back to IDLE / standby
-      //        return  sx127x_spi_write_register(REG_SEQ_CONFIG1, &data, 1, device->spi_device);
     }
   } else {
     return SX127X_ERR_INVALID_ARG;
@@ -575,7 +587,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
 
 int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
   uint64_t adjusted = (frequency << 19) / SX127x_OSCILLATOR_FREQUENCY;
-  uint8_t data[] = {(uint8_t)(adjusted >> 16), (uint8_t)(adjusted >> 8), (uint8_t)(adjusted >> 0)};
+  uint8_t data[] = {(uint8_t) (adjusted >> 16), (uint8_t) (adjusted >> 8), (uint8_t) (adjusted >> 0)};
   ERROR_CHECK(sx127x_spi_write_register(REG_FRF_MSB, data, 3, device->spi_device));
   device->frequency = frequency;
   return SX127X_OK;
@@ -649,7 +661,7 @@ int sx127x_lora_set_syncword(uint8_t value, sx127x *device) {
 }
 
 int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
-  uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
+  uint8_t data[] = {(uint8_t) (value >> 8), (uint8_t) (value >> 0)};
   if (device->active_modem == SX127x_MODULATION_LORA) {
     return sx127x_spi_write_register(REG_PREAMBLE_MSB, data, 2, device->spi_device);
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
@@ -707,7 +719,7 @@ int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   uint8_t value;
   ERROR_CHECK(sx127x_read_register(REG_PKT_SNR_VALUE, device->spi_device, &value));
-  *snr = ((int8_t)value) * 0.25f;
+  *snr = ((int8_t) value) * 0.25f;
   return SX127X_OK;
 }
 
@@ -729,6 +741,8 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
     uint32_t frequency_error;
     ERROR_CHECK(sx127x_spi_read_registers(REG_FEI_MSB, device->spi_device, 2, &frequency_error));
+    //printf("raw freq %ld\n", frequency_error);
+//      ERROR_CHECK(sx127x_spi_read_registers(0x1b, device->spi_device, 2, &frequency_error));
     if (frequency_error & 0x8000) {
       // keep within original 2 bytes
       frequency_error = ((~frequency_error) + 1) & 0xFFFF;
@@ -757,11 +771,11 @@ int sx127x_dump_registers(sx127x *device) {
 }
 
 int sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device) {
-  return sx127x_spi_write_register(REG_DIO_MAPPING_1, (uint8_t *)&value, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_DIO_MAPPING_1, (uint8_t *) &value, 1, device->spi_device);
 }
 
 int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device) {
-  return sx127x_spi_write_register(REG_DIO_MAPPING_2, (uint8_t *)&value, 1, device->spi_device);
+  return sx127x_spi_write_register(REG_DIO_MAPPING_2, (uint8_t *) &value, 1, device->spi_device);
 }
 
 void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {
@@ -880,7 +894,7 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
   }
   uint8_t remaining_fifo = FIFO_SIZE_FSK;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
-    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, (uint8_t *)&data_length, 1, device->spi_device));
+    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, (uint8_t *) &data_length, 1, device->spi_device));
     remaining_fifo--;
   }
   return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
@@ -925,35 +939,35 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
 
   if (interval_ms <= 255 * p1) {
     timer1_resolution = p1;
-    timer1_coefficient = (int)(interval_ms / p1);
+    timer1_coefficient = (int) (interval_ms / p1);
   } else if (interval_ms <= 255 * p1 * 2) {
     timer1_resolution = p1;
     timer2_resolution = p1;
-    timer1_coefficient = (int)(interval_ms / p1 / 2);
+    timer1_coefficient = (int) (interval_ms / p1 / 2);
   } else if (interval_ms <= (255 * p2 + 255 * p1)) {
     timer1_resolution = p2;
     timer2_resolution = p1;
-    timer1_coefficient = (int)(interval_ms / p2);
+    timer1_coefficient = (int) (interval_ms / p2);
   } else if (interval_ms <= 255 * p2 * 2) {
     timer1_resolution = p2;
     timer2_resolution = p2;
-    timer1_coefficient = (int)(interval_ms / p2 / 2);
+    timer1_coefficient = (int) (interval_ms / p2 / 2);
   } else if (interval_ms <= (255 * p3 + 255 * p1)) {
     timer1_resolution = p3;
     timer2_resolution = p1;
-    timer1_coefficient = (int)(interval_ms / p3);
+    timer1_coefficient = (int) (interval_ms / p3);
   } else if (interval_ms <= (255 * p3 + 255 * p2)) {
     timer1_resolution = p3;
     timer2_resolution = p2;
-    timer1_coefficient = (int)(interval_ms / p3);
+    timer1_coefficient = (int) (interval_ms / p3);
   } else {
     timer1_resolution = p3;
     timer2_resolution = p3;
-    timer1_coefficient = (int)(interval_ms / p3 / 2);
+    timer1_coefficient = (int) (interval_ms / p3 / 2);
   }
 
   if (timer2_resolution != 0) {
-    timer2_coefficient = (int)((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
+    timer2_coefficient = (int) ((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
   }
 
   uint8_t timer_resolution = 0b00000000;
@@ -1011,19 +1025,19 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
     if (bitrate < 1200 || bitrate > 300000) {
       return SX127X_ERR_INVALID_ARG;
     }
-    uint32_t value = (uint32_t)(SX127x_OSCILLATOR_FREQUENCY * 16.0 / bitrate);
+    uint32_t value = (uint32_t) (SX127x_OSCILLATOR_FREQUENCY * 16.0 / bitrate);
     bitrate_value = (value >> 4) & 0xFFFF;
     bitrate_fractional = value & 0x0F;
   } else if (device->active_modem == SX127x_MODULATION_OOK) {
     if (bitrate < 1200 || bitrate > 25000) {
       return SX127X_ERR_INVALID_ARG;
     }
-    bitrate_value = (uint16_t)(SX127x_OSCILLATOR_FREQUENCY / bitrate);
+    bitrate_value = (uint16_t) (SX127x_OSCILLATOR_FREQUENCY / bitrate);
     bitrate_fractional = 0;
   } else {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t data[] = {(uint8_t)(bitrate_value >> 8), (uint8_t)(bitrate_value >> 0)};
+  uint8_t data[] = {(uint8_t) (bitrate_value >> 8), (uint8_t) (bitrate_value >> 0)};
   ERROR_CHECK(sx127x_spi_write_register(REG_BITRATE_MSB, data, 2, device->spi_device));
   return sx127x_spi_write_register(REG_BITRATE_FRAC, &bitrate_fractional, 1, device->spi_device);
 }
@@ -1033,8 +1047,8 @@ int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device) {
   if (frequency_deviation < 600 || frequency_deviation > 200000) {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint16_t value = (uint16_t)(frequency_deviation / SX127x_FSTEP);
-  uint8_t data[] = {(uint8_t)(value >> 8), (uint8_t)(value >> 0)};
+  uint16_t value = (uint16_t) (frequency_deviation / SX127x_FSTEP);
+  uint8_t data[] = {(uint8_t) (value >> 8), (uint8_t) (value >> 0)};
   return sx127x_spi_write_register(REG_FDEV_MSB, data, 2, device->spi_device);
 }
 
@@ -1075,7 +1089,7 @@ uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
   uint8_t result = 0;
   for (uint8_t e = 7; e >= 1; e--) {
     for (int8_t m = 2; m >= 0; m--) {
-      float point = SX127x_OSCILLATOR_FREQUENCY / (float)(((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
+      float point = SX127x_OSCILLATOR_FREQUENCY / (float) (((4 * m) + 16) * ((uint32_t) 1 << (e + 2)));
       float current_tolerance = fabsf(bandwidth - point);
       if (current_tolerance < min_tolerance) {
         result = ((m << 3) | e);
@@ -1197,9 +1211,26 @@ int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, 
   return sx127x_spi_write_register(REG_PREAMBLE_DETECT, &value, 1, device->spi_device);
 }
 
+int sx127x_fsk_ook_rx_calibrate(sx127x *device) {
+  CHECK_FSK_OOK_MODULATION(device);
+  if (device->opmod != SX127x_MODE_STANDBY) {
+    return SX127X_ERR_INVALID_STATE;
+  }
+
+  uint8_t value = 0b01000000; // ImageCalStart
+  ERROR_CHECK(sx127x_append_register(REG_IMAGE_CAL, value, 0b10111111, device->spi_device));
+
+  uint8_t calibration_running = 0b00100000; // ImageCalRunning
+  do {
+    ERROR_CHECK(sx127x_read_register(REG_IMAGE_CAL, device->spi_device, &value));
+  } while ((value & calibration_running) == calibration_running);
+  return SX127X_OK;
+}
+
 void sx127x_destroy(sx127x *device) {
   if (device == NULL) {
     return;
   }
   free(device);
 }
+

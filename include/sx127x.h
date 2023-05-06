@@ -900,6 +900,15 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
 
 /**
+ * @brief Perform manual image and RSSI calibration. Can be performed only in the standby mode.
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_STATE if current state is not STANDBY
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_calibrate(sx127x *device);
+
+/**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
  *
  * @param device Pointer to variable to hold the device handle
