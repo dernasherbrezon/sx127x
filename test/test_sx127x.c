@@ -151,7 +151,7 @@ START_TEST(test_fsk_ook_rx) {
 END_TEST
 
 START_TEST(test_fsk_ook_tx) {
-  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_tx_set_callback(tx_callback, device);
 
@@ -160,9 +160,10 @@ START_TEST(test_fsk_ook_tx) {
     payload[i] = i - 1;
   }
 
-  // 1. Small payload which should fit into FIFO
+  // 1. Small payload that should fit into FIFO
   payload[0] = 63;
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, payload[0] + 1);
@@ -173,6 +174,7 @@ START_TEST(test_fsk_ook_tx) {
   spi_mock_write(SX127X_OK);  // reset mock buffers
   payload[0] = 255;
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 10; i++) {
@@ -188,6 +190,7 @@ START_TEST(test_fsk_ook_tx) {
   spi_mock_write(SX127X_OK);  // reset mock buffers
   payload[0] = 62;
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;
   sx127x_handle_interrupt(device);
   payload[0] = 63;  // the actual sent payload length is 1 more
@@ -199,6 +202,7 @@ START_TEST(test_fsk_ook_tx) {
   spi_mock_write(SX127X_OK);
   payload[0] = 254;
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;
   for (int i = 0; i < 10; i++) {
     sx127x_handle_interrupt(device);
@@ -215,6 +219,7 @@ START_TEST(test_fsk_ook_tx) {
   transmitted = 0;
   spi_mock_write(SX127X_OK);
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, packet_length);
@@ -224,7 +229,8 @@ START_TEST(test_fsk_ook_tx) {
   transmitted = 0;
   packet_length = 63;
   spi_mock_write(SX127X_OK);
-  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, packet_length + 1);
@@ -236,6 +242,7 @@ START_TEST(test_fsk_ook_tx) {
   transmitted = 0;
   spi_mock_write(SX127X_OK);  // reset mock buffers
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 80; i++) {
@@ -251,6 +258,7 @@ START_TEST(test_fsk_ook_tx) {
   transmitted = 0;
   spi_mock_write(SX127X_OK);  // reset mock buffers
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 80; i++) {
@@ -336,7 +344,7 @@ START_TEST(test_fsk_ook_rssi) {
   ck_assert_int_eq(SX127X_ERR_NOT_FOUND, sx127x_rx_get_packet_rssi(device, &rssi));
 
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
-  ck_assert_int_eq(registers[0x41], 0b11000000);
+  ck_assert_int_eq(registers[0x41], 0b11000001);
 
   // simulate interrupt
   registers[0x3e] = 0b00000010;
@@ -414,7 +422,7 @@ START_TEST(test_fsk_ook) {
 
   ck_assert_int_eq(registers[0x0d], 0b10010111);
   ck_assert_int_eq(registers[0x0c], 0b10000000);
-  ck_assert_int_eq(registers[0x27], 0b00110001);
+  ck_assert_int_eq(registers[0x27], 0b01110001);
   ck_assert_int_eq(registers[0x0a], 0b01001001);
   ck_assert_int_eq(registers[0x0e], 0b00000010);
   ck_assert_int_eq(registers[0x1f], 0b10101010);
@@ -434,8 +442,8 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(registers[0x25], 0x00);
   ck_assert_int_eq(registers[0x26], 0x08);
 
-  registers[0x1d] = 0xFF;
-  registers[0x1e] = 0xF0;
+  registers[0x1b] = 0xFF;
+  registers[0x1c] = 0xF0;
   int32_t frequency_error;
   ck_assert_int_eq(SX127X_OK, sx127x_rx_get_frequency_error(device, &frequency_error));
   ck_assert_int_eq(-976, frequency_error);
@@ -502,6 +510,9 @@ START_TEST(test_lora) {
   ck_assert_int_eq(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device));
   ck_assert_int_eq(registers[0x1d], 0b01110010);
   ck_assert_int_eq(registers[0x1e], 0b10010100);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
+  ck_assert_int_eq(registers[0x27], 8);
 }
 END_TEST
 
