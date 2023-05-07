@@ -456,9 +456,9 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0 && !device->fsk_rssi_available) {
         sx127x_fsk_ook_get_rssi(device);
-        //     int32_t frequency_error;
-        //     sx127x_rx_get_frequency_error(device, &frequency_error);
-        //     printf("preamble interrupt %d %ld\n", irq, frequency_error);
+//             int32_t frequency_error;
+//             sx127x_rx_get_frequency_error(device, &frequency_error);
+//             printf("preamble interrupt %d %ld\n", irq, frequency_error);
         return;
       }
       // if preamble dio not attached, then try sync_address match
@@ -740,7 +740,7 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
     return SX127X_OK;
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
     uint32_t frequency_error;
-    ERROR_CHECK(sx127x_spi_read_registers(REG_FEI_MSB, device->spi_device, 2, &frequency_error));
+    ERROR_CHECK(sx127x_spi_read_registers(0x1b, device->spi_device, 2, &frequency_error));
     //printf("raw freq %ld\n", frequency_error);
 //      ERROR_CHECK(sx127x_spi_read_registers(0x1b, device->spi_device, 2, &frequency_error));
     if (frequency_error & 0x8000) {
@@ -869,6 +869,11 @@ int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx12
   uint8_t reg_data[] = {data_length};
   ERROR_CHECK(sx127x_spi_write_register(REG_PAYLOAD_LENGTH, reg_data, 1, device->spi_device));
   return sx127x_spi_write_buffer(REG_FIFO, data, data_length, device->spi_device);
+}
+
+int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device) {
+  uint8_t value = (uint8_t) (0.95f * ((float) frequency_error / device->frequency / 1E6f));
+  return sx127x_spi_write_register(0x27, &value, 1, device->spi_device);
 }
 
 int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint8_t *data, uint16_t data_length, uint8_t remaining_fifo, sx127x *device) {

@@ -9,6 +9,8 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <unistd.h>
+#include <time.h>
+#include <errno.h>
 
 // Correspond to SPI0 with chip select pin CE0 (GPIO8) on RaspberryPI
 #define SPI_DEVICE "/dev/spidev0.0"
@@ -65,6 +67,63 @@ void cad_callback(sx127x *device, int cad_detected) {
   fprintf(stdout, "cad detected\n");
 }
 
+int msleep(long msec) {
+  struct timespec ts;
+  int res;
+
+  if (msec < 0) {
+    errno = EINVAL;
+    return EXIT_FAILURE;
+  }
+
+  ts.tv_sec = msec / 1000;
+  ts.tv_nsec = (msec % 1000) * 1000000;
+
+  do {
+    res = nanosleep(&ts, &ts);
+  } while (res && errno == EINTR);
+
+  return res;
+}
+
+int gpio_write_value(int fd, int value) {
+  struct gpiohandle_data data;
+  data.values[0] = value;
+  int code = ioctl(fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &data);
+  if (code < 0) {
+    perror("unable to write value");
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+int reset_sx127x() {
+  int fd = open(GPIO_DEVICE, O_RDONLY);
+  if (fd < 0) {
+    perror("unable to open device");
+    return EXIT_FAILURE;
+  }
+  struct gpiohandle_request rq;
+  rq.lineoffsets[0] = 6;
+  rq.lines = 1;
+  rq.flags = GPIOHANDLE_REQUEST_OUTPUT;
+  strcpy(rq.consumer_label, "sx127x_reset");
+  int code = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
+  if (code < 0) {
+    perror("unable to reset chip");
+    return EXIT_FAILURE;
+  }
+  close(fd);
+
+  LINUX_ERROR_CHECK(gpio_write_value(rq.fd, 1));
+  LINUX_ERROR_CHECK(gpio_write_value(rq.fd, 0));
+  msleep(5);
+  LINUX_ERROR_CHECK(gpio_write_value(rq.fd, 1));
+  msleep(5);
+  close(rq.fd);
+  return EXIT_SUCCESS;
+}
+
 int setup_and_wait_for_interrupt(sx127x *device) {
   int fd = open(GPIO_DEVICE, O_RDONLY);
   if (fd < 0) {
@@ -107,6 +166,8 @@ int setup_and_wait_for_interrupt(sx127x *device) {
 }
 
 int main() {
+  LINUX_ERROR_CHECK(reset_sx127x());
+
   int spi_device_fd = open(SPI_DEVICE, O_RDWR);
   if (spi_device_fd < 0) {
     perror("unable to open device");
@@ -124,10 +185,11 @@ int main() {
   sx127x *device = NULL;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-  LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
+  LINUX_ERROR_CHECK(sx127x_set_frequency(437200000, device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_ppm_offset(4000, device));
   LINUX_ERROR_CHECK(sx127x_lora_reset_fifo(device));
   LINUX_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
   LINUX_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   LINUX_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   LINUX_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, device));

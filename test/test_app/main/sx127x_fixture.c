@@ -90,7 +90,7 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
     ERROR_CHECK(sx127x_fixture_create_base(config, &result));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, modulation, result->device));
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, modulation, result->device));
-    ERROR_CHECK(sx127x_set_frequency(437200012, result->device));
+    ERROR_CHECK(sx127x_set_frequency(437200000, result->device));
     ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G6, result->device));
     ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, result->device));
     if (modulation == SX127x_MODULATION_LORA) {

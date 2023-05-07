@@ -47,7 +47,7 @@ typedef enum {
 
 typedef enum {
   SX127x_MODULATION_LORA = 0b10000000,
-  SX127x_MODULATION_FSK = 0b00000000,
+  SX127x_MODULATION_FSK = 0b00000000, // default
   SX127x_MODULATION_OOK = 0b00100000
 } sx127x_modulation_t;
 
@@ -205,13 +205,13 @@ typedef enum {
   SX127x_BW_31250 = 0b01000000,
   SX127x_BW_41700 = 0b01010000,
   SX127x_BW_62500 = 0b01100000,
-  SX127x_BW_125000 = 0b01110000,
+  SX127x_BW_125000 = 0b01110000, // default
   SX127x_BW_250000 = 0b10000000,
   SX127x_BW_500000 = 0b10010000
 } sx127x_bw_t;
 
 typedef enum {
-  SX127x_CR_4_5 = 0b00000010,
+  SX127x_CR_4_5 = 0b00000010, // default
   SX127x_CR_4_6 = 0b00000100,
   SX127x_CR_4_7 = 0b00000110,
   SX127x_CR_4_8 = 0b00001000
@@ -535,6 +535,16 @@ int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi);
  *         - SX127X_OK                on success
  */
 int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr);
+
+/**
+ * @brief Compensate reference oscillator drift. The frequency error should be calculated as follows: send the LoRa message at the known stable frequency, get the frequency error on receiver. Please note the frequency should be manually adjusted and configured using sx127x_set_frequency function
+ * @param frequency_error The frequency error as measured at the receiver. Just make sure transmitter has stable oscillator before the measurement.
+ * @param device Pointer to variable to hold the device handle
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ * @return
+ */
+int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device);
 
 /**
  * @brief Read estimated frequency error from modem.
