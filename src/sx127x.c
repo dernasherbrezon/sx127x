@@ -402,7 +402,6 @@ void sx127x_fsk_ook_reset_state(sx127x *device) {
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq));
-  //printf("irq: %d\n", irq);
   // clear the irq
   ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_2, &irq, 1, device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
@@ -452,19 +451,14 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     } else {
       // if not RX irq, then try preamble detect
       ERROR_CHECK_NOCODE(sx127x_read_register(REG_IRQ_FLAGS_1, device->spi_device, &irq));
-      // ESP_LOGI("sx127x", "second irq: %d", irq);
       //  clear the irq
       ERROR_CHECK_NOCODE(sx127x_spi_write_register(REG_IRQ_FLAGS_1, &irq, 1, device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0 && !device->fsk_rssi_available) {
         sx127x_fsk_ook_get_rssi(device);
-//             int32_t frequency_error;
-//             sx127x_rx_get_frequency_error(device, &frequency_error);
-//             printf("preamble interrupt %d %ld\n", irq, frequency_error);
         return;
       }
       // if preamble dio not attached, then try sync_address match
       if ((irq & SX127X_FSK_IRQ_SYNC_ADDRESS_MATCH) != 0 && !device->fsk_rssi_available) {
-        //printf("syncaddress interrupt %d\n", irq);
         sx127x_fsk_ook_get_rssi(device);
         return;
       }

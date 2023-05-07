@@ -62,12 +62,16 @@ void tx_callback(sx127x *device) {
   ESP_LOGI("sx127x_test", "sent");
 }
 
-void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+void rx_log_message(sx127x *device, uint8_t *data, uint16_t data_length) {
   int32_t frequency_error = 0;
   ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
   int16_t rssi = 0;
-  ESP_ERROR_CHECK(sx127x_rx_get_packet_rssi(device, &rssi));
+  sx127x_rx_get_packet_rssi(device, &rssi);
   ESP_LOGI("sx127x_test", "received: %d rssi: %d freq error: %ld", data_length, rssi, frequency_error);
+}
+
+void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+  rx_log_message(device, data, data_length);
   memcpy(fixture->rx_data, data, data_length);
   fixture->rx_data_length = data_length;
   xSemaphoreGive(fixture->rx_done);
@@ -83,7 +87,7 @@ void cad_callback(sx127x *device, int cad_detected) {
 }
 
 void rx_callback_with_counter(sx127x *device, uint8_t *data, uint16_t data_length) {
-  ESP_LOGI("sx127x_test", "received: %d", data_length);
+  rx_log_message(device, data, data_length);
   message_counter++;
   if (message_counter >= MAX_BEACONS_EXPECTED) {
     xSemaphoreGive(fixture->rx_done);
@@ -241,7 +245,7 @@ TEST_CASE("sx127x_test_fsk_tx_max_baud", "[fsk]") {
 
 TEST_CASE("sx127x_test_fsk_rx_filtered", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0xca, 0xfe, fixture->device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0xca, 0xfe, fixture->device));
   sx127x_rx_set_callback(rx_callback_with_counter, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
   xSemaphoreTake(fixture->rx_done, TIMEOUT);
@@ -370,6 +374,7 @@ void tearDown() {
     sx127x_fixture_destroy(fixture);
     fixture = NULL;
   }
+  message_counter = 0;
 }
 
 void app_main(void) {
