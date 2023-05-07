@@ -50,6 +50,7 @@
 #define REG_PKT_SNR_VALUE 0x19
 #define REG_PKT_RSSI_VALUE 0x1a
 #define REG_RSSI_VALUE 0x1b
+#define REG_AFC_VALUE 0x1b
 #define REG_MODEM_CONFIG_1 0x1d
 #define REG_MODEM_CONFIG_2 0x1e
 #define REG_PREAMBLE_DETECT 0x1f
@@ -740,9 +741,8 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
     return SX127X_OK;
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
     uint32_t frequency_error;
-    ERROR_CHECK(sx127x_spi_read_registers(0x1b, device->spi_device, 2, &frequency_error));
-    //printf("raw freq %ld\n", frequency_error);
-//      ERROR_CHECK(sx127x_spi_read_registers(0x1b, device->spi_device, 2, &frequency_error));
+    // for some reason register FEI always contains 0
+    ERROR_CHECK(sx127x_spi_read_registers(REG_AFC_VALUE, device->spi_device, 2, &frequency_error));
     if (frequency_error & 0x8000) {
       // keep within original 2 bytes
       frequency_error = ((~frequency_error) + 1) & 0xFFFF;
