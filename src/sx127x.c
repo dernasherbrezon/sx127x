@@ -866,7 +866,7 @@ int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx12
 }
 
 int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device) {
-  uint8_t value = (uint8_t) (0.95f * ((float) frequency_error / device->frequency / 1E6f));
+  uint8_t value = (uint8_t) (0.95f * ((float) frequency_error / (device->frequency / 1E6f)));
   return sx127x_spi_write_register(0x27, &value, 1, device->spi_device);
 }
 
