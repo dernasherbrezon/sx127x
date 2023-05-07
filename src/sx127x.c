@@ -764,14 +764,6 @@ int sx127x_dump_registers(sx127x *device) {
   return SX127X_OK;
 }
 
-int sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device) {
-  return sx127x_spi_write_register(REG_DIO_MAPPING_1, (uint8_t *) &value, 1, device->spi_device);
-}
-
-int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device) {
-  return sx127x_spi_write_register(REG_DIO_MAPPING_2, (uint8_t *) &value, 1, device->spi_device);
-}
-
 void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {
   device->tx_callback = tx_callback;
 }

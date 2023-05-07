@@ -446,32 +446,6 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device);
  */
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
-/**
- * @brief Map different interrupts from sx127x to different digital pins output.
- *
- * Six general purpose IO pins are available on the SX1276/77/78/79, and their configuration in Continuous or Packet mode is controlled through RegDioMapping1 and RegDioMapping2.
- *
- * @param value Mapping
- * @param device Pointer to variable to hold the device handle
- * @return
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_set_dio_mapping1(sx127x_dio_mapping1_t value, sx127x *device);
-
-/**
- * @brief Map different interrupts from sx127x to different digital pins output.
- *
- * Six general purpose IO pins are available on the SX1276/77/78/79, and their configuration in Continuous or Packet mode is controlled through RegDioMapping1 and RegDioMapping2.
- *
- * @param value Mapping
- * @param device Pointer to variable to hold the device handle
- * @return
- *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
- *         - SX127X_OK                on success
- */
-int sx127x_set_dio_mapping2(sx127x_dio_mapping2_t value, sx127x *device);
-
 int sx127x_dump_registers(sx127x *device);
 
 /**

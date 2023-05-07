@@ -482,6 +482,9 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_calibrate(device));
   ck_assert_int_eq(registers[0x3b], 0b01000000); // start calibration attempted
+
+  ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
+  ck_assert_int_eq(registers[0x0d], 0b10011111); // + previous configuration
 }
 END_TEST
 
@@ -548,6 +551,9 @@ START_TEST(test_lora) {
 
   ck_assert_int_eq(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
   ck_assert_int_eq(registers[0x27], 8);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
+  ck_assert_int_eq(registers[0x26], 0b00001100); // + previous config
 }
 END_TEST
 
