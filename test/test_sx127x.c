@@ -150,6 +150,31 @@ START_TEST(test_fsk_ook_rx) {
 }
 END_TEST
 
+START_TEST(test_fsk_ook_beacon) {
+  uint8_t data[] = {0xCA, 0xFE};
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, sizeof(data), device));
+  ck_assert_int_eq(SX127X_ERR_INVALID_STATE, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 1000, device));
+
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(data), device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 1000, device));
+  spi_assert_write(data, sizeof(data));
+  ck_assert_int_eq(registers[0x39], 0b11110011);
+  ck_assert_int_eq(registers[0x3a], 0b00111001);
+  ck_assert_int_eq(registers[0x38], 0b00001001);
+
+  ck_assert_int_eq(registers[0x35], 0b10011111);
+  ck_assert_int_eq(registers[0x3f], 0b00010000);
+  ck_assert_int_eq(registers[0x31], 0b00001000);
+  ck_assert_int_eq(registers[0x36], 0b10100100); // sequencer
+
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_stop_beacon(device));
+  ck_assert_int_eq(registers[0x36], 0b01000000); //stop sequencer
+  ck_assert_int_eq(registers[0x3f], 0b00010000);
+  ck_assert_int_eq(registers[0x31], 0b00000000);
+}
+END_TEST
+
 START_TEST(test_fsk_ook_tx) {
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
@@ -418,6 +443,10 @@ START_TEST(test_fsk_ook) {
   ck_assert_int_eq(registers[0x32], 0xFF);
 
   ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_OOK, device));
+  ck_assert_int_eq(SX127X_ERR_INVALID_ARG, sx127x_fsk_ook_set_bitrate(800, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
+  ck_assert_int_eq(registers[0x02], 0x1A);
+  ck_assert_int_eq(registers[0x03], 0x0A);
   ck_assert_int_eq(SX127X_OK, sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, device));
 
   ck_assert_int_eq(registers[0x0d], 0b10010111);
@@ -447,6 +476,12 @@ START_TEST(test_fsk_ook) {
   int32_t frequency_error;
   ck_assert_int_eq(SX127X_OK, sx127x_rx_get_frequency_error(device, &frequency_error));
   ck_assert_int_eq(-976, frequency_error);
+
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
+  ck_assert_int_eq(SX127X_ERR_INVALID_STATE, sx127x_fsk_ook_rx_calibrate(device));
+  ck_assert_int_eq(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_rx_calibrate(device));
+  ck_assert_int_eq(registers[0x3b], 0b01000000); // start calibration attempted
 }
 END_TEST
 
@@ -528,6 +563,7 @@ END_TEST
 void teardown() {
   if (device != NULL) {
     sx127x_destroy(device);
+    sx127x_destroy(NULL); // no-op. check no panic or access violation
     device = NULL;
   }
   if (registers != NULL) {
@@ -566,6 +602,7 @@ Suite *common_suite(void) {
   tcase_add_test(tc_core, test_lora_rx);
   tcase_add_test(tc_core, test_lora_cad);
   tcase_add_test(tc_core, test_fsk_ook_tx);
+  tcase_add_test(tc_core, test_fsk_ook_beacon);
   tcase_add_test(tc_core, test_fsk_ook_rx);
 
   tcase_add_checked_fixture(tc_core, setup, teardown);
