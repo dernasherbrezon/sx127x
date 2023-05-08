@@ -22,6 +22,7 @@
     "export": {
         "exclude": [
             "**/build",
+            "**/dist",
             "**/debug",
             "**/sdkconfig",
             "**/sdkconfig.old",
