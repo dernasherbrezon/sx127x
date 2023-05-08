@@ -31,6 +31,7 @@ And FSK/OOK features:
 * Short messages and extra long messages (up to 2047 bytes). For messages more than 62 bytes digital pins DIO1 and DIO2 must be wired up and configured properly.
 * CRC, Encoding, RSSI, address filtering, AFC and syncword configurations
 * Fixed and variable packet formats
+* Periodic beacons
 
 # How to use
 
@@ -75,6 +76,22 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sx127x)
 target_link_libraries(my_application sx127x)
 ```
 
+## Custom architecture
+
+It is possible to use this library in any other microcontroller architecture. To do this several steps are required. 
+
+ 1. Implement functions to work via SPI. Interface is defined in ```include/sx127x_spi.h``` and put implementation somewhere inside your project.
+ 2. Clone this library into your project
+ 3. Connect all things together in your application's cmake file:
+
+```cmake
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sx127x/include)
+add_library(sx127x STATIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/sx127x/src/sx127x.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/sx127x_custom_spi_implementation.c")
+target_link_libraries(my_application sx127x)
+```
+
 ## Functions
 
 All functions follow the same format:
@@ -85,7 +102,7 @@ sx127x_(modulation)_(rx or tx or empty)_(set or get)_(parameter)
 
 Where:
 
-  * modulation - can be "fsk" or "ook" or "fsk_ook" or empty. If empty, then applicable for all modulation types
+  * modulation - can be "lora", "fsk" or "ook" or "fsk_ook" or empty. If empty, then applicable for all modulation types
   * rx or tx - some functions specific for rx or tx. If empty, then applicable for both
   * set or get - normally functions operate over sx127x registers - either set or get them
 
@@ -100,6 +117,7 @@ Where:
 * ```receive_fsk``` - RX in FSK mode. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```receive_fsk_filtered``` - RX in FSK mode where only messages with NODE address 0x11 and Broadcast NODE address 0x00 are accepted. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```receive_fsk_fixed``` - RX in FSK mode. Accepted packets with fixed packet length - 2047 bytes (max possible), NRZ encoding, CRC, AFC on.
+* ```receive_fsk_raspberry``` - RX in FSK mode on RaspberryPI via GPIO pins and onboard SPI. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```receive_ook``` - RX in OOK mode. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```transmit_lora``` - TX in LoRa mode and explicit header. Several messages of different sizes and at all supported power levels
 * ```transmit_lora_implicit_header``` - TX in LoRa mode and implicit header (without header)
@@ -119,3 +137,22 @@ cd build
 cmake ..
 make test
 ```
+
+## Integration tests
+
+Integration tests can verify communication between real devices in different modes. Tests require two LoRa boards connected to the same host. It is possible to test on any other boards by overriding pin mappings in ```test/test_app/main.c```. By default tests require:
+
+ * Receiver is Heltec lora32 v2
+ * Transmitter is TTGO lora32
+
+Before running tests from ESP-IDF make sure [pytest is installed](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html).
+
+Run the following command to test:
+
+```
+cd test/test_app
+idf.py build
+pytest --target esp32 --port="/dev/ttyUSB0|/dev/ttyACM0" pytest_*
+```
+
+This command assumes ```/dev/ttyUSB0``` is receiver, ```/dev/ttyACM0``` is transmitter.
