@@ -159,14 +159,24 @@ START_TEST(test_fsk_ook_beacon) {
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(data), device));
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 1000, device));
   spi_assert_write(data, sizeof(data));
-  ck_assert_int_eq(registers[0x39], 0b11110011);
-  ck_assert_int_eq(registers[0x3a], 0b00111001);
+  ck_assert_int_eq(registers[0x39], 243);
+  ck_assert_int_eq(registers[0x3a], 57);
   ck_assert_int_eq(registers[0x38], 0b00001001);
 
   ck_assert_int_eq(registers[0x35], 0b10011111);
   ck_assert_int_eq(registers[0x3f], 0b00010000);
   ck_assert_int_eq(registers[0x31], 0b00001000);
   ck_assert_int_eq(registers[0x36], 0b10100100); // sequencer
+
+  // test different timer settings
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 15, device));
+  ck_assert_int_eq(registers[0x39], 234);
+  ck_assert_int_eq(registers[0x3a], 0);
+  ck_assert_int_eq(registers[0x38], 0b00000111);
+  ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 20, device));
+  ck_assert_int_eq(registers[0x39], 156);
+  ck_assert_int_eq(registers[0x3a], 156);
+  ck_assert_int_eq(registers[0x38], 0b00000101);
 
   ck_assert_int_eq(SX127X_OK, sx127x_fsk_ook_tx_stop_beacon(device));
   ck_assert_int_eq(registers[0x36], 0b01000000); //stop sequencer

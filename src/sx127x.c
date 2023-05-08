@@ -930,35 +930,35 @@ int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t 
 
   if (interval_ms <= 255 * p1) {
     timer1_resolution = p1;
-    timer1_coefficient = (int) (interval_ms / p1);
+    timer1_coefficient = (uint8_t) (interval_ms / p1);
   } else if (interval_ms <= 255 * p1 * 2) {
     timer1_resolution = p1;
     timer2_resolution = p1;
-    timer1_coefficient = (int) (interval_ms / p1 / 2);
+    timer1_coefficient = (uint8_t) (interval_ms / p1 / 2);
   } else if (interval_ms <= (255 * p2 + 255 * p1)) {
     timer1_resolution = p2;
     timer2_resolution = p1;
-    timer1_coefficient = (int) (interval_ms / p2);
+    timer1_coefficient = (uint8_t) (interval_ms / p2);
   } else if (interval_ms <= 255 * p2 * 2) {
     timer1_resolution = p2;
     timer2_resolution = p2;
-    timer1_coefficient = (int) (interval_ms / p2 / 2);
+    timer1_coefficient = (uint8_t) (interval_ms / p2 / 2);
   } else if (interval_ms <= (255 * p3 + 255 * p1)) {
     timer1_resolution = p3;
     timer2_resolution = p1;
-    timer1_coefficient = (int) (interval_ms / p3);
+    timer1_coefficient = (uint8_t) (interval_ms / p3);
   } else if (interval_ms <= (255 * p3 + 255 * p2)) {
     timer1_resolution = p3;
     timer2_resolution = p2;
-    timer1_coefficient = (int) (interval_ms / p3);
+    timer1_coefficient = (uint8_t) (interval_ms / p3);
   } else {
     timer1_resolution = p3;
     timer2_resolution = p3;
-    timer1_coefficient = (int) (interval_ms / p3 / 2);
+    timer1_coefficient = (uint8_t) (interval_ms / p3 / 2);
   }
 
   if (timer2_resolution != 0) {
-    timer2_coefficient = (int) ((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
+    timer2_coefficient = (uint8_t) ((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
   }
 
   uint8_t timer_resolution = 0b00000000;
@@ -1140,7 +1140,7 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  int result = sx127x_append_register(REG_PACKET_CONFIG1, crc_type, 0b11100110, device->spi_device);
+  int result = sx127x_append_register(REG_PACKET_CONFIG1, (uint8_t) crc_type, 0b11100110, device->spi_device);
   if (result == SX127X_OK) {
     device->fsk_crc_type = crc_type;
   }
