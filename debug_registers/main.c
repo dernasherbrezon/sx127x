@@ -1,0 +1,249 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
+
+int dump_lora_registers(uint8_t *regs) {
+  uint8_t value = regs[0x01];
+  printf("0x01 RegOpMode: \n");
+  if ((value & 0b10000000) != 0) {
+    printf("\tLongRangeMode=SX127x_MODULATION_LORA\n");
+  } else {
+    printf("\tLongRangeMode=SX127x_MODULATION_FSK\n");
+  }
+  if (((value & 0b01000000) >> 6) == 0) {
+    printf("\tAccessSharedReg=Access LoRa registers\n");
+  } else {
+    printf("\tAccessSharedReg=Access FSK registers\n");
+  }
+  if (((value & 0b00001000) >> 3) == 0) {
+    printf("\tLowFrequencyModeOn=High Frequency Mode\n");
+  } else {
+    printf("\tLowFrequencyModeOn=Low Frequency Mode\n");
+  }
+  uint8_t mode = (value & 0b111);
+  switch (mode) {
+    case 0b000:
+      printf("\tMode=SLEEP\n");
+      break;
+    case 0b001:
+      printf("\tMode=STDBY\n");
+      break;
+    case 0b010:
+      printf("\tMode=Frequency synthesis TX\n");
+      break;
+    case 0b011:
+      printf("\tMode=Transmit (TX)\n");
+      break;
+    case 0b100:
+      printf("\tMode=Frequency synthesis RX (FSRX)\n");
+      break;
+    case 0b101:
+      printf("\tMode=Receive continuous\n");
+      break;
+    case 0b110:
+      printf("\tMode=receive single\n");
+      break;
+    case 0b111:
+      printf("\tMode=Channel activity detection\n");
+      break;
+  }
+  uint64_t freq = (((uint64_t) regs[0x06]) << 16) | (((uint64_t) regs[0x07]) << 8) | (regs[0x08]);
+  printf("0x06: RegFr:\n");
+  printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
+  printf("0x07: RegPaConfig:\n");
+  value = regs[0x07];
+  if ((value & 0b10000000) != 0) {
+    printf("\tPaSelect=PA_BOOST pin\n");
+  } else {
+    printf("\tPaSelect=RFO pin\n");
+  }
+  printf("\tMaxPower=0x%x\n", ((value & 0b110000) >> 4));
+  printf("\tOutputPower=0x%x\n", ((value & 0b1111)));
+  printf("0x0a: RegPaRamp:\n");
+  printf("\tPaRamp=0x%x\n", regs[0x0a]);
+  printf("0x0b: RegOcp:\n");
+  value = regs[0x0b];
+  if ((value & 0b100000) != 0) {
+    printf("\tOcpOn=OCP enabled\n");
+  } else {
+    printf("\tOcpOn=OCP disabled\n");
+  }
+  printf("\tOcpTrim=0x%x\n", (value & 0b11111));
+  printf("0x0c: RegLna:\n");
+  value = regs[0x0c];
+  printf("\tLnaGain=%d\n", ((value & 0b11100000) >> 5));
+  printf("\tLnaBoostLf=%d\n", ((value & 0b11000) >> 3));
+  if (((value & 0b11)) != 0) {
+    printf("\tLnaBoostHf=Boost on\n");
+  } else {
+    printf("\tLnaBoostHf=Default LNA current\n");
+  }
+  printf("0x0d: RegFifoAddrPtr:\n");
+  printf("\tFifoAddrPtr=%x\n", regs[0x0d]);
+  printf("0x0e: RegFifoTxBaseAddr:\n");
+  printf("\tFifoTxBaseAddr=%x\n", regs[0x0e]);
+  printf("0x0f: RegFifoRxBaseAddr:\n");
+  printf("\tFifoRxBaseAddr=%x\n", regs[0x0f]);
+  printf("0x10: RegFifoRxCurrentAddr:\n");
+  printf("\tFifoRxCurrentAddr=%x\n", regs[0x10]);
+  value = regs[0x1d];
+  printf("0x1d: RegModemConfig1:\n");
+  switch (((value & 0b11110000) >> 4)) {
+    case 0b0000:
+      printf("\tBw=7.8 kHz\n");
+      break;
+    case 0b0001:
+      printf("\tBw=10.4 kHz\n");
+      break;
+    case 0b0010:
+      printf("\tBw=15.6 kHz\n");
+      break;
+    case 0b0011:
+      printf("\tBw=20.8kHz\n");
+      break;
+    case 0b0100:
+      printf("\tBw=31.25 kHz\n");
+      break;
+    case 0b0101:
+      printf("\tBw=41.7 kHz\n");
+      break;
+    case 0b0110:
+      printf("\tBw=62.5 kHz\n");
+      break;
+    case 0b0111:
+      printf("\tBw=125 kHz\n");
+      break;
+    case 0b1000:
+      printf("\tBw=250 kHz\n");
+      break;
+    case 0b1001:
+      printf("\tBw=500 kHz\n");
+      break;
+  }
+  switch (((value & 0b1110) >> 1)) {
+    case 0b001:
+      printf("\tCodingRate=4/5\n");
+      break;
+    case 0b010:
+      printf("\tCodingRate=4/6\n");
+      break;
+    case 0b011:
+      printf("\tCodingRate=4/7\n");
+      break;
+    case 0b100:
+      printf("\tCodingRate=4/8\n");
+      break;
+  }
+  printf("\tImplicitHeaderModeOn=%d\n", (value & 0b1));
+  printf("0x1e: RegModemConfig2\n");
+  value = regs[0x1e];
+  printf("\tSpreadingFactor=%d\n", ((value & 0b11110000) >> 4));
+  if (((value & 0b1000) >> 3) != 0) {
+    printf("\tTxContinuousMode=continuous mode\n");
+  } else {
+    printf("\tTxContinuousMode=normal mode\n");
+  }
+  printf("\tRxPayloadCrcOn=%d\n", ((value & 0b100) >> 2));
+  printf("0x1f: RegSymbTimeoutLsb:\n");
+  printf("\tSymbTimeout=%d\n", ((regs[0x1e] & 0b11) << 8) | regs[0x1f]);
+  printf("0x20: RegPreamble:\n");
+  printf("\tPreambleLength=%d\n", (regs[0x20] << 8) | regs[0x21]);
+  printf("0x22: RegPayloadLength:\n");
+  printf("\tPayloadLength=%d\n", regs[0x22]);
+  printf("0x23: RegMaxPayloadLength:\n");
+  printf("\tPayloadMaxLength=%d\n", regs[0x23]);
+  printf("0x24: RegHopPeriod:\n");
+  printf("\tFreqHoppingPeriod=%d\n", regs[0x24]);
+  printf("0x25: RegFifoRxByteAddr:\n");
+  printf("\tFifoRxByteAddrPtr=%d\n", regs[0x25]);
+  printf("0x26: RegModemConfig3:\n");
+  value = regs[0x26];
+  if ((value & 0b1000) != 0) {
+    printf("\tLowDataRateOptimize=Enabled\n");
+  } else {
+    printf("\tLowDataRateOptimize=Disabled\n");
+  }
+  printf("\tAgcAutoOn=%d\n", ((value & 0b100) >> 2));
+  printf("0x27: PpmCorrection:\n");
+  printf("\tPpmCorrection=%d\n", regs[0x27]);
+  printf("0x31: RegDetectOptimize:\n");
+  printf("\tDetectionOptimize=%d\n", (regs[0x31] & 0b111));
+  printf("0x37: RegDetectionThreshold:\n");
+  printf("\tDetectionThreshold=%d\n", regs[0x37]);
+  printf("0x39: RegSyncWord:\n");
+  printf("\tSyncWord=%d\n", regs[0x39]);
+  return 0;
+}
+
+int at_util_string2hex(const char *str, uint8_t **output, size_t *output_length) {
+  size_t len = 0;
+  size_t str_len = strlen(str);
+  for (size_t i = 0; i < str_len; i++) {
+    if (str[i] == ' ' || str[i] == ':' || str[i] == ',') {
+      continue;
+    }
+    //expect 0x99 so each "x" is for separate number
+    if (str[i] == 'x') {
+      len++;
+    }
+  }
+  size_t bytes = len;
+  uint8_t *result = malloc(sizeof(uint8_t) * bytes);
+  if (result == NULL) {
+    return -1;
+  }
+  uint8_t curByte = 0;
+  for (size_t i = 0, j = 0; i < strlen(str);) {
+    char curChar = str[i];
+    if (curChar == ' ' || str[i] == ':') {
+      i++;
+      continue;
+    }
+    if (str[i] == ',') {
+      result[j] = curByte;
+      curByte = 0;
+      i++;
+      j++;
+      continue;
+    }
+    if (str[i] == '0' && str[i + 1] == 'x') {
+      i += 2;
+      continue;
+    }
+    curByte *= 16;
+    if (curChar >= '0' && curChar <= '9') {
+      curByte += curChar - '0';
+    } else if (curChar >= 'A' && curChar <= 'F') {
+      curByte += (curChar - 'A') + 10;
+    } else if (curChar >= 'a' && curChar <= 'f') {
+      curByte += (curChar - 'a') + 10;
+    } else {
+      return -1;
+    }
+    i++;
+  }
+  *output = result;
+  *output_length = bytes;
+  return 0;
+}
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    fprintf(stderr, "missing argument\n");
+    return EXIT_FAILURE;
+  }
+  uint8_t *output = NULL;
+  size_t output_length = 0;
+  int code = at_util_string2hex(argv[1], &output, &output_length);
+  if (code != 0) {
+    return EXIT_FAILURE;
+  }
+  uint8_t *prepended = malloc(sizeof(uint8_t) * (output_length + 1));
+  memset(prepended, 0, (output_length + 1));
+  memcpy(prepended + 1, output, output_length);
+  if ((prepended[0x01] & 0b10000000) != 0) {
+    return dump_lora_registers(prepended);
+  }
+  return EXIT_SUCCESS;
+}
