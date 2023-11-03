@@ -3,13 +3,12 @@
 #include <string.h>
 #include <inttypes.h>
 
-int dump_lora_registers(uint8_t *regs) {
-  uint8_t value = regs[0x01];
+void print_op_mode(uint8_t value) {
   printf("0x01 RegOpMode: \n");
-  if ((value & 0b10000000) != 0) {
-    printf("\tLongRangeMode=SX127x_MODULATION_LORA\n");
+  if ((value & 0b10000000) == 0b10000000) {
+    printf("\tLongRangeMode=LORA\n");
   } else {
-    printf("\tLongRangeMode=SX127x_MODULATION_FSK\n");
+    printf("\tLongRangeMode=FSK\n");
   }
   if (((value & 0b01000000) >> 6) == 0) {
     printf("\tAccessSharedReg=Access LoRa registers\n");
@@ -48,12 +47,133 @@ int dump_lora_registers(uint8_t *regs) {
       printf("\tMode=Channel activity detection\n");
       break;
   }
+}
+
+void print_ocp(uint8_t value) {
+  printf("0x0b: RegOcp:\n");
+  if ((value & 0b100000) != 0) {
+    printf("\tOcpOn=OCP enabled\n");
+  } else {
+    printf("\tOcpOn=OCP disabled\n");
+  }
+  printf("\tOcpTrim=0x%x\n", (value & 0b11111));
+}
+
+void print_lna(uint8_t value) {
+  printf("0x0c: RegLna:\n");
+  printf("\tLnaGain=%d\n", ((value & 0b11100000) >> 5));
+  printf("\tLnaBoostLf=%d\n", ((value & 0b11000) >> 3));
+  if (((value & 0b11)) != 0) {
+    printf("\tLnaBoostHf=Boost on\n");
+  } else {
+    printf("\tLnaBoostHf=Default LNA current\n");
+  }
+}
+
+int dump_fsk_registers(const uint8_t *regs) {
+  uint8_t value = regs[0x01];
+  print_op_mode(value);
+  printf("0x02: RegBitrateMsb:\n");
+  double bit_rate = 32000000.0 / (((regs[0x02] << 8) | (regs[0x03])) + regs[0x5D] / 16.0);
+  printf("\tBitRate=%f\n", bit_rate);
+  printf("0x04: RegFdevMsb\n");
+  double freq_deviation = (32000000.0 / (1 << 19)) * (((regs[0x04] & 0b111111) << 8) | regs[0x05]);
+  printf("\tFdev=%f\n", freq_deviation);
   uint64_t freq = (((uint64_t) regs[0x06]) << 16) | (((uint64_t) regs[0x07]) << 8) | (regs[0x08]);
   printf("0x06: RegFr:\n");
   printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
-  printf("0x07: RegPaConfig:\n");
+  printf("0x09: RegPaConfig:\n");
   value = regs[0x07];
-  if ((value & 0b10000000) != 0) {
+  if ((value & 0b10000000) == 0b10000000) {
+    printf("\tPaSelect=PA_BOOST pin\n");
+  } else {
+    printf("\tPaSelect=RFO pin\n");
+  }
+  printf("\tMaxPower=0x%x\n", ((value & 0b110000) >> 4));
+  printf("\tOutputPower=0x%x\n", ((value & 0b1111)));
+  printf("0x0a: RegPaRamp:\n");
+  printf("\tModulationShaping=");
+  value = (regs[0x0a] & 0b01100000) >> 5;
+  switch (value) {
+    case 0b00:
+      printf("No shaping");
+      break;
+    case 0b01:
+      printf("Gaussian filter BT = 1.0");
+      break;
+    case 0b10:
+      printf("Gaussian filter BT = 0.5");
+      break;
+    case 0b11:
+      printf("Gaussian filter BT = 0.3");
+      break;
+  }
+  printf("\n");
+  printf("\tPaRamp=0x%x\n", (regs[0x0a] & 0b1111));
+  print_ocp(regs[0x0b]);
+  print_lna(regs[0x0c]);
+  printf("0x0d: RegRxConfig\n");
+  if ((regs[0x0d] & 0b10000000) != 0) {
+    printf("\tRestartRxOnCollision=Automatic restart On\n");
+  } else {
+    printf("\tRestartRxOnCollision=No automatic Restart\n");
+  }
+  if ((regs[0x0d] & 0b1000000) != 0) {
+    printf("\tRestartRxWithoutPllLock=Manual Restart of the Receiver\n");
+  } else {
+    printf("\tRestartRxWithoutPllLock=No restart\n");
+  }
+  if ((regs[0x0d] & 0b100000) != 0) {
+    printf("\tRestartRxWithPllLock=Manual Restart of the Receiver\n");
+  } else {
+    printf("\tRestartRxWithPllLock=No restart\n");
+  }
+  if ((regs[0x0d] & 0b10000) != 0) {
+    printf("\tAfcAutoOn=AFC is performed at each receiver startup\n");
+  } else {
+    printf("\tAfcAutoOn=No AFC performed at receiver startup\n");
+  }
+  if ((regs[0x0d] & 0b1000) != 0) {
+    printf("\tAgcAutoOn=LNA gain is controlled by the AGC\n");
+  } else {
+    printf("\tAgcAutoOn=LNA gain forced by the LnaGain Setting\n");
+  }
+  uint8_t trigger_event = (regs[0x0d] & 0b111);
+  switch (trigger_event) {
+    case 0b000:
+      printf("\tRxTrigger=None\n");
+      break;
+    case 0b001:
+      printf("\tRxTrigger=RSSI\n");
+      break;
+    case 0b110:
+      printf("\tRxTrigger=PreambleDetect\n");
+      break;
+    case 0b111:
+      printf("\tRxTrigger=RSSI and PreambleDetect\n");
+      break;
+  }
+  printf("0x0e: RegRssiConfig\n");
+  printf("\tRssiOffset=%d\n", (regs[0x0e] & 0b11111000) >> 3);
+  printf("\tRssiSmoothing=%d\n", (regs[0x0e] & 0b111));
+  printf("0x0f: RegRssiCollision\n");
+  printf("\tRssiCollisionThreshold=%d\n", (regs[0x0f]));
+  printf("0x10: RegRssiThresh\n");
+  printf("\tRssiThreshold=%d\n", (regs[0x10] / 2));
+  printf("0x11: RegRssiValue\n");
+  printf("\tRssiValue=%f\n", (regs[0x11] / 2.0f));
+  return EXIT_SUCCESS;
+}
+
+int dump_lora_registers(uint8_t *regs) {
+  uint8_t value = regs[0x01];
+  print_op_mode(value);
+  uint64_t freq = (((uint64_t) regs[0x06]) << 16) | (((uint64_t) regs[0x07]) << 8) | (regs[0x08]);
+  printf("0x06: RegFr:\n");
+  printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
+  printf("0x09: RegPaConfig:\n");
+  value = regs[0x07];
+  if ((value & 0b10000000) == 0b10000000) {
     printf("\tPaSelect=PA_BOOST pin\n");
   } else {
     printf("\tPaSelect=RFO pin\n");
@@ -62,23 +182,8 @@ int dump_lora_registers(uint8_t *regs) {
   printf("\tOutputPower=0x%x\n", ((value & 0b1111)));
   printf("0x0a: RegPaRamp:\n");
   printf("\tPaRamp=0x%x\n", regs[0x0a]);
-  printf("0x0b: RegOcp:\n");
-  value = regs[0x0b];
-  if ((value & 0b100000) != 0) {
-    printf("\tOcpOn=OCP enabled\n");
-  } else {
-    printf("\tOcpOn=OCP disabled\n");
-  }
-  printf("\tOcpTrim=0x%x\n", (value & 0b11111));
-  printf("0x0c: RegLna:\n");
-  value = regs[0x0c];
-  printf("\tLnaGain=%d\n", ((value & 0b11100000) >> 5));
-  printf("\tLnaBoostLf=%d\n", ((value & 0b11000) >> 3));
-  if (((value & 0b11)) != 0) {
-    printf("\tLnaBoostHf=Boost on\n");
-  } else {
-    printf("\tLnaBoostHf=Default LNA current\n");
-  }
+  print_ocp(regs[0x0b]);
+  print_lna(regs[0x0c]);
   printf("0x0d: RegFifoAddrPtr:\n");
   printf("\tFifoAddrPtr=%x\n", regs[0x0d]);
   printf("0x0e: RegFifoTxBaseAddr:\n");
@@ -334,8 +439,15 @@ int main(int argc, char **argv) {
   uint8_t *prepended = malloc(sizeof(uint8_t) * (output_length + 1));
   memset(prepended, 0, (output_length + 1));
   memcpy(prepended + 1, output, output_length);
-  if ((prepended[0x01] & 0b10000000) != 0) {
+  if ((prepended[0x01] & 0b10000000) == 0b10000000) {
     return dump_lora_registers(prepended);
+  }
+  if ((prepended[0x01] & 0b00000000) == 0b00000000) {
+    return dump_fsk_registers(prepended);
+  }
+  if ((prepended[0x01] & 0b00100000) == 0b00100000) {
+    printf("ook is not supported yet");
+    return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
 }
