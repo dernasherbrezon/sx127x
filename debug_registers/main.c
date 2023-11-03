@@ -173,6 +173,98 @@ int dump_lora_registers(uint8_t *regs) {
   printf("\tDetectionThreshold=%d\n", regs[0x37]);
   printf("0x39: RegSyncWord:\n");
   printf("\tSyncWord=%d\n", regs[0x39]);
+  printf("0x40: RegDioMapping1\n");
+  value = ((regs[0x40] & 0b11000000) >> 6);
+  switch (value) {
+    case 0b00:
+      printf("\tDIO0=RxDone\n");
+      break;
+    case 0b01:
+      printf("\tDIO0=TxDone\n");
+      break;
+    case 0b10:
+      printf("\tDIO0=CadDone\n");
+      break;
+    case 0b11:
+      printf("\tDIO0=Invalid\n");
+      break;
+  }
+  value = ((regs[0x40] & 0b00110000) >> 4);
+  switch (value) {
+    case 0b00:
+      printf("\tDIO1=RxTimeout\n");
+      break;
+    case 0b01:
+      printf("\tDIO1=FhssChangeChannel\n");
+      break;
+    case 0b10:
+      printf("\tDIO1=CadDetected\n");
+      break;
+    case 0b11:
+      printf("\tDIO1=Invalid\n");
+      break;
+  }
+  value = ((regs[0x40] & 0b00001100) >> 2);
+  switch (value) {
+    case 0b00:
+      printf("\tDIO2=FhssChangeChannel\n");
+      break;
+    case 0b01:
+      printf("\tDIO2=FhssChangeChannel\n");
+      break;
+    case 0b10:
+      printf("\tDIO2=FhssChangeChannel\n");
+      break;
+    case 0b11:
+      printf("\tDIO2=Invalid\n");
+      break;
+  }
+  value = ((regs[0x40] & 0b11));
+  switch (value) {
+    case 0b00:
+      printf("\tDIO3=CadDone\n");
+      break;
+    case 0b01:
+      printf("\tDIO3=ValidHeader\n");
+      break;
+    case 0b10:
+      printf("\tDIO3=PayloadCrcError\n");
+      break;
+    case 0b11:
+      printf("\tDIO3=Invalid\n");
+      break;
+  }
+  printf("0x41: RegDioMapping2\n");
+  value = ((regs[0x41] & 0b11000000) >> 6);
+  switch (value) {
+    case 0b00:
+      printf("\tDIO4=CadDetected\n");
+      break;
+    case 0b01:
+      printf("\tDIO4=PllLock\n");
+      break;
+    case 0b10:
+      printf("\tDIO4=PllLock\n");
+      break;
+    case 0b11:
+      printf("\tDIO4=Invalid\n");
+      break;
+  }
+  value = ((regs[0x41] & 0b110000) >> 4);
+  switch (value) {
+    case 0b00:
+      printf("\tDIO5=ModeReady\n");
+      break;
+    case 0b01:
+      printf("\tDIO5=ClkOut\n");
+      break;
+    case 0b10:
+      printf("\tDIO5=ClkOut\n");
+      break;
+    case 0b11:
+      printf("\tDIO5=Invalid\n");
+      break;
+  }
   return 0;
 }
 
