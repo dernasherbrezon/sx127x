@@ -59,6 +59,26 @@ void print_ocp(uint8_t value) {
   printf("\tOcpTrim=0x%x\n", (value & 0b11111));
 }
 
+double calculate_bw(uint8_t value) {
+  uint8_t mantissa;
+  switch (((value & 0b11000) >> 3)) {
+    case 0b10:
+      mantissa = 24;
+      break;
+    case 0b01:
+      mantissa = 20;
+      break;
+    case 0b00:
+      mantissa = 16;
+      break;
+    case 0b11:
+      // invalid - should fail
+      mantissa = 0;
+      break;
+  }
+  return 32000000.0 / (mantissa * ((uint32_t) 1 << ((value & 0b111) + 2)));
+}
+
 void print_lna(uint8_t value) {
   printf("0x0c: RegLna:\n");
   printf("\tLnaGain=%d\n", ((value & 0b11100000) >> 5));
@@ -162,6 +182,138 @@ int dump_fsk_registers(const uint8_t *regs) {
   printf("\tRssiThreshold=%d\n", (regs[0x10] / 2));
   printf("0x11: RegRssiValue\n");
   printf("\tRssiValue=%f\n", (regs[0x11] / 2.0f));
+  printf("0x12: RegRxBw\n");
+  printf("\tRxBw=%f\n", calculate_bw(regs[0x12]));
+  printf("0x13: RegAfcBw\n");
+  printf("\tAfcBw=%f\n", calculate_bw(regs[0x13]));
+  printf("0x1a: RegAfcFei\n");
+  if ((regs[0x1a] & 0b1) == 1) {
+    printf("\tAfcAutoClearOn=AFC register is not cleared at the beginning of the automatic AFC phase\n");
+  } else {
+    printf("\tAfcAutoClearOn=AFC register is cleared at the beginning of the automatic AFC phase\n");
+  }
+  printf("0x1f: RegPreambleDetect\n");
+  if ((regs[0x1f] & 0b10000000) != 0) {
+    printf("\tPreambleDetectorOn=1\n");
+  } else {
+    printf("\tPreambleDetectorOn=0\n");
+  }
+  printf("\tPreambleDetectorSize=%d\n", ((regs[0x1f] & 0b1100000) >> 5) + 1);
+  printf("\tPreambleDetectorTol=%d\n", (regs[0x1f] & 0b11111));
+  printf("0x20: RegRxTimeout1\n");
+  printf("\tTimeoutRxRssi=%d\n", regs[0x20]);
+  printf("0x21: RegRxTimeout2\n");
+  printf("\tTimeoutRxPreamble=%d\n", regs[0x21]);
+  printf("0x22: RegRxTimeout3\n");
+  printf("\tTimeoutSignalSync=%d\n", regs[0x22]);
+  printf("0x23: RegRxDelay\n");
+  printf("\tInterPacketRxDelay=%d\n", regs[0x23]);
+  printf("0x24: RegOsc\n");
+  switch (regs[0x24] & 0b111) {
+    case 0b000:
+      printf("\tClkOut=FXOSC\n");
+      break;
+    case 0b001:
+      printf("\tClkOut=FXOSC/2\n");
+      break;
+    case 0b010:
+      printf("\tClkOut=FXOSC/4\n");
+      break;
+    case 0b011:
+      printf("\tClkOut=FXOSC/8\n");
+      break;
+    case 0b100:
+      printf("\tClkOut=FXOSC/16\n");
+      break;
+    case 0b101:
+      printf("\tClkOut=FXOSC/32\n");
+      break;
+    case 0b110:
+      printf("\tClkOut=RC (automatically enabled)\n");
+      break;
+    case 0b111:
+      printf("\tClkOut=OFF\n");
+      break;
+  }
+  printf("0x25: RegPreambleMsb\n");
+  printf("\tPreambleSize=%d\n", (regs[0x25] << 8) | regs[0x26]);
+  printf("0x27: RegSyncConfig\n");
+  switch ((regs[0x27] & 0b11000000) >> 6) {
+    case 0b00:
+      printf("\tAutoRestartRxMode=Off\n");
+      break;
+    case 0b01:
+      printf("\tAutoRestartRxMode=On, without waiting for the PLL to re-lock\n");
+      break;
+    case 0b10:
+      printf("\tAutoRestartRxMode=On, wait for the PLL to lock (frequency changed)\n");
+      break;
+    case 0b11:
+      printf("\tAutoRestartRxMode=Invalid\n");
+      break;
+  }
+  if ((regs[0x27] & 0b100000) != 0) {
+    printf("\tPreamblePolarity=0x55\n");
+  } else {
+    printf("\tPreamblePolarity=0xAA\n");
+  }
+  if ((regs[0x27] & 0b10000) != 0) {
+    printf("\tSyncOn=On\n");
+  } else {
+    printf("\tSyncOn=Off\n");
+  }
+  uint8_t sync_size = (regs[0x27] & 0b111) + 1;
+  printf("\tSyncSize=%d\n", sync_size);
+  printf("0x28: RegSyncValue\n");
+  printf("\tSyncValue=");
+  for (int i = 0; i < sync_size; i++) {
+    printf("%x", regs[0x28 + i]);
+  }
+  printf("\n");
+  printf("0x30: RegPacketConfig1\n");
+  if ((regs[0x30] & 0b10000000) != 0) {
+    printf("\tPacketFormat=Variable\n");
+  } else {
+    printf("\tPacketFormat=Fixed\n");
+  }
+  switch((regs[0x30] & 0b1100000) >> 5) {
+    case 0b00:
+      printf("\tDcFree=Off\n");
+      break;
+    case 0b01:
+      printf("\tDcFree=Manchester\n");
+      break;
+    case 0b10:
+      printf("\tDcFree=Whitening\n");
+      break;
+    case 0b11:
+      printf("\tDcFree=Invalid\n");
+      break;
+  }
+  if ((regs[0x30] & 0b1000) != 0) {
+    printf("\tCrcAutoClearOff=Do not clear FIFO\n");
+  } else {
+    printf("\tCrcAutoClearOff=Clear FIFO and restart new packet reception\n");
+  }
+  switch((regs[0x30] & 0b110) >> 1) {
+    case 0b00:
+      printf("\tAddressFiltering=None\n");
+      break;
+    case 0b01:
+      printf("\tAddressFiltering=Address field must match NodeAddress\n");
+      break;
+    case 0b10:
+      printf("\tAddressFiltering=Address field must match NodeAddress or BroadcastAddress\n");
+      break;
+    case 0b11:
+      printf("\tAddressFiltering=Invalid\n");
+      break;
+  }
+  if ((regs[0x30] & 0b1) != 0) {
+    printf("\tCrcWhiteningType=IBM CRC\n");
+  } else {
+    printf("\tCrcWhiteningType=CCITT CRC\n");
+  }
   return EXIT_SUCCESS;
 }
 
