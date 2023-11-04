@@ -340,6 +340,435 @@ int dump_fsk_registers(const uint8_t *regs) {
   printf("\tNodeAddress=%d\n", regs[0x33]);
   printf("0x34: RegBroadcastAdrs\n");
   printf("\tBroadcastAddress=%d\n", regs[0x34]);
+  printf("0x35: RegFifoThresh\n");
+  if ((regs[0x35] & 0b10000000) != 0) {
+    printf("\tTxStartCondition=FifoEmpty goes low\n");
+  } else {
+    printf("\tTxStartCondition=FifoLevel\n");
+  }
+  printf("\tFifoThreshold=%d\n", (regs[0x35] & 0b111111));
+  printf("0x36: RegSeqConfig1\n");
+  if ((regs[0x36] & 0b100000) != 0) {
+    printf("\tIdleMode=Sleep mode\n");
+  } else {
+    printf("\tIdleMode=Standby mode\n");
+  }
+  switch ((regs[0x36] & 0b11000) >> 3) {
+    case 0b00:
+      printf("\tFromStart=to LowPowerSelection\n");
+      break;
+    case 0b01:
+      printf("\tFromStart=to Receive state\n");
+      break;
+    case 0b10:
+      printf("\tFromStart=to Transmit state\n");
+      break;
+    case 0b11:
+      printf("\tFromStart=to Transmit state on a FifoLevel interrupt\n");
+      break;
+  }
+  if ((regs[0x36] & 0b100) != 0) {
+    printf("\tLowPowerSelection=Idle state with chip on Standby or Sleep mode\n");
+  } else {
+    printf("\tLowPowerSelection=SequencerOff state\n");
+  }
+  if ((regs[0x36] & 0b10) != 0) {
+    printf("\tFromIdle=to Receive state\n");
+  } else {
+    printf("\tFromIdle=to Transmit state\n");
+  }
+  if ((regs[0x36] & 0b1) != 0) {
+    printf("\tFromTransmit=to Receive state on a PacketSent interrupt\n");
+  } else {
+    printf("\tFromTransmit=to LowPowerSelection on a PacketSent interrupt\n");
+  }
+  printf("0x37: RegSeqConfig2\n");
+  switch ((regs[0x37] & 0b11100000) >> 5) {
+    case 0b000:
+    case 0b111:
+      printf("\tFromReceive=unused\n");
+      break;
+    case 0b001:
+      printf("\tFromReceive=to PacketReceived state on a PayloadReady interrupt\n");
+      break;
+    case 0b010:
+      printf("\tFromReceive=to LowPowerSelection on a PayloadReady interrupt\n");
+      break;
+    case 0b011:
+      printf("\tFromReceive=to PacketReceived state on a CrcOk interrupt\n");
+      break;
+    case 0b100:
+      printf("\tFromReceive=to SequencerOff state on a Rssi interrupt\n");
+      break;
+    case 0b101:
+      printf("\tFromReceive=to SequencerOff state on a SyncAddress interrupt\n");
+      break;
+    case 0b110:
+      printf("\tFromReceive=to SequencerOff state on a PreambleDetect interrupt\n");
+      break;
+  }
+  switch ((regs[0x37] & 0b11000) >> 3) {
+    case 0b00:
+      printf("\tFromRxTimeout=to Receive State, via ReceiveRestart\n");
+      break;
+    case 0b01:
+      printf("\tFromRxTimeout=to Transmit state\n");
+      break;
+    case 0b10:
+      printf("\tFromRxTimeout=to LowPowerSelection\n");
+      break;
+    case 0b11:
+      printf("\tFromRxTimeout=to SequencerOff state\n");
+      break;
+  }
+  switch ((regs[0x37] & 0b111)) {
+    case 0b000:
+      printf("\tFromPacketReceived=to SequencerOff state\n");
+      break;
+    case 0b001:
+      printf("\tFromPacketReceived=to Transmit state on a FifoEmpty interrupt\n");
+      break;
+    case 0b010:
+      printf("\tFromPacketReceived=to LowPowerSelection\n");
+      break;
+    case 0b011:
+      printf("\tFromPacketReceived=to Receive via FS mode, if frequency was changed\n");
+      break;
+    case 0b100:
+      printf("\tFromPacketReceived=to Receive state\n");
+      break;
+  }
+  printf("0x38: RegTimerResol\n");
+  switch ((regs[0x38] & 0b1100) >> 2) {
+    case 0b00:
+      printf("\tTimer1Resolution=disabled\n");
+      break;
+    case 0b01:
+      printf("\tTimer1Resolution=64 us\n");
+      break;
+    case 0b10:
+      printf("\tTimer1Resolution=4.1 ms\n");
+      break;
+    case 0b11:
+      printf("\tTimer1Resolution=262 ms\n");
+      break;
+  }
+  switch ((regs[0x38] & 0b11)) {
+    case 0b00:
+      printf("\tTimer2Resolution=disabled\n");
+      break;
+    case 0b01:
+      printf("\tTimer2Resolution=64 us\n");
+      break;
+    case 0b10:
+      printf("\tTimer2Resolution=4.1 ms\n");
+      break;
+    case 0b11:
+      printf("\tTimer2Resolution=262 ms\n");
+      break;
+  }
+  printf("0x39: RegTimer1Coef\n");
+  printf("\tTimer1Coefficient=%d\n", regs[0x39]);
+  printf("0x3a: RegTimer2Coef\n");
+  printf("\tTimer2Coefficient=%d\n", regs[0x3a]);
+  printf("0x3b: RegImageCal\n");
+  if ((regs[0x3b] & 0b10000000) != 0) {
+    printf("\tAutoImageCalOn=1\n");
+  } else {
+    printf("\tAutoImageCalOn=0\n");
+  }
+  if ((regs[0x3b] & 0b1000) != 0) {
+    printf("\tTempChange=Temperature change greater than TempThreshold\n");
+  } else {
+    printf("\tTempChange=Temperature change lower than TempThreshold\n");
+  }
+  switch ((regs[0x3b] & 0b110) >> 1) {
+    case 0b00:
+      printf("\tTempThreshold=5 °C\n");
+      break;
+    case 0b01:
+      printf("\tTempThreshold=10 °C\n");
+      break;
+    case 0b10:
+      printf("\tTempThreshold=15 °C\n");
+      break;
+    case 0b11:
+      printf("\tTempThreshold=20 °C\n");
+      break;
+  }
+  if ((regs[0x3b] & 0b1) != 0) {
+    printf("\tTempChange=Temperature monitoring stopped\n");
+  } else {
+    printf("\tTempChange=Temperature monitoring done in all modes except Sleep and Standby\n");
+  }
+  printf("0x3c: RegTemp\n");
+  printf("\tTempValue=%d\n", regs[0x3c]);
+  printf("0x3d: RegLowBat\n");
+  if ((regs[0x3d] & 0b1000) != 0) {
+    printf("\tLowBatOn=1\n");
+  } else {
+    printf("\tLowBatOn=0\n");
+  }
+  switch ((regs[0x3d] & 0b111)) {
+    case 0b000:
+      printf("\tLowBatTrim=1.695 V\n");
+      break;
+    case 0b001:
+      printf("\tLowBatTrim=1.764 V\n");
+      break;
+    case 0b010:
+      printf("\tLowBatTrim=1.835 V\n");
+      break;
+    case 0b011:
+      printf("\tLowBatTrim=1.905 V\n");
+      break;
+    case 0b100:
+      printf("\tLowBatTrim=1.976 V\n");
+      break;
+    case 0b101:
+      printf("\tLowBatTrim=2.045 V\n");
+      break;
+    case 0b110:
+      printf("\tLowBatTrim=2.116 V\n");
+      break;
+    case 0b111:
+      printf("\tLowBatTrim=2.185 V\n");
+      break;
+  }
+  printf("0x40: RegDioMapping1\n");
+  if ((regs[0x31] & 0b1000000) != 0) {
+    uint8_t dio0 = ((regs[0x40] & 0b11000000) >> 6);
+    uint8_t dio1 = ((regs[0x40] & 0b00110000) >> 4);
+    uint8_t dio2 = ((regs[0x40] & 0b00001100) >> 2);
+    uint8_t dio3 = ((regs[0x40] & 0b00000011));
+    uint8_t dio4 = ((regs[0x41] & 0b11000000) >> 6);
+    uint8_t dio5 = ((regs[0x41] & 0b00110000) >> 4);
+    uint8_t mode = (regs[0x01] & 0b111);
+    switch (mode) {
+      case 0b000:
+        switch (dio1) {
+          case 0b00:
+            printf("\tDIO1=FifoLevel\n");
+            break;
+          case 0b01:
+            printf("\tDIO1=FifoEmpty\n");
+            break;
+          case 0b10:
+            printf("\tDIO1=FifoFull\n");
+            break;
+        }
+        switch (dio2) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO2=FifoFull\n");
+            break;
+        }
+        switch (dio3) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO3=FifoEmpty\n");
+            break;
+        }
+        if (dio5 == 0b00) {
+          printf("\tDIO5=ClkOut if RC\n");
+        }
+        break;
+      case 0b001:
+      case 0b010:
+      case 0b100:
+        if (dio0 == 0b11) {
+          printf("\tDIO0=TempChange / LowBat\n");
+        }
+        switch (dio1) {
+          case 0b00:
+            printf("\tDIO1=FifoLevel\n");
+            break;
+          case 0b01:
+            printf("\tDIO1=FifoEmpty\n");
+            break;
+          case 0b10:
+            printf("\tDIO1=FifoFull\n");
+            break;
+        }
+        switch (dio2) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO2=FifoFull\n");
+            break;
+        }
+        switch (dio3) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO3=FifoEmpty\n");
+            break;
+        }
+        if (dio4 == 0b00) {
+          printf("\tDIO4=TempChange / LowBat\n");
+        }
+        switch (dio5) {
+          case 0b00:
+            printf("\tDIO5=ClkOut\n");
+            break;
+          case 0b11:
+            printf("\tDIO5=ModeReady\n");
+            break;
+        }
+        break;
+      case 0b011:
+        switch (dio0) {
+          case 0b00:
+            printf("\tDIO0=PacketSent\n");
+            break;
+          case 0b11:
+            printf("\tDIO0=TempChange / LowBat\n");
+            break;
+        }
+        switch (dio1) {
+          case 0b00:
+            printf("\tDIO1=FifoLevel\n");
+            break;
+          case 0b01:
+            printf("\tDIO1=FifoEmpty\n");
+            break;
+          case 0b10:
+            printf("\tDIO1=FifoFull\n");
+            break;
+        }
+        switch (dio2) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO2=FifoFull\n");
+            break;
+        }
+        switch (dio3) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO3=FifoEmpty\n");
+            break;
+          case 0b01:
+            printf("\tDIO3=TxReady\n");
+            break;
+        }
+        if (dio4 == 0b00) {
+          printf("\tDIO4=TempChange / LowBat\n");
+        }
+        switch (dio5) {
+          case 0b00:
+            printf("\tDIO5=ClkOut\n");
+            break;
+          case 0b01:
+            printf("\tDIO5=PllLock\n");
+            break;
+          case 0b10:
+            printf("\tDIO5=Data\n");
+            break;
+          case 0b11:
+            printf("\tDIO5=ModeReady\n");
+            break;
+        }
+        break;
+      case 0b101:
+      case 0b110:
+        switch (dio0) {
+          case 0b00:
+            printf("\tDIO0=PayloadReady\n");
+            break;
+          case 0b01:
+            printf("\tDIO0=CrcOk\n");
+            break;
+          case 0b11:
+            printf("\tDIO0=TempChange / LowBat\n");
+            break;
+        }
+        switch (dio1) {
+          case 0b00:
+            printf("\tDIO1=FifoLevel\n");
+            break;
+          case 0b01:
+            printf("\tDIO1=FifoEmpty\n");
+            break;
+          case 0b10:
+            printf("\tDIO1=FifoFull\n");
+            break;
+        }
+        switch (dio2) {
+          case 0b00:
+            printf("\tDIO2=FifoFull\n");
+            break;
+          case 0b01:
+            printf("\tDIO2=RxReady\n");
+            break;
+          case 0b10:
+            printf("\tDIO2=Timeout\n");
+            break;
+          case 0b11:
+            printf("\tDIO2=SyncAddress\n");
+            break;
+        }
+        switch (dio3) {
+          case 0b00:
+          case 0b10:
+          case 0b11:
+            printf("\tDIO3=FifoEmpty\n");
+            break;
+        }
+        switch (dio4) {
+          case 0b00:
+            printf("\tDIO4=TempChange / LowBat\n");
+            break;
+          case 0b01:
+            printf("\tDIO4=PllLock\n");
+            break;
+          case 0b10:
+            printf("\tDIO4=Timeout\n");
+            break;
+          case 0b11:
+            printf("\tDIO4=Rssi/Preamble Detect\n");
+            break;
+        }
+        switch (dio5) {
+          case 0b00:
+            printf("\tDIO5=ClkOut\n");
+            break;
+          case 0b01:
+            printf("\tDIO5=PllLock\n");
+            break;
+          case 0b10:
+            printf("\tDIO5=Data\n");
+            break;
+          case 0b11:
+            printf("\tDIO5=ModeReady\n");
+            break;
+        }
+        break;
+    }
+  } else {
+    printf("\tDIO mapping in Continuous mode\n");
+  }
+  printf("0x41: RegDioMapping2\n");
+  if ((regs[0x41] & 0b1) != 0) {
+    printf("\tMapPreambleDetect=PreambleDetect interrupt\n");
+  } else {
+    printf("\tMapPreambleDetect=Rssi interrupt\n");
+  }
+  printf("0x44: RegPllHop\n");
+  printf("\tFastHopOn=%d\n", ((regs[0x44] & 0b10000000) >> 7));
+  printf("0x4b: RegTcxo\n");
+  printf("\tTcxoInputOn=%d\n", ((regs[0x4b] & 0b10000) >> 4));
+  printf("0x4d: RegPaDac\n");
+  if ((regs[0x4d] & 0b111) == 0x04) {
+    printf("\tPaDac=Default\n");
+  } else if ((regs[0x4d] & 0b111) == 0x07) {
+    printf("\tPaDac=+20dBm on PA_BOOST\n");
+  } else {
+    printf("\tPaDac=Invalid\n");
+  }
   return EXIT_SUCCESS;
 }
 
