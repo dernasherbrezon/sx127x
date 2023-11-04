@@ -276,9 +276,9 @@ int dump_fsk_registers(const uint8_t *regs) {
   } else {
     printf("\tPacketFormat=Fixed\n");
   }
-  switch((regs[0x30] & 0b1100000) >> 5) {
+  switch ((regs[0x30] & 0b1100000) >> 5) {
     case 0b00:
-      printf("\tDcFree=Off\n");
+      printf("\tDcFree=Off (NRZ)\n");
       break;
     case 0b01:
       printf("\tDcFree=Manchester\n");
@@ -290,12 +290,17 @@ int dump_fsk_registers(const uint8_t *regs) {
       printf("\tDcFree=Invalid\n");
       break;
   }
+  if ((regs[0x30] & 0b10000) != 0) {
+    printf("\tCrcOn=1\n");
+  } else {
+    printf("\tCrcOn=0\n");
+  }
   if ((regs[0x30] & 0b1000) != 0) {
     printf("\tCrcAutoClearOff=Do not clear FIFO\n");
   } else {
     printf("\tCrcAutoClearOff=Clear FIFO and restart new packet reception\n");
   }
-  switch((regs[0x30] & 0b110) >> 1) {
+  switch ((regs[0x30] & 0b110) >> 1) {
     case 0b00:
       printf("\tAddressFiltering=None\n");
       break;
@@ -314,6 +319,27 @@ int dump_fsk_registers(const uint8_t *regs) {
   } else {
     printf("\tCrcWhiteningType=CCITT CRC\n");
   }
+  printf("0x31: RegPacketConfig2\n");
+  if ((regs[0x31] & 0b1000000) != 0) {
+    printf("\tDataMode=Packet\n");
+  } else {
+    printf("\tDataMode=Continuous\n");
+  }
+  if ((regs[0x31] & 0b100000) != 0) {
+    printf("\tIoHomeOn=1\n");
+  } else {
+    printf("\tIoHomeOn=0\n");
+  }
+  if ((regs[0x31] & 0b1000) != 0) {
+    printf("\tBeaconOn=1\n");
+  } else {
+    printf("\tBeaconOn=0\n");
+  }
+  printf("\tPayloadLength=%d\n", ((regs[0x31] & 0b111) << 8) | regs[0x32]);
+  printf("0x33: RegNodeAdrs\n");
+  printf("\tNodeAddress=%d\n", regs[0x33]);
+  printf("0x34: RegBroadcastAdrs\n");
+  printf("\tBroadcastAddress=%d\n", regs[0x34]);
   return EXIT_SUCCESS;
 }
 
