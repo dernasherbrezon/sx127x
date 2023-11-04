@@ -446,7 +446,18 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device);
  */
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
-int sx127x_dump_registers(sx127x *device);
+/**
+ * @brief Output internal registers
+ *
+ * Output all internal registers in the current mode. Can be useful for debugging and troubleshooting.
+ *
+ * @param output Pre-allocated array where the values will be written. Should be at least 0x80 length.
+ * @param device Pointer to variable to hold the device handle
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_dump_registers(uint8_t *output, sx127x *device);
 
 /**
  * @brief Handle interrupt from DIOx pins.

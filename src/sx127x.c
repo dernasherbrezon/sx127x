@@ -14,8 +14,6 @@
 #include "sx127x.h"
 
 #include <math.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sx127x_spi.h>
@@ -751,17 +749,11 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
   }
 }
 
-int sx127x_dump_registers(sx127x *device) {
-  uint8_t length = 0x7F;
-  for (int i = 1; i < length; i++) {
-    uint8_t value;
-    int code = sx127x_read_register(i, device->spi_device, &value);
-    if (code != SX127X_OK) {
-      continue;
-    }
-    printf("0x%2x: 0x%2x\n", i, value);
-  }
-  return SX127X_OK;
+int sx127x_dump_registers(uint8_t *output, sx127x *device) {
+  //Reading from 0x00 register will actually read from fifo
+  //skip it
+  output[0] = 0x00;
+  return sx127x_spi_read_buffer(0x01, output + 1, 0x7F, device->spi_device);
 }
 
 void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {

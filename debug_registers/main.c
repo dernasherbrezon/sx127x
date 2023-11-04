@@ -1043,16 +1043,13 @@ int main(int argc, char **argv) {
   if (code != 0) {
     return EXIT_FAILURE;
   }
-  uint8_t *prepended = malloc(sizeof(uint8_t) * (output_length + 1));
-  memset(prepended, 0, (output_length + 1));
-  memcpy(prepended + 1, output, output_length);
-  if ((prepended[0x01] & 0b10000000) == 0b10000000) {
-    return dump_lora_registers(prepended);
+  if ((output[0x01] & 0b10000000) == 0b10000000) {
+    return dump_lora_registers(output);
   }
-  if ((prepended[0x01] & 0b00000000) == 0b00000000) {
-    return dump_fsk_registers(prepended);
+  if ((output[0x01] & 0b00000000) == 0b00000000) {
+    return dump_fsk_registers(output);
   }
-  if ((prepended[0x01] & 0b00100000) == 0b00100000) {
+  if ((output[0x01] & 0b00100000) == 0b00100000) {
     printf("ook is not supported yet");
     return EXIT_FAILURE;
   }
