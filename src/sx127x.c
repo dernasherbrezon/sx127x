@@ -498,6 +498,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
     if (device->rx_callback != NULL) {
       device->rx_callback(device, device->packet, device->fsk_ook_packet_length);
     }
+    device->fsk_ook_packet_length = 0;
     return;
   }
   if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
