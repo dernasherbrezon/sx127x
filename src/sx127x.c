@@ -810,21 +810,24 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
 }
 
 int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
-  uint8_t data[1];
+  if (max_current < 45) {
+    return SX127X_ERR_INVALID_ARG;
+  }
   if (!enable) {
     uint8_t value = 0b00000000;
     return sx127x_spi_write_register(REG_OCP, &value, 1, device->spi_device);
   }
+  uint8_t value;
   // 5.4.4. Over Current Protection
   if (max_current <= 120) {
-    data[0] = (max_current - 45) / 5;
+    value = (max_current - 45) / 5;
   } else if (max_current <= 240) {
-    data[0] = (max_current + 30) / 10;
+    value = (max_current + 30) / 10;
   } else {
-    data[0] = 27;
+    value = 27;
   }
-  data[0] += 0b00100000;
-  return sx127x_spi_write_register(REG_OCP, data, 1, device->spi_device);
+  value |= 0b00100000;
+  return sx127x_spi_write_register(REG_OCP, &value, 1, device->spi_device);
 }
 
 int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
