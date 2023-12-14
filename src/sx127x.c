@@ -184,7 +184,6 @@ struct sx127x_t {
   uint8_t packet[MAX_PACKET_SIZE_FSK_FIXED];
   uint16_t fsk_ook_packet_length;
   uint16_t fsk_ook_packet_sent_received;
-  int fsk_ook_packet_read_code;
   bool fsk_rssi_available;
   int16_t fsk_rssi;
 
@@ -299,27 +298,23 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
     if (device->fsk_ook_format == SX127X_FIXED) {
       int code = sx127x_fsk_ook_read_fixed_packet_length(device, &packet_length);
       if (code != SX127X_OK) {
-        device->fsk_ook_packet_read_code = code;
         return;
       }
     } else if (device->fsk_ook_format == SX127X_VARIABLE) {
       uint8_t value;
       int code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
       if (code != SX127X_OK) {
-        device->fsk_ook_packet_read_code = code;
         return;
       }
       packet_length = value;
       remaining_fifo--;
     } else {
-      device->fsk_ook_packet_read_code = SX127X_ERR_INVALID_ARG;
       return;
     }
     device->fsk_ook_packet_length = packet_length;
     bool address_filtered;
     int code = sx127x_fsk_ook_is_address_filtered(device, &address_filtered);
     if (code != SX127X_OK) {
-      device->fsk_ook_packet_read_code = code;
       return;
     }
     // if node filtering is enabled, then skip next byte because it will be node id
@@ -327,7 +322,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
       uint8_t value;
       code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
       if (code != SX127X_OK) {
-        device->fsk_ook_packet_read_code = code;
         return;
       }
       device->fsk_ook_packet_length--;
@@ -344,7 +338,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
   if (read_batch && device->fsk_ook_packet_sent_received + batch_size < device->fsk_ook_packet_length) {
     int code = sx127x_spi_read_buffer(REG_FIFO, device->packet + device->fsk_ook_packet_sent_received, batch_size, device->spi_device);
     if (code != SX127X_OK) {
-      device->fsk_ook_packet_read_code = code;
       return;
     }
     device->fsk_ook_packet_sent_received += batch_size;
@@ -353,7 +346,6 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
     if (device->fsk_ook_packet_sent_received == 0 && device->fsk_ook_packet_length <= remaining_fifo) {
       int code = sx127x_spi_read_buffer(REG_FIFO, device->packet, device->fsk_ook_packet_length, device->spi_device);
       if (code != SX127X_OK) {
-        device->fsk_ook_packet_read_code = code;
         return;
       }
       device->fsk_ook_packet_sent_received = device->fsk_ook_packet_length;
@@ -364,21 +356,17 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
         uint8_t value;
         int code = sx127x_read_register(REG_FIFO, device->spi_device, &value);
         if (code != SX127X_OK) {
-          device->fsk_ook_packet_read_code = code;
           return;
         }
         device->packet[device->fsk_ook_packet_sent_received] = value;
         device->fsk_ook_packet_sent_received++;
         code = sx127x_read_register(REG_IRQ_FLAGS_2, device->spi_device, &irq);
         if (code != SX127X_OK) {
-          device->fsk_ook_packet_read_code = code;
           return;
         }
       } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0);
     }
   }
-  // even if data was not fully read
-  device->fsk_ook_packet_read_code = SX127X_OK;
 }
 
 int sx127x_fsk_ook_get_rssi(sx127x *device) {
