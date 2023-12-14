@@ -765,7 +765,7 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
   if (pin == SX127x_PA_PIN_RFO && (power < -4 || power > 15)) {
     return SX127X_ERR_INVALID_ARG;
   }
-  if (pin == SX127x_PA_PIN_BOOST && (power < 2 || power > 20)) {
+  if (pin == SX127x_PA_PIN_BOOST && (power < 2 || power > 20 || power == 18 || power == 19)) {
     return SX127X_ERR_INVALID_ARG;
   }
   uint8_t data[] = {0};
