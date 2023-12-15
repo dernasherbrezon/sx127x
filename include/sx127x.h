@@ -904,6 +904,26 @@ int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, 
 int sx127x_fsk_ook_rx_calibrate(sx127x *device);
 
 /**
+ * @brief Control temperature monitoring. By default enabled. Should be used to measure the temperature in any mode except Sleep and Standby
+ * @param enable - Default: enabled
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_STATE if current state is not STANDBY
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_set_temp_monitor(bool enable, sx127x *device);
+
+/**
+ * @brief Higher precision requires a calibration procedure at a known temperature.
+ * @param device Pointer to variable to hold the device handle
+ * @param raw_temperature raw sensor temperature. Due to process variations, the absolute accuracy of the result is +/- 10 °C.
+ * @return int
+ *         - SX127X_ERR_INVALID_STATE if current state is not STANDBY
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_raw_temperature(sx127x *device, int8_t *raw_temperature);
+
+/**
  * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
  *
  * @param device Pointer to variable to hold the device handle

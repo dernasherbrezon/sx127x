@@ -80,6 +80,7 @@
 #define REG_SYNC_WORD 0x39
 #define REG_INVERTIQ2 0x3b
 #define REG_IMAGE_CAL 0x3b
+#define REG_TEMP 0x3c
 #define REG_IRQ_FLAGS_1 0x3e
 #define REG_IRQ_FLAGS_2 0x3f
 #define REG_DIO_MAPPING_1 0x40
@@ -1208,6 +1209,25 @@ int sx127x_fsk_ook_rx_calibrate(sx127x *device) {
     ERROR_CHECK(sx127x_read_register(REG_IMAGE_CAL, device->spi_device, &value));
   } while ((value & calibration_running) == calibration_running);
   return SX127X_OK;
+}
+
+int sx127x_fsk_ook_get_raw_temperature(sx127x *device, int8_t *raw_temperature) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t value;
+  ERROR_CHECK(sx127x_read_register(REG_TEMP, device->spi_device, &value));
+  if ((value & 0x80) == 0x80) {
+    *raw_temperature = 255 - value;
+  } else {
+    *raw_temperature = -1 * value;
+  }
+  return SX127X_OK;
+}
+
+int sx127x_fsk_ook_set_temp_monitor(bool enable, sx127x *device) {
+  CHECK_FSK_OOK_MODULATION(device);
+  // the field is called TempMonitorOff, thus inverted
+  uint8_t value = (enable ? 0b00000000 : 0b00000001);
+  return sx127x_append_register(REG_IMAGE_CAL, value, 0b11111110, device->spi_device);
 }
 
 void sx127x_destroy(sx127x *device) {
