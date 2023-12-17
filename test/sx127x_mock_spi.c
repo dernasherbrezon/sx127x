@@ -1,4 +1,4 @@
-#include <check.h>
+#include "unity.h"
 #include <string.h>
 #include <sx127x_spi.h>
 
@@ -34,7 +34,7 @@ int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uin
 }
 
 int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  ck_assert_int_eq(sx127x_mock_expected_response_current + buffer_length <= sx127x_mock_expected_response_length, 1);
+  TEST_ASSERT_EQUAL_INT(sx127x_mock_expected_response_current + buffer_length <= sx127x_mock_expected_response_length, 1);
   memcpy(buffer, sx127x_mock_expected_response + sx127x_mock_expected_response_current, buffer_length);
   sx127x_mock_expected_response_current += buffer_length;
   if (sx127x_mock_expected_response_current == sx127x_mock_expected_response_length) {
@@ -76,9 +76,9 @@ void spi_mock_fifo(uint8_t *expected, size_t expected_length, int code) {
 }
 
 void spi_assert_write(uint8_t *expected, size_t expected_length) {
-  ck_assert_int_eq(expected_length, sx127x_mock_actual_request_length);
+  TEST_ASSERT_EQUAL_INT(expected_length, sx127x_mock_actual_request_length);
   for (size_t i = 0; i < expected_length; i++) {
-    ck_assert_int_eq(expected[i], actual_request[i]);
+    TEST_ASSERT_EQUAL_INT(expected[i], actual_request[i]);
   }
 }
 
