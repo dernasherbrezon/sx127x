@@ -51,12 +51,12 @@ jobs:
         docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
         -w "/app/${{ github.repository }}/examples/receive_fsk" espressif/idf:v5.1.2 \
         /bin/bash -c 'git config --global --add safe.directory "*" && idf.py build'
-        docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
+        docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
         -w "/app/${{ github.repository }}/examples/receive_fsk_beacon" espressif/idf:v5.1.2 \
-        /bin/bash -c 'git config --global --add safe.directory "*" && idf.py build'
-        docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
+        /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
+        docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
         -w "/app/${{ github.repository }}/examples/receive_fsk_filtered" espressif/idf:v5.1.2 \
-        /bin/bash -c 'git config --global --add safe.directory "*" && idf.py build'
+        /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
       shell: bash
     - name: Cache ccache
       uses: actions/cache@v3
