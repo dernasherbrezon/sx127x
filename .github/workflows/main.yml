@@ -43,6 +43,12 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         sonar-scanner --define sonar.cfamily.build-wrapper-output="./test/${{ env.BUILD_WRAPPER_OUT_DIR }}"
+    - name: Cache ccache
+      uses: actions/cache@v3
+      with:
+        path: ~/ccache
+        key: ${{ runner.os }}-ccache
+        restore-keys: ${{ runner.os }}-ccache
     - name: Build examples
       run: |
         export IDF_TARGET=$(echo "esp32" | tr '[:upper:]' '[:lower:]' | tr -d '_-')
@@ -58,9 +64,3 @@ jobs:
         -w "/app/${{ github.repository }}/examples/receive_fsk_filtered" espressif/idf:v5.1.2 \
         /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
       shell: bash
-    - name: Cache ccache
-      uses: actions/cache@v3
-      with:
-        path: ~/ccache
-        key: ${{ runner.os }}-ccache
-        restore-keys: ${{ runner.os }}-ccache
