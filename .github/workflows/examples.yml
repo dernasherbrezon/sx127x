@@ -2,6 +2,7 @@ name: examples
 jobs:
   build:
     runs-on: ubuntu-latest
+    steps:
       - name: Cache ccache
         uses: actions/cache@v3
         with:
