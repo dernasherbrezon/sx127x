@@ -96,7 +96,8 @@ void rx_callback_with_counter(sx127x *device, uint8_t *data, uint16_t data_lengt
 
 TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
-  sx127x_dump_registers(fixture->device);
+  uint8_t registers[0x80];
+  sx127x_dump_registers(registers, fixture->device);
 }
 
 TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
