@@ -94,6 +94,14 @@ void rx_callback_with_counter(sx127x *device, uint8_t *data, uint16_t data_lengt
   }
 }
 
+void wait_for_rx_done() {
+  // delay depends on bit rate, modulation and current state
+  vTaskDelay(pdMS_TO_TICKS(5));
+  // tests will wait for this message before sending data
+  ESP_LOGI("sx127x_test", "RX started");
+  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+}
+
 TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
   uint8_t registers[0x80];
@@ -104,7 +112,7 @@ TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
   xSemaphoreTake(fixture->rx_done, TIMEOUT);
@@ -137,7 +145,7 @@ TEST_CASE("sx127x_test_fsk_rx_beacons", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));
   sx127x_rx_set_callback(rx_callback_with_counter, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_INT(MAX_BEACONS_EXPECTED, message_counter);
 }
 
@@ -154,7 +162,7 @@ TEST_CASE("sx127x_test_fsk_rx_fixed_small", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
 }
@@ -174,7 +182,7 @@ TEST_CASE("sx127x_test_fsk_rx_fixed_batch", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_max_single_batch_fixed), fixture->device));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_single_batch_fixed), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_single_batch_fixed, fixture->rx_data, sizeof(fsk_max_single_batch_fixed));
 }
@@ -194,7 +202,7 @@ TEST_CASE("sx127x_test_fsk_rx_fixed_max", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, FIXED_MAX_LENGTH, fixture->device));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(FIXED_MAX_LENGTH, fixture->rx_data_length);
   uint8_t *expected = malloc(FIXED_MAX_LENGTH);
   for (int i = 0; i < FIXED_MAX_LENGTH; i++) {
@@ -228,7 +236,7 @@ TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(170000.0, fixture->device));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
 }
@@ -249,7 +257,7 @@ TEST_CASE("sx127x_test_fsk_rx_filtered", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0xca, 0xfe, fixture->device));
   sx127x_rx_set_callback(rx_callback_with_counter, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_INT(MAX_BEACONS_EXPECTED, message_counter);
 }
 
@@ -280,9 +288,9 @@ TEST_CASE("sx127x_test_lora_rx_deepsleep_verify", "[lora]") {
 
 TEST_CASE("sx127x_test_lora_rx_deepsleep", "[lora]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_set_direction((gpio_num_t) rx_fixture_config.dio0, RTC_GPIO_MODE_INPUT_ONLY));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_pulldown_en((gpio_num_t) rx_fixture_config.dio0));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
   ESP_LOGI("sx127x_test", "entering deep sleep");
   TEST_ASSERT_EQUAL_INT(SX127X_OK, esp_sleep_enable_ext0_wakeup((gpio_num_t) rx_fixture_config.dio0, 1));
   esp_deep_sleep_start();
@@ -302,7 +310,7 @@ TEST_CASE("sx127x_test_lora_rx_explicit_header", "[lora]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(lora_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
 }
@@ -324,7 +332,7 @@ TEST_CASE("sx127x_test_lora_rx_implicit_header", "[lora]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(&explicit_header, fixture->device));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(lora_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
 }
@@ -342,7 +350,7 @@ TEST_CASE("sx127x_test_ook_rx_variable_length", "[ook]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_OOK, &fixture));
   sx127x_rx_set_callback(rx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_OOK, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
+  wait_for_rx_done();
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
   xSemaphoreTake(fixture->rx_done, TIMEOUT);

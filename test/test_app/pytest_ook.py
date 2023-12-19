@@ -13,6 +13,7 @@ def test_variable_length(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect('Press ENTER to see the list of tests')
     dut_rx.write('"sx127x_test_ook_rx_variable_length"')
+    dut_rx.expect('RX started')
 
     dut_tx.expect('Press ENTER to see the list of tests')
     dut_tx.write('"sx127x_test_ook_tx_variable_length"')

@@ -13,6 +13,7 @@ def test_explicit_header(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect('Press ENTER to see the list of tests')
     dut_rx.write('"sx127x_test_lora_rx_explicit_header"')
+    dut_rx.expect('RX started')
 
     dut_tx.expect('Press ENTER to see the list of tests')
     dut_tx.write('"sx127x_test_lora_tx_explicit_header"')
@@ -31,6 +32,7 @@ def test_implicit_header(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect('Press ENTER to see the list of tests')
     dut_rx.write('"sx127x_test_lora_rx_implicit_header"')
+    dut_rx.expect('RX started')
 
     dut_tx.expect('Press ENTER to see the list of tests')
     dut_tx.write('"sx127x_test_lora_tx_implicit_header"')
