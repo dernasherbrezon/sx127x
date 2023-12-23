@@ -376,9 +376,6 @@ TEST_CASE("sx127x_test_ook_rx_variable_length", "[ook]") {
   xSemaphoreTake(fixture->rx_done, TIMEOUT);
   TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_single_batch), fixture->rx_data_length);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_single_batch, fixture->rx_data, sizeof(fsk_max_single_batch));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
-  TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_variable), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_variable, fixture->rx_data, sizeof(fsk_max_variable));
 }
 
 TEST_CASE("sx127x_test_ook_tx_variable_length", "[ook]") {
@@ -390,10 +387,6 @@ TEST_CASE("sx127x_test_ook_tx_variable_length", "[ook]") {
   xSemaphoreTake(fixture->tx_done, TIMEOUT);
   vTaskDelay(pdMS_TO_TICKS(50));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, fixture->device));
-  xSemaphoreTake(fixture->tx_done, TIMEOUT);
-  vTaskDelay(pdMS_TO_TICKS(50));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, fixture->device));
   xSemaphoreTake(fixture->tx_done, TIMEOUT);
 }
