@@ -5,6 +5,7 @@
 #include <unity.h>
 #include <driver/rtc_io.h>
 #include <esp_sleep.h>
+#include <stdio.h>
 
 #include "sx127x_fixture.h"
 
@@ -19,8 +20,8 @@ sx127x_fixture_config_t rx_fixture_config = {
     .ss = 18,
     .rst = 23,
     .dio0 = 26,
-    .dio1 = 35, // Heltec lora32 v2
-    .dio2 = 34};
+    .dio1 = 33, // TTGO lora32
+    .dio2 = 32};
 
 sx127x_fixture_config_t tx_fixture_config = {
     .sck = 5,
@@ -106,6 +107,13 @@ TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
   uint8_t registers[0x80];
   sx127x_dump_registers(registers, fixture->device);
+  for (int i = 0; i < sizeof(registers); i++) {
+    if (i != 0) {
+      printf(",");
+    }
+    printf("%d", registers[i]);
+  }
+  printf("\n");
 }
 
 TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
@@ -230,7 +238,7 @@ TEST_CASE("sx127x_test_fsk_tx_fixed_max", "[fsk]") {
 TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(300000.0, fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(100000.0, fixture->device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(10000.0, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_auto(false, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_bandwidth(170000.0, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(170000.0, fixture->device));
@@ -244,7 +252,7 @@ TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
 TEST_CASE("sx127x_test_fsk_tx_max_baud", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&tx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(300000.0, fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(100000.0, fixture->device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(10000.0, fixture->device));
   setup_gpio_interrupts((gpio_num_t) tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
   sx127x_tx_set_callback(tx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture->device));
@@ -287,6 +295,7 @@ TEST_CASE("sx127x_test_lora_rx_deepsleep_verify", "[lora]") {
 }
 
 TEST_CASE("sx127x_test_lora_rx_deepsleep", "[lora]") {
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_set_direction((gpio_num_t) rx_fixture_config.dio0, RTC_GPIO_MODE_INPUT_ONLY));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_pulldown_en((gpio_num_t) rx_fixture_config.dio0));

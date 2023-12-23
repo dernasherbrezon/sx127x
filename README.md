@@ -141,10 +141,7 @@ make test
 
 ## Integration tests
 
-Integration tests can verify communication between real devices in different modes. Tests require two LoRa boards connected to the same host. It is possible to test on any other boards by overriding pin mappings in ```test/test_app/main.c```. By default tests require:
-
- * Receiver is Heltec lora32 v2
- * Transmitter is TTGO lora32
+Integration tests can verify communication between real devices in different modes. Tests require two LoRa boards connected to the same host. It is possible to test on any other boards by overriding pin mappings in ```test/test_app/main.c```. By default tests assume transmitter and receiver is TTGO lora32.
 
 Before running tests from ESP-IDF make sure [pytest is installed](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html).
 
@@ -153,7 +150,5 @@ Run the following command to test:
 ```
 cd test/test_app
 idf.py build
-pytest --target esp32 --port="/dev/ttyUSB0|/dev/ttyACM0" pytest_*
+pytest --target esp32 --port="/dev/ttyACM0|/dev/ttyACM1" pytest_*
 ```
-
-This command assumes ```/dev/ttyUSB0``` is receiver, ```/dev/ttyACM0``` is transmitter.

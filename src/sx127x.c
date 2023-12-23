@@ -514,7 +514,6 @@ int sx127x_create(void *spi_device, sx127x **result) {
   }
   *device = (struct sx127x_t) {0};
   device->spi_device = spi_device;
-  device->use_implicit_header = false;
 
   uint8_t version;
   int code = sx127x_read_register(REG_VERSION, device->spi_device, &version);
@@ -531,6 +530,8 @@ int sx127x_create(void *spi_device, sx127x **result) {
   device->fsk_rssi_available = false;
   device->opmod = SX127x_MODE_STANDBY;
   device->fsk_crc_type = SX127X_CRC_CCITT;
+  device->use_implicit_header = false;
+  device->expected_packet_length = 0;
   *result = device;
   return SX127X_OK;
 }
