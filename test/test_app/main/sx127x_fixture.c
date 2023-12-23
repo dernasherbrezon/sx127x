@@ -83,6 +83,7 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
   ERROR_CHECK(gpio_set_level((gpio_num_t) config->rst, 1));
   vTaskDelay(pdMS_TO_TICKS(10));
   ESP_LOGI(TAG, "sx127x was reset");
+  // it looks like if leave this pin "HIGH" then interrupt in deep sleep mode won't be generated
   ERROR_CHECK(gpio_reset_pin((gpio_num_t) config->rst));
 
   sx127x_fixture_t *result = NULL;

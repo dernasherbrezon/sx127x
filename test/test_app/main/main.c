@@ -249,7 +249,7 @@ TEST_CASE("sx127x_test_fsk_tx_fixed_max", "[fsk]") {
 TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(300000.0, fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(10000.0, fixture->device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(100000.0, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_auto(false, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_bandwidth(170000.0, fixture->device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(170000.0, fixture->device));
@@ -263,7 +263,7 @@ TEST_CASE("sx127x_test_fsk_rx_max_baud", "[fsk]") {
 TEST_CASE("sx127x_test_fsk_tx_max_baud", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&tx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(300000.0, fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(10000.0, fixture->device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(100000.0, fixture->device));
   setup_gpio_interrupts((gpio_num_t) tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
   sx127x_tx_set_callback(tx_callback, fixture->device);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture->device));
