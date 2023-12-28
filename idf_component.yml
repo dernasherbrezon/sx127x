@@ -1,4 +1,4 @@
-version: "3.1.1"
+version: "3.1.2"
 description: Library to work with LoRa chips sx127x
 url: https://github.com/dernasherbrezon/sx127x
 files:
