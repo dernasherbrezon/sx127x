@@ -52,7 +52,7 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
   return 0;
 }
 
-int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *spi_device) {
+int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, void *spi_device) {
   struct spi_ioc_transfer tr[2];
   memset(&tr, 0, sizeof(tr));
   reg = reg | 0x80;
@@ -67,7 +67,7 @@ int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *
   return 0;
 }
 
-int sx127x_spi_write_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
+int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device) {
   struct spi_ioc_transfer tr[2];
   memset(&tr, 0, sizeof(tr));
   reg = reg | 0x80;

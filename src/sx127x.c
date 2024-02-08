@@ -837,7 +837,7 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
   return sx127x_append_register(REG_MODEM_CONFIG_2, value, 0b11111011, device->spi_device);
 }
 
-int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device) {
+int sx127x_lora_tx_set_for_transmission(const uint8_t *data, uint8_t data_length, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   // uint8_t can't be more than MAX_PACKET_SIZE
   if (data_length == 0) {

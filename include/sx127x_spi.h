@@ -58,7 +58,7 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *spi_device);
+int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, void *spi_device);
 
 /**
  * @brief Write data_length bytes into the register
@@ -71,7 +71,7 @@ int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_spi_write_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device);
+int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device);
 
 #ifdef __cplusplus
 }

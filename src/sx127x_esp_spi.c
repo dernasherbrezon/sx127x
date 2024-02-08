@@ -48,7 +48,7 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
   return spi_device_polling_transmit(spi_device, &t);
 }
 
-int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *spi_device) {
+int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, void *spi_device) {
   if (data_length == 0 || data_length > 4) {
     return ESP_ERR_INVALID_ARG;
   }
@@ -65,7 +65,7 @@ int sx127x_spi_write_register(int reg, uint8_t *data, size_t data_length, void *
   return spi_device_polling_transmit(spi_device, &t);
 }
 
-int sx127x_spi_write_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
+int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device) {
   spi_transaction_t t = {
       .addr = reg | 0x80,
       .rx_buffer = NULL,

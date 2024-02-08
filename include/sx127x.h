@@ -602,7 +602,7 @@ void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_tx_set_for_transmission(uint8_t *data, uint8_t data_length, sx127x *device);
+int sx127x_lora_tx_set_for_transmission(const uint8_t *data, uint8_t data_length, sx127x *device);
 
 /**
  * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
