@@ -103,7 +103,7 @@ int dump_fsk_registers(const uint8_t *regs) {
   printf("0x06: RegFr:\n");
   printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
   printf("0x09: RegPaConfig:\n");
-  value = regs[0x07];
+  value = regs[0x09];
   if ((value & 0b10000000) == 0b10000000) {
     printf("\tPaSelect=PA_BOOST pin\n");
   } else {
@@ -779,7 +779,7 @@ int dump_lora_registers(uint8_t *regs) {
   printf("0x06: RegFr:\n");
   printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
   printf("0x09: RegPaConfig:\n");
-  value = regs[0x07];
+  value = regs[0x09];
   if ((value & 0b10000000) == 0b10000000) {
     printf("\tPaSelect=PA_BOOST pin\n");
   } else {
