@@ -110,7 +110,7 @@ int main() {
   LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_BITS_PER_WORD, &bits_per_word));
   int lsb_setting = 0;  // MSB
   LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_LSB_FIRST, &lsb_setting));
-  int max_speed = 500000;
+  int max_speed = 8000000;
   LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_MAX_SPEED_HZ, &max_speed));
 
   sx127x *device = NULL;

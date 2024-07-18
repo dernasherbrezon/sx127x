@@ -20,7 +20,7 @@
 #define GPIO_DIO3_PIN 26
 #define GPIO_DIO0_PIN 27
 #define GPIO_RESET_PIN 6
-#define GPIO_POLL_TIMEOUT -1
+#define GPIO_POLL_TIMEOUT (-1)
 
 #define LINUX_ERROR_CHECK(x)                                                       \
   do {                                                                             \
@@ -177,7 +177,7 @@ int main() {
     LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_BITS_PER_WORD, &bits_per_word));
     int lsb_setting = 0;  // MSB
     LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_LSB_FIRST, &lsb_setting));
-    int max_speed = 500000;
+    int max_speed = 4000000;
     LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_MAX_SPEED_HZ, &max_speed));
 
     sx127x *device = NULL;

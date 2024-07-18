@@ -22,7 +22,7 @@ for (int i = 0; i < sizeof(registers); i++) {
   if (i != 0) {
     printf(",");
   }
-  printf("%d", registers[i]);
+  printf("0x%02x", registers[i]);
 }
 printf("\n");
 ```
