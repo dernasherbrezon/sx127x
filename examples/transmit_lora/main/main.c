@@ -118,8 +118,4 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, device));
 
   tx_callback(device);
-
-  while (1) {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }

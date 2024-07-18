@@ -92,8 +92,4 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
   ESP_LOGI(TAG, "transmitting");
-
-  while (1) {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }

@@ -136,8 +136,4 @@ void app_main() {
   setup_gpio_interrupts((gpio_num_t)DIO2, device, GPIO_INTR_POSEDGE);
 
   tx_callback(device);
-
-  while (1) {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }

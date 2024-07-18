@@ -66,8 +66,4 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_tx_start_beacon(payload, sizeof(payload), 1000, device));
   vTaskDelay(10000 / portTICK_PERIOD_MS);
   ESP_ERROR_CHECK(sx127x_fsk_ook_tx_stop_beacon(device));
-
-  while (1) {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }

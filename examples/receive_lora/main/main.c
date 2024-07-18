@@ -116,7 +116,4 @@ void app_main() {
   setup_gpio_interrupts((gpio_num_t)DIO0, device);
 
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
-  while (1) {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }
