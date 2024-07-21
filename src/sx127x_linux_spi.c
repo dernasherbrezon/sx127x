@@ -17,50 +17,67 @@
 #include <string.h>
 #include <sx127x_spi.h>
 #include <sys/ioctl.h>
+#include <stdlib.h>
 
 int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uint32_t *result) {
-  *result = 0;
-  struct spi_ioc_transfer tr[2];
+  if (data_length == 0 || data_length > 4) {
+    return -1;
+  }
+  struct spi_ioc_transfer tr;
   memset(&tr, 0, sizeof(tr));
-  reg = reg & 0x7F;
-  tr[0].tx_buf = (unsigned long)&reg;
-  tr[0].len = 1;
-  tr[1].rx_buf = (unsigned long)result;
-  tr[1].len = data_length;
-  int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
-  // convert from big-endian to host order
-  *result = ntohl(*result);
-  *result = *result >> (4 - data_length) * 8;
+  uint64_t tx_buf = ((uint8_t) reg & 0x7F);
+  uint64_t rx_buf = 0;
+  tr.tx_buf = (__u64) &tx_buf;
+  tr.rx_buf = (__u64) &rx_buf;
+  tr.len = data_length + 1;
+  int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
   if (code == -1) {
+    *result = 0;
     return errno;
   }
+  // first >> 8 shift is to remove garbage received during tx
+  // second shift is to actually trim uint32 to the expected length
+  *result = ntohl(rx_buf >> 8) >> (4 - data_length) * 8;
   return 0;
 }
 
 int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  struct spi_ioc_transfer tr[2];
+  if (buffer_length < 1) {
+    return 0;
+  }
+  uint8_t *tmp = malloc(buffer_length + 1);
+  if (tmp == NULL) {
+    return ENOMEM;
+  }
+  struct spi_ioc_transfer tr;
   memset(&tr, 0, sizeof(tr));
-  reg = reg & 0x7F;
-  tr[0].tx_buf = (unsigned long)&reg;
-  tr[0].len = 1;
-  tr[1].rx_buf = (unsigned long)buffer;
-  tr[1].len = buffer_length;
-  int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
+  uint64_t tx_buf = ((uint8_t) reg & 0x7F);
+  tr.tx_buf = (__u64) &tx_buf;
+  tr.rx_buf = (__u64) tmp;
+  tr.len = buffer_length + 1;
+  int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
   if (code == -1) {
+    free(tmp);
     return errno;
   }
+  // shift 1 byte to the right
+  memcpy(buffer, tmp + 1, buffer_length);
+  free(tmp);
   return 0;
 }
 
 int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, void *spi_device) {
-  struct spi_ioc_transfer tr[2];
+  if (data_length == 0 || data_length > 4) {
+    return -1;
+  }
+  struct spi_ioc_transfer tr;
   memset(&tr, 0, sizeof(tr));
-  reg = reg | 0x80;
-  tr[0].tx_buf = (unsigned long)&reg;
-  tr[0].len = 1;
-  tr[1].tx_buf = (unsigned long)data;
-  tr[1].len = data_length;
-  int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
+  uint8_t tmp[5] = {0};
+  tmp[0] = reg | 0x80;
+  memcpy(tmp + 1, data, data_length);
+  tr.tx_buf = (unsigned long) tmp;
+  tr.len = data_length + 1;
+  int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
   if (code == -1) {
     return errno;
   }
@@ -68,14 +85,17 @@ int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, 
 }
 
 int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  struct spi_ioc_transfer tr[2];
+  struct spi_ioc_transfer tr;
   memset(&tr, 0, sizeof(tr));
-  reg = reg | 0x80;
-  tr[0].tx_buf = (unsigned long)&reg;
-  tr[0].len = 1;
-  tr[1].tx_buf = (unsigned long)buffer;
-  tr[1].len = buffer_length;
-  int code = ioctl(*(int *)spi_device, SPI_IOC_MESSAGE(2), &tr);
+  uint8_t *tmp = malloc(buffer_length + 1);
+  if (tmp == NULL) {
+    return ENOMEM;
+  }
+  tmp[0] = reg | 0x80;
+  memcpy(tmp + 1, buffer, buffer_length);
+  tr.tx_buf = (__u64) tmp;
+  tr.len = buffer_length + 1;
+  int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
   if (code == -1) {
     return errno;
   }

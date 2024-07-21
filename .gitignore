@@ -59,7 +59,7 @@ dependencies.lock
 .DS_Store
 build_mac/
 cmake-build-remote
-**/cmake-build-debug/
+**/cmake-build*/
 .idea/
 dist/
 debug/
