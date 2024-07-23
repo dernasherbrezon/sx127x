@@ -535,6 +535,56 @@ int dump_fsk_registers(const uint8_t *regs) {
       printf("\tLowBatTrim=2.185 V\n");
       break;
   }
+  printf("0x3e: RegIrqFlags1\n");
+  if ((regs[0x3e] >> 7) & 0x1) {
+    printf("\tModeReady\n");
+  }
+  if ((regs[0x3e] >> 6) & 0x1) {
+    printf("\tRxReady\n");
+  }
+  if ((regs[0x3e] >> 5) & 0x1) {
+    printf("\tTxReady\n");
+  }
+  if ((regs[0x3e] >> 4) & 0x1) {
+    printf("\tPllLock\n");
+  }
+  if ((regs[0x3e] >> 3) & 0x1) {
+    printf("\tRssi\n");
+  }
+  if ((regs[0x3e] >> 2) & 0x1) {
+    printf("\tTimeout\n");
+  }
+  if ((regs[0x3e] >> 1) & 0x1) {
+    printf("\tPreambleDetect\n");
+  }
+  if ((regs[0x3e] >> 0) & 0x1) {
+    printf("\tSyncAddressMatch\n");
+  }
+  printf("0x3f: RegIrqFlags2\n");
+  if ((regs[0x3f] >> 7) & 0x1) {
+    printf("\tFifoFull\n");
+  }
+  if ((regs[0x3f] >> 6) & 0x1) {
+    printf("\tFifoEmpty\n");
+  }
+  if ((regs[0x3f] >> 5) & 0x1) {
+    printf("\tFifoLevel\n");
+  }
+  if ((regs[0x3f] >> 4) & 0x1) {
+    printf("\tFifoOverrun\n");
+  }
+  if ((regs[0x3f] >> 3) & 0x1) {
+    printf("\tPacketSent\n");
+  }
+  if ((regs[0x3f] >> 2) & 0x1) {
+    printf("\tPayloadReady\n");
+  }
+  if ((regs[0x3f] >> 1) & 0x1) {
+    printf("\tCrcOk\n");
+  }
+  if ((regs[0x3f] >> 0) & 0x1) {
+    printf("\tLowBat\n");
+  }
   printf("0x40: RegDioMapping1\n");
   if ((regs[0x31] & 0b1000000) != 0) {
     uint8_t dio0 = ((regs[0x40] & 0b11000000) >> 6);
