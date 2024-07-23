@@ -407,17 +407,22 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     return;
   }
   if ((irq & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
-    // turn off TX mode as soon as possible to reduce power consumption
-    // FSK modem by default keep sending preamble after manual shutdown
-    // ignore status code
-    sx127x_set_opmod(SX127x_MODE_STANDBY, device->active_modem, device);
+    sx127x_fsk_ook_reset_state(device);
     if (device->tx_callback != NULL) {
       device->tx_callback(device);
     }
-    sx127x_fsk_ook_reset_state(device);
     return;
   }
   if (device->opmod == SX127x_MODE_TX) {
+    if ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) != 0) {
+      // TX sequencer clears PACKET_SENT IRQ so only FIFO_EMPTY interrupt can be used to detect if message was actually sent
+      sx127x_fsk_ook_reset_state(device);
+      if (device->tx_callback != NULL) {
+        device->tx_callback(device);
+      }
+      return;
+    }
+    // FIFO_LEVEL == 0 - below level
     if ((irq & SX127X_FSK_IRQ_FIFO_LEVEL) == 0 && (irq & SX127X_FSK_IRQ_FIFO_FULL) == 0) {
       uint8_t to_send;
       if (device->expected_packet_length - device->fsk_ook_packet_sent_received > (HALF_MAX_FIFO_THRESHOLD - 1)) {
@@ -425,7 +430,9 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       } else {
         to_send = (uint8_t) (device->expected_packet_length - device->fsk_ook_packet_sent_received);
       }
-      // safe check
+      // tx still sending the data
+      // ignore interrupt
+      // this can happen when exactly 63 bytes sent and FIFO_LEVEL is ~30bytes
       if (to_send == 0) {
         return;
       }
@@ -558,6 +565,12 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       // start tx as soon as first byte in FIFO available
       uint8_t data = (TX_START_CONDITION_FIFO_EMPTY | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
+      // use sequencer to send single packet and stop carrier
+      uint8_t value = 0b10010000;
+      ERROR_CHECK(sx127x_spi_write_register(REG_SEQ_CONFIG1, &value, 1, device->spi_device));
+      device->active_modem = modulation;
+      device->opmod = opmod;
+      return SX127X_OK;
     }
   } else {
     return SX127X_ERR_INVALID_ARG;

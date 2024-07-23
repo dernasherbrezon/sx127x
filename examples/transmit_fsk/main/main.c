@@ -73,7 +73,7 @@ void tx_callback(sx127x *device) {
     return;
   }
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
-  ESP_LOGI(TAG, "transmitting");
+  ESP_LOGI(TAG, "transmitting: %d", messages_sent);
   messages_sent++;
 }
 
@@ -87,6 +87,13 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_INPUT_OUTPUT));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
+  vTaskDelay(pdMS_TO_TICKS(5));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
+  vTaskDelay(pdMS_TO_TICKS(10));
+  ESP_LOGI(TAG, "sx127x was reset");
+  ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
 
   spi_bus_config_t config = {
       .mosi_io_num = MOSI,
@@ -113,7 +120,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
-  ESP_ERROR_CHECK(sx127x_set_preamble_length(4, device));  // FIXME?
+  ESP_ERROR_CHECK(sx127x_set_preamble_length(4, device));
   uint8_t syncWord[] = {0x12, 0xAD};
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, device));
