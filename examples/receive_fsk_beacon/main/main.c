@@ -39,7 +39,7 @@ void handle_interrupt_task(void *arg) {
 }
 
 void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
-  uint8_t payload[2090 * 2];
+  uint8_t payload[514];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
     uint8_t cur = data[i];
@@ -64,6 +64,14 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_INPUT_OUTPUT));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
+  vTaskDelay(pdMS_TO_TICKS(5));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
+  vTaskDelay(pdMS_TO_TICKS(10));
+  ESP_LOGI(TAG, "sx127x was reset");
+  ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
+
   spi_bus_config_t config = {
       .mosi_io_num = MOSI,
       .miso_io_num = MISO,

@@ -63,7 +63,9 @@ void app_main() {
 
   uint8_t payload[] = {0xCA, 0xFE, 0x01, 0x02, 0xBE, 0xEF};
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(payload), device));
+  ESP_LOGI(TAG, "sending beacons...");
   ESP_ERROR_CHECK(sx127x_fsk_ook_tx_start_beacon(payload, sizeof(payload), 1000, device));
   vTaskDelay(10000 / portTICK_PERIOD_MS);
   ESP_ERROR_CHECK(sx127x_fsk_ook_tx_stop_beacon(device));
+  ESP_LOGI(TAG, "stopped");
 }
