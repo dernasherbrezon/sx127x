@@ -27,14 +27,16 @@ sx127x *device = NULL;
 int messages_sent = 0;
 TaskHandle_t handle_interrupt;
 
-void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+void IRAM_ATTR
+
+handle_interrupt_fromisr(void *arg) {
   xTaskResumeFromISR(handle_interrupt);
 }
 
 void handle_interrupt_task(void *arg) {
   while (1) {
     vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *)arg);
+    sx127x_handle_interrupt((sx127x *) arg);
   }
 }
 
@@ -43,11 +45,17 @@ void tx_callback(sx127x *device) {
     ESP_LOGI(TAG, "transmitted");
   }
   if (messages_sent == 0) {
-    uint8_t data[2047];
+    uint16_t data_length = 2047;
+    uint8_t *data = malloc(sizeof(uint8_t) * data_length);
+    if (data == NULL) {
+      ESP_LOGE(TAG, "unable to initialize data to send: no memory");
+      return;
+    }
     for (int i = 0; i < 2047; i++) {
       data[i] = (i % 10);
     }
-    ESP_ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission(data, sizeof(data), device));
+    ESP_ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission(data, data_length, device));
+    free(data);
   } else {
     // FSK mode require manual switch from TX to Standby
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
@@ -63,11 +71,19 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type
   gpio_pulldown_en(gpio);
   gpio_pullup_dis(gpio);
   gpio_set_intr_type(gpio, type);
-  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
+  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) device);
 }
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_INPUT_OUTPUT));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
+  vTaskDelay(pdMS_TO_TICKS(5));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
+  vTaskDelay(pdMS_TO_TICKS(10));
+  ESP_LOGI(TAG, "sx127x was reset");
+  ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
+
   spi_bus_config_t config = {
       .mosi_io_num = MOSI,
       .miso_io_num = MISO,
@@ -97,7 +113,7 @@ void app_main() {
   uint8_t syncWord[] = {0x12, 0xAD};
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_SCRAMBLED, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
   ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
@@ -105,7 +121,7 @@ void app_main() {
 
   sx127x_tx_set_callback(tx_callback, device);
 
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196 * 2, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);
     sx127x_destroy(device);
@@ -113,9 +129,9 @@ void app_main() {
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)DIO0, device, GPIO_INTR_POSEDGE);
-  setup_gpio_interrupts((gpio_num_t)DIO1, device, GPIO_INTR_NEGEDGE);
-  setup_gpio_interrupts((gpio_num_t)DIO2, device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO0, device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO1, device, GPIO_INTR_NEGEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO2, device, GPIO_INTR_POSEDGE);
 
   tx_callback(device);
 }
