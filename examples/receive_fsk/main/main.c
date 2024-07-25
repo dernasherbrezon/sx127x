@@ -27,14 +27,16 @@ TaskHandle_t handle_interrupt;
 int total_packets_received = 0;
 static const char *TAG = "sx127x";
 
-void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+void IRAM_ATTR
+
+handle_interrupt_fromisr(void *arg) {
   xTaskResumeFromISR(handle_interrupt);
 }
 
 void handle_interrupt_task(void *arg) {
   while (1) {
     vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *)arg);
+    sx127x_handle_interrupt((sx127x *) arg);
   }
 }
 
@@ -50,7 +52,13 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
 
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
-  ESP_LOGI(TAG, "received: %d %s freq_error: %" PRId32, data_length, payload, frequency_error);
+  int16_t rssi;
+  int code = sx127x_rx_get_packet_rssi(device, &rssi);
+  if (code == SX127X_ERR_NOT_FOUND) {
+    ESP_LOGI(TAG, "received: %d %s freq_error: %" PRId32, data_length, payload, frequency_error);
+  } else {
+    ESP_LOGI(TAG, "received: %d %s rssi: %d freq_error: %" PRId32, data_length, payload, rssi, frequency_error);
+  }
   total_packets_received++;
 }
 
@@ -59,7 +67,7 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
   gpio_pulldown_en(gpio);
   gpio_pullup_dis(gpio);
   gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
-  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
+  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) device);
 }
 
 void app_main() {
@@ -89,7 +97,7 @@ void app_main() {
       .address_bits = 8,
       .dummy_bits = 0,
       .mode = 0};
-  spi_device_handle_t spi_device;   
+  spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
@@ -110,6 +118,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_rx_calibrate(device));
 
   sx127x_rx_set_callback(rx_callback, device);
 
@@ -121,9 +130,9 @@ void app_main() {
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)DIO0, device);
-  setup_gpio_interrupts((gpio_num_t)DIO1, device);
-  setup_gpio_interrupts((gpio_num_t)DIO2, device);
+  setup_gpio_interrupts((gpio_num_t) DIO0, device);
+  setup_gpio_interrupts((gpio_num_t) DIO1, device);
+  setup_gpio_interrupts((gpio_num_t) DIO2, device);
 
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
 }

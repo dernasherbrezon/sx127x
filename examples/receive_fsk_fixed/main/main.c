@@ -50,7 +50,13 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
 
   int32_t frequency_error;
   ESP_ERROR_CHECK(sx127x_rx_get_frequency_error(device, &frequency_error));
-  ESP_LOGI(TAG, "received: %d %s freq_error: %" PRId32, data_length, payload, frequency_error);
+  int16_t rssi;
+  int code = sx127x_rx_get_packet_rssi(device, &rssi);
+  if (code == SX127X_ERR_NOT_FOUND) {
+    ESP_LOGI(TAG, "received: %d %s freq_error: %" PRId32, data_length, payload, frequency_error);
+  } else {
+    ESP_LOGI(TAG, "received: %d %s rssi: %d freq_error: %" PRId32, data_length, payload, rssi, frequency_error);
+  }
   total_packets_received++;
 }
 
