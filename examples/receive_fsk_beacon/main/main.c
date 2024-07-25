@@ -15,12 +15,12 @@
 #define RST 23
 #define DIO0 26
 // older versions of TTGO require manual wiring of pins below
-//#define DIO1 33
-//#define DIO2 32
+#define DIO1 33
+#define DIO2 32
 
 // Heltec lora32 v2
-#define DIO1 35
-#define DIO2 34
+//#define DIO1 35
+//#define DIO2 34
 
 sx127x *device = NULL;
 TaskHandle_t handle_interrupt;
