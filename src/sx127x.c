@@ -561,9 +561,10 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
       uint8_t data = HALF_MAX_FIFO_THRESHOLD;
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
     } else if (opmod == SX127x_MODE_TX) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL, 0b00000011, device->spi_device));
+      uint8_t data = (SX127x_FSK_DIO0_PACKET_SENT | SX127x_FSK_DIO1_FIFO_LEVEL | SX127x_FSK_DIO2_FIFO_FULL | SX127x_FSK_DIO3_FIFO_EMPTY);
+      ERROR_CHECK(sx127x_spi_write_register(REG_DIO_MAPPING_1, &data, 1, device->spi_device));
       // start tx as soon as first byte in FIFO available
-      uint8_t data = (TX_START_CONDITION_FIFO_EMPTY | HALF_MAX_FIFO_THRESHOLD);
+      data = (TX_START_CONDITION_FIFO_EMPTY | HALF_MAX_FIFO_THRESHOLD);
       ERROR_CHECK(sx127x_spi_write_register(REG_FIFO_THRESH, &data, 1, device->spi_device));
       // use sequencer to send single packet and stop carrier
       uint8_t value = 0b10010000;
@@ -868,17 +869,16 @@ int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device) {
   return sx127x_spi_write_register(0x27, &value, 1, device->spi_device);
 }
 
-int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint8_t *data, uint16_t data_length, uint8_t remaining_fifo, sx127x *device) {
+int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, sx127x *device) {
   uint8_t to_send;
-  if (data_length > remaining_fifo) {
-    to_send = remaining_fifo;
-    memcpy(device->packet, data, sizeof(uint8_t) * data_length);
+  if (data_length > FIFO_SIZE_FSK) {
+    to_send = FIFO_SIZE_FSK;
   } else {
     to_send = data_length;
   }
   device->expected_packet_length = data_length;
   device->fsk_ook_packet_sent_received = to_send;
-  return sx127x_spi_write_buffer(REG_FIFO, data, to_send, device->spi_device);
+  return sx127x_spi_write_buffer(REG_FIFO, device->packet, to_send, device->spi_device);
 }
 
 int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device) {
@@ -889,12 +889,15 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
   if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_FIXED) {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t remaining_fifo = FIFO_SIZE_FSK;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
-    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, (uint8_t *) &data_length, 1, device->spi_device));
-    remaining_fifo--;
+    device->packet[0] = (uint8_t) data_length;
+    // packet length is always more than 255
+    memcpy(device->packet + 1, data, sizeof(uint8_t) * data_length);
+    data_length++;
+  } else {
+    memcpy(device->packet, data, sizeof(uint8_t) * data_length);
   }
-  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
+  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data_length, device);
 }
 
 int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
@@ -905,15 +908,17 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
   if (device->fsk_ook_format == SX127X_FIXED && data_length > (MAX_PACKET_SIZE_FSK_FIXED - 1)) {
     return SX127X_ERR_INVALID_ARG;
   }
-  uint8_t remaining_fifo = FIFO_SIZE_FSK;
+  uint16_t offset = 0;
+  uint16_t packet_length = data_length;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
-    uint8_t data_length_with_address = data_length + 1;
-    ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &data_length_with_address, 1, device->spi_device));
-    remaining_fifo--;
+    device->packet[offset] = (uint8_t) (data_length + 1);
+    offset++;
+    packet_length = data_length + 1;
   }
-  ERROR_CHECK(sx127x_spi_write_register(REG_FIFO, &address_to, 1, device->spi_device));
-  remaining_fifo--;
-  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data, data_length, remaining_fifo, device);
+  device->packet[offset] = address_to;
+  offset++;
+  memcpy(device->packet + offset, data, sizeof(uint8_t) * data_length);
+  return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(packet_length, device);
 }
 
 int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device) {

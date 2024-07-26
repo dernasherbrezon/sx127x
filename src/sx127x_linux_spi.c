@@ -85,17 +85,18 @@ int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, 
 }
 
 int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  struct spi_ioc_transfer tr;
-  memset(&tr, 0, sizeof(tr));
   uint8_t *tmp = malloc(buffer_length + 1);
   if (tmp == NULL) {
     return ENOMEM;
   }
   tmp[0] = reg | 0x80;
   memcpy(tmp + 1, buffer, buffer_length);
+  struct spi_ioc_transfer tr;
+  memset(&tr, 0, sizeof(tr));
   tr.tx_buf = (__u64) tmp;
   tr.len = buffer_length + 1;
   int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
+  free(tmp);
   if (code == -1) {
     return errno;
   }
