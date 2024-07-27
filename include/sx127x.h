@@ -21,8 +21,9 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_PACKET_SIZE 256
+#define MAX_PACKET_SIZE 255
 #define MAX_PACKET_SIZE_FSK_FIXED 2047
+#define MAX_NUMBER_OF_REGISTERS 0x70
 
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
@@ -452,7 +453,7 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
  *
  * Output all internal registers in the current mode. Can be useful for debugging and troubleshooting.
  *
- * @param output Pre-allocated array where the values will be written. Should be at least 0x80 length.
+ * @param output Pre-allocated array where the values will be written. Should be at least MAX_NUMBER_OF_REGISTERS length.
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid

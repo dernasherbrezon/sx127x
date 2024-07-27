@@ -763,7 +763,7 @@ int sx127x_dump_registers(uint8_t *output, sx127x *device) {
   //Reading from 0x00 register will actually read from fifo
   //skip it
   output[0] = 0x00;
-  return sx127x_spi_read_buffer(0x01, output + 1, 0x7F, device->spi_device);
+  return sx127x_spi_read_buffer(0x01, output + 1, MAX_NUMBER_OF_REGISTERS - 1, device->spi_device);
 }
 
 void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {
@@ -883,7 +883,7 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, 
 
 int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > 255) {
+  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > MAX_PACKET_SIZE) {
     return SX127X_ERR_INVALID_ARG;
   }
   if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_FIXED) {
@@ -902,7 +902,7 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
 
 int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > 254) {
+  if (device->fsk_ook_format == SX127X_VARIABLE && data_length > (MAX_PACKET_SIZE - 1)) {
     return SX127X_ERR_INVALID_ARG;
   }
   if (device->fsk_ook_format == SX127X_FIXED && data_length > (MAX_PACKET_SIZE_FSK_FIXED - 1)) {
@@ -1160,11 +1160,11 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
 
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  if (format == SX127X_FIXED && (max_payload_length == 0 || max_payload_length > 2047)) {
+  if (format == SX127X_FIXED && (max_payload_length == 0 || max_payload_length > MAX_PACKET_SIZE_FSK_FIXED)) {
     return SX127X_ERR_INVALID_ARG;
   }
   // max_payload_length = 2047 in variable packet mode will disable max payload length check
-  if (format == SX127X_VARIABLE && (max_payload_length == 0 || (max_payload_length > 255 && max_payload_length != 2047))) {
+  if (format == SX127X_VARIABLE && (max_payload_length == 0 || (max_payload_length > MAX_PACKET_SIZE && max_payload_length != MAX_PACKET_SIZE_FSK_FIXED))) {
     return SX127X_ERR_INVALID_ARG;
   }
   uint8_t msb_bits = ((max_payload_length >> 8) & 0b111);

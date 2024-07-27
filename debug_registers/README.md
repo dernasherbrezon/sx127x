@@ -16,7 +16,7 @@ make
 First, obtain sx127x registers. It can be done using ```sx127x_dump_registers``` function.
 
 ```c
-uint8_t registers[0x80];
+uint8_t registers[MAX_NUMBER_OF_REGISTERS];
 sx127x_dump_registers(registers, device);
 for (int i = 0; i < sizeof(registers); i++) {
   if (i != 0) {
