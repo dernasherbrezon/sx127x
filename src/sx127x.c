@@ -909,11 +909,11 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
     return SX127X_ERR_INVALID_ARG;
   }
   uint16_t offset = 0;
-  uint16_t packet_length = data_length;
+  uint16_t packet_length = data_length + 1;
   if (device->fsk_ook_format == SX127X_VARIABLE) {
-    device->packet[offset] = (uint8_t) (data_length + 1);
+    device->packet[offset] = (uint8_t) packet_length;
     offset++;
-    packet_length = data_length + 1;
+    packet_length++;
   }
   device->packet[offset] = address_to;
   offset++;
