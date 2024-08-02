@@ -23,7 +23,7 @@ extern "C" {
 
 #define MAX_PACKET_SIZE 255
 #define MAX_PACKET_SIZE_FSK_FIXED 2047
-#define MAX_NUMBER_OF_REGISTERS 0x70
+#define MAX_NUMBER_OF_REGISTERS 0x71
 
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
 #define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
@@ -349,6 +349,16 @@ int sx127x_set_opmod(sx127x_mode_t mode, sx127x_modulation_t modulation, sx127x 
  *         - SX127X_OK                on success
  */
 int sx127x_set_frequency(uint64_t frequency, sx127x *device);
+
+/**
+ * @brief Get frequency for RX or TX
+ * @param device Pointer to variable to hold the device handle
+ * @param frequency Result frequency in hz.
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_get_frequency(sx127x *device, uint64_t *frequency);
 
 /**
  * @brief Reset chip's memory pointers to 0. Both RX and TX.
