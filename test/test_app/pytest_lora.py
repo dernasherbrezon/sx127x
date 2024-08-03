@@ -2,8 +2,6 @@ import pytest
 from pytest_embedded import Dut
 from typing import Tuple
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
@@ -21,8 +19,6 @@ def test_explicit_header(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect_unity_test_output()
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
@@ -40,8 +36,6 @@ def test_implicit_header(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect_unity_test_output()
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
@@ -58,8 +52,6 @@ def test_rx_after_cad(dut: Tuple[Dut, Dut]) -> None:
 
     dut_rx.expect_unity_test_output()
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)

@@ -2,8 +2,6 @@ import pytest
 from pytest_embedded import Dut
 from typing import Tuple
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
