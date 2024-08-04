@@ -459,6 +459,20 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device);
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
 /**
+ * @brief Configure frequency hopping for TX and RX. Frequency hopping spread spectrum (FHSS) is typically employed when the duration of a single packet could exceed
+regulatory requirements relating to the maximum permissible channel dwell time.
+ *
+ * @param period Symbol periods between frequency hops.
+ * @param frequencies Set of predefined frequencies. Should be the same on RX and TX
+ * @param frequencies_length Size of predefined frequencies
+ * @param device Pointer to variable to hold the device handle
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_set_frequency_hopping(uint8_t period, uint64_t *frequencies, uint8_t frequencies_length, sx127x *device);
+
+/**
  * @brief Output internal registers
  *
  * Output all internal registers in the current mode. Can be useful for debugging and troubleshooting.

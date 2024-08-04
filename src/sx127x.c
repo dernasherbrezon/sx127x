@@ -55,6 +55,7 @@
 #define REG_FEI_MSB 0x1d
 #define REG_PREAMBLE_MSB 0x20
 #define REG_PREAMBLE_LSB 0x21
+#define REG_HOP_PERIOD 0x24
 #define REG_PREAMBLE_MSB_FSK 0x25
 #define REG_PAYLOAD_LENGTH 0x22
 #define REG_MODEM_CONFIG_3 0x26
@@ -202,6 +203,10 @@ struct sx127x_t {
   sx127x_mode_t opmod;
   sx127x_packet_format_t fsk_ook_format;
   sx127x_crc_type_t fsk_crc_type;
+
+  uint64_t *frequencies;
+  uint8_t frequencies_length;
+  uint8_t current_frequency;
 };
 
 int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
@@ -228,11 +233,9 @@ int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, s
     return code;
   }
 
-  for (size_t i = 0; i < data_length; i++) {
-    spi_device->shadow_registers[reg + i] = (uint8_t) ((*result >> (data_length - 1 - i) * 8) & 0xFF);
-    spi_device->shadow_registers_sync[reg + i] = SHADOW_CACHED;
-  }
-
+  uint8_t *pointer = ((uint8_t *) result) + (sizeof(uint32_t) - data_length);
+  memcpy(spi_device->shadow_registers + reg, pointer, data_length);
+  memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, data_length);
   return code;
 }
 
@@ -246,10 +249,8 @@ int sx127x_shadow_spi_write_register(int reg, const uint8_t *data, size_t data_l
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return code;
   }
-  for (size_t i = 0; i < data_length; i++) {
-    spi_device->shadow_registers_sync[reg + i] = SHADOW_CACHED;
-    spi_device->shadow_registers[reg + i] = data[i];
-  }
+  memcpy(spi_device->shadow_registers + reg, data, data_length);
+  memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, data_length);
   return code;
 }
 
@@ -258,17 +259,23 @@ int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return code;
   }
-  for (size_t i = 0; i < buffer_length; i++) {
-    spi_device->shadow_registers_sync[reg + i] = SHADOW_CACHED;
-    spi_device->shadow_registers[reg + i] = buffer[i];
-  }
+  memcpy(spi_device->shadow_registers + reg, buffer, buffer_length);
+  memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, buffer_length);
   return code;
 }
 
 int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *result) {
-  uint32_t value;
-  ERROR_CHECK(sx127x_shadow_spi_read_registers(reg, spi_device, 1, &value));
-  *result = (uint8_t) value;
+  if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
+    ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, (uint32_t *) result));
+    return SX127X_OK;
+  }
+  if (spi_device->shadow_registers_sync[reg] == SHADOW_CACHED) {
+    *result = spi_device->shadow_registers[reg];
+    return SX127X_OK;
+  }
+  ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, (uint32_t *) result));
+  spi_device->shadow_registers_sync[reg] = SHADOW_CACHED;
+  spi_device->shadow_registers[reg] = *result;
   return SX127X_OK;
 }
 
@@ -558,6 +565,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
     return;
   }
   if ((value & SX127x_IRQ_FLAG_PAYLOAD_CRC_ERROR) != 0) {
+    device->current_frequency = 0;
     return;
   }
   if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
@@ -566,12 +574,24 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
       device->rx_callback(device, device->packet, device->expected_packet_length);
     }
     device->expected_packet_length = 0;
+    device->current_frequency = 0;
     return;
   }
   if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
+    device->current_frequency = 0;
     if (device->tx_callback != NULL) {
       device->tx_callback(device);
     }
+    return;
+  }
+  //always last because if message was sent or received,
+  //then no need to change freq
+  if ((value & SX127x_IRQ_FLAG_FHSSCHANGECHANNEL) != 0) {
+    if (device->current_frequency >= device->frequencies_length) {
+      device->current_frequency = 0;
+    }
+    ERROR_CHECK_NOCODE(sx127x_set_frequency(device->frequencies[device->current_frequency], device));
+    device->current_frequency++;
     return;
   }
 }
@@ -631,9 +651,11 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   // enforce DIO mappings for RX and TX
   if (modulation == SX127x_MODULATION_LORA) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_RX_DONE, 0b00111111, &device->spi_device));
+      uint8_t data = (SX127x_DIO0_RX_DONE | SX127x_DIO1_RXTIMEOUT | SX127x_DIO2_FHSS_CHANGE_CHANNEL | SX127x_DIO3_CAD_DONE);
+      ERROR_CHECK(sx127x_shadow_spi_write_register(REG_DIO_MAPPING_1, &data, 1, &device->spi_device));
     } else if (opmod == SX127x_MODE_TX) {
-      ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_TX_DONE, 0b00111111, &device->spi_device));
+      uint8_t data = (SX127x_DIO0_TX_DONE | SX127x_DIO1_FHSS_CHANGE_CHANNEL | SX127x_DIO2_FHSS_CHANGE_CHANNEL | SX127x_DIO3_CAD_DONE);
+      ERROR_CHECK(sx127x_shadow_spi_write_register(REG_DIO_MAPPING_1, &data, 1, &device->spi_device));
     } else if (opmod == SX127x_MODE_CAD) {
       ERROR_CHECK(sx127x_append_register(REG_DIO_MAPPING_1, SX127x_DIO0_CAD_DONE, 0b00111111, &device->spi_device));
     }
@@ -775,6 +797,16 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
     uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
     return sx127x_append_register(REG_MODEM_CONFIG_2, value, 0b11111011, &device->spi_device);
   }
+}
+
+int sx127x_lora_set_frequency_hopping(uint8_t period, uint64_t *frequencies, uint8_t frequencies_length, sx127x *device) {
+  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
+  if (frequencies == NULL || frequencies_length == 0) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  device->frequencies = frequencies;
+  device->frequencies_length = frequencies_length;
+  return sx127x_shadow_spi_write_register(REG_HOP_PERIOD, &period, 1, &device->spi_device);
 }
 
 int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi) {
