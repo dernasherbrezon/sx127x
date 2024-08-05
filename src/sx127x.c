@@ -266,14 +266,18 @@ int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer
 
 int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *result) {
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
-    ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, (uint32_t *) result));
+    uint32_t value;
+    ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
+    *result = (uint8_t) value;
     return SX127X_OK;
   }
   if (spi_device->shadow_registers_sync[reg] == SHADOW_CACHED) {
     *result = spi_device->shadow_registers[reg];
     return SX127X_OK;
   }
-  ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, (uint32_t *) result));
+  uint32_t value;
+  ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
+  *result = (uint8_t) value;
   spi_device->shadow_registers_sync[reg] = SHADOW_CACHED;
   spi_device->shadow_registers[reg] = *result;
   return SX127X_OK;
@@ -846,7 +850,7 @@ int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   uint8_t value;
   ERROR_CHECK(sx127x_read_register(REG_PKT_SNR_VALUE, &device->spi_device, &value));
-  *snr = ((int8_t) value) * 0.25f;
+  *snr = (float) ((int8_t) value) * 0.25f;
   return SX127X_OK;
 }
 

@@ -319,7 +319,7 @@ void test_lora_tx() {
   spi_assert_write(payload, sizeof(payload));
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x40], 0b01000000);
+  TEST_ASSERT_EQUAL_INT(registers[0x40], 0b01010000);
 
   // simulate interrupt
   registers[0x12] = 0b00001000;  // tx done
