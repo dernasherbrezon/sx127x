@@ -233,7 +233,7 @@ int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, s
     return code;
   }
 
-  uint8_t *pointer = ((uint8_t *) result) + (sizeof(uint32_t) - data_length);
+  const uint8_t *pointer = ((uint8_t *) result) + (sizeof(uint32_t) - data_length);
   memcpy(spi_device->shadow_registers + reg, pointer, data_length);
   memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, data_length);
   return code;
