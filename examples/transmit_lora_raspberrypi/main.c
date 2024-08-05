@@ -113,25 +113,25 @@ int main() {
   int max_speed = 8000000;
   LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_MAX_SPEED_HZ, &max_speed));
 
-  sx127x *device = NULL;
+  sx127x device;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-  LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  LINUX_ERROR_CHECK(sx127x_lora_reset_fifo(device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
-  LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, device));
-  sx127x_tx_set_callback(tx_callback, device);
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
+  LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
+  LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
+  sx127x_tx_set_callback(tx_callback, &device);
 
   // 4 is OK
-  LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
+  LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, &device));
   sx127x_tx_header_t header = {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
-  LINUX_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, device));
+  LINUX_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 
-  return setup_and_wait_for_interrupt(device);
+  return setup_and_wait_for_interrupt(&device);
 }

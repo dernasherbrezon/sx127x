@@ -26,7 +26,6 @@ extern "C" {
 #define MAX_NUMBER_OF_REGISTERS 0x71
 
 #define SX127X_OK 0                      /*!< esp_err_t value indicating success (no error) */
-#define SX127X_ERR_NO_MEM 0x101          /*!< Out of memory */
 #define SX127X_ERR_INVALID_ARG 0x102     /*!< Invalid argument */
 #define SX127X_ERR_INVALID_STATE 0x103   /*!< Invalid state. Most likely function is not applicable for the selected modem */
 #define SX127X_ERR_NOT_FOUND 0x105       /*!< Requested resource not found */
@@ -308,10 +307,46 @@ typedef enum {
 } sx127x_pa_pin_t;
 
 /**
+ * @brief Wrapper around abstract spi device.
+ */
+typedef struct {
+  void *spi_device;
+  uint8_t shadow_registers[MAX_NUMBER_OF_REGISTERS];
+  uint8_t shadow_registers_sync[MAX_NUMBER_OF_REGISTERS];
+} shadow_spi_device_t;
+
+/**
  * @brief Device handle
  *
  */
 typedef struct sx127x_t sx127x;
+
+struct sx127x_t {
+  shadow_spi_device_t spi_device;
+
+  bool use_implicit_header;
+
+  void (*rx_callback)(sx127x *, uint8_t *, uint16_t);
+
+  void (*tx_callback)(sx127x *);
+
+  void (*cad_callback)(sx127x *, int);
+
+  uint8_t packet[MAX_PACKET_SIZE_FSK_FIXED];
+  uint16_t expected_packet_length;
+  uint16_t fsk_ook_packet_sent_received;
+  bool fsk_rssi_available;
+  int16_t fsk_rssi;
+
+  sx127x_modulation_t active_modem;
+  sx127x_mode_t opmod;
+  sx127x_packet_format_t fsk_ook_format;
+  sx127x_crc_type_t fsk_crc_type;
+
+  uint64_t *frequencies;
+  uint8_t frequencies_length;
+  uint8_t current_frequency;
+};
 
 /**
  * @brief Create device handle and attach to SPI bus.
@@ -325,7 +360,7 @@ typedef struct sx127x_t sx127x;
  *         - SX127X_ERR_INVALID_VERSION  if device attached to SPI bus is invalid or chip is not sx127x.
  *         - SX127X_OK                   on success
  */
-int sx127x_create(void *spi_device, sx127x **result);
+int sx127x_create(void *spi_device, sx127x *result);
 
 /**
  * @brief Set operating mode.
@@ -948,13 +983,6 @@ int sx127x_fsk_ook_set_temp_monitor(bool enable, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_get_raw_temperature(sx127x *device, int8_t *raw_temperature);
-
-/**
- * @brief Disconnect from SPI and release any resources assotiated. After calling this function pointer to device will be unusable.
- *
- * @param device Pointer to variable to hold the device handle
- */
-void sx127x_destroy(sx127x *device);
 
 #ifdef __cplusplus
 }

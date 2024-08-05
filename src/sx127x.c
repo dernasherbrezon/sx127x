@@ -176,39 +176,6 @@ typedef enum {
   SX127x_HEADER_MODE_IMPLICIT = 0b00000001
 } sx127x_header_mode_t;
 
-typedef struct {
-  void *spi_device;
-  uint8_t shadow_registers[MAX_NUMBER_OF_REGISTERS];
-  uint8_t shadow_registers_sync[MAX_NUMBER_OF_REGISTERS];
-} shadow_spi_device_t;
-
-struct sx127x_t {
-  shadow_spi_device_t spi_device;
-
-  bool use_implicit_header;
-
-  void (*rx_callback)(sx127x *, uint8_t *, uint16_t);
-
-  void (*tx_callback)(sx127x *);
-
-  void (*cad_callback)(sx127x *, int);
-
-  uint8_t packet[MAX_PACKET_SIZE_FSK_FIXED];
-  uint16_t expected_packet_length;
-  uint16_t fsk_ook_packet_sent_received;
-  bool fsk_rssi_available;
-  int16_t fsk_rssi;
-
-  sx127x_modulation_t active_modem;
-  sx127x_mode_t opmod;
-  sx127x_packet_format_t fsk_ook_format;
-  sx127x_crc_type_t fsk_crc_type;
-
-  uint64_t *frequencies;
-  uint8_t frequencies_length;
-  uint8_t current_frequency;
-};
-
 int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return sx127x_spi_read_registers(reg, spi_device->spi_device, data_length, result);
@@ -608,46 +575,39 @@ void sx127x_handle_interrupt(sx127x *device) {
   }
 }
 
-int sx127x_create(void *spi_device, sx127x **result) {
-  struct sx127x_t *device = malloc(sizeof(struct sx127x_t));
-  if (device == NULL) {
-    return SX127X_ERR_NO_MEM;
-  }
-  *device = (struct sx127x_t) {0};
-  device->spi_device.spi_device = spi_device;
-  device->spi_device.shadow_registers_sync[REG_FIFO] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_FIFO_RX_CURRENT_ADDR] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_RSSI_VALUE_FSK] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_IRQ_FLAGS] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_RX_NB_BYTES] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_PKT_SNR_VALUE] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_PKT_RSSI_VALUE] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_FREQ_ERROR_MSB] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_AFC_VALUE] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_SEQ_CONFIG1] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_IMAGE_CAL] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_TEMP] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_1] = SHADOW_IGNORE;
-  device->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_2] = SHADOW_IGNORE;
+int sx127x_create(void *spi_device, sx127x *result) {
+  memset(result, 0, sizeof(struct sx127x_t));
+  result->spi_device.spi_device = spi_device;
+  result->spi_device.shadow_registers_sync[REG_FIFO] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_FIFO_RX_CURRENT_ADDR] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_RSSI_VALUE_FSK] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_IRQ_FLAGS] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_RX_NB_BYTES] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_PKT_SNR_VALUE] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_PKT_RSSI_VALUE] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_FREQ_ERROR_MSB] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_AFC_VALUE] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_SEQ_CONFIG1] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_IMAGE_CAL] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_TEMP] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_1] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_2] = SHADOW_IGNORE;
 
   uint8_t version;
-  int code = sx127x_read_register(REG_VERSION, &device->spi_device, &version);
+  int code = sx127x_read_register(REG_VERSION, &result->spi_device, &version);
   if (code != SX127X_OK) {
-    sx127x_destroy(device);
     return code;
   }
   if (version != SX127x_VERSION) {
-    sx127x_destroy(device);
     return SX127X_ERR_INVALID_VERSION;
   }
-  device->active_modem = SX127x_MODULATION_LORA;
-  device->fsk_ook_format = SX127X_VARIABLE;
-  device->fsk_rssi_available = false;
-  device->opmod = SX127x_MODE_STANDBY;
-  device->fsk_crc_type = SX127X_CRC_CCITT;
-  device->use_implicit_header = false;
-  device->expected_packet_length = 0;
-  *result = device;
+  result->active_modem = SX127x_MODULATION_LORA;
+  result->fsk_ook_format = SX127X_VARIABLE;
+  result->fsk_rssi_available = false;
+  result->opmod = SX127x_MODE_STANDBY;
+  result->fsk_crc_type = SX127X_CRC_CCITT;
+  result->use_implicit_header = false;
+  result->expected_packet_length = 0;
   return SX127X_OK;
 }
 
@@ -1379,11 +1339,3 @@ int sx127x_fsk_ook_set_temp_monitor(bool enable, sx127x *device) {
   uint8_t value = (enable ? 0b00000000 : 0b00000001);
   return sx127x_append_register(REG_IMAGE_CAL, value, 0b11111110, &device->spi_device);
 }
-
-void sx127x_destroy(sx127x *device) {
-  if (device == NULL) {
-    return;
-  }
-  free(device);
-}
-

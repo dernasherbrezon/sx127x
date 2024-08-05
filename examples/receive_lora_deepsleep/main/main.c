@@ -16,7 +16,7 @@
 #define RST 23
 #define DIO0 26
 
-sx127x *device = NULL;
+sx127x device;
 int total_packets_received = 0;
 static const char *TAG = "sx127x";
 
@@ -64,21 +64,21 @@ void app_main() {
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
   if (cpu0WakeupReason == ESP_SLEEP_WAKEUP_EXT0) {
-    sx127x_rx_set_callback(rx_callback, device);
-    sx127x_handle_interrupt(device);
+    sx127x_rx_set_callback(rx_callback, &device);
+    sx127x_handle_interrupt(&device);
   } else {
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-    ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-    ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
-    ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, device));
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-    ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
-    ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
-    ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, device));
-    ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
-    ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
-    ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
+    ESP_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+    ESP_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
+    ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+    ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, &device));
+    ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
+    ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, &device));
+    ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, &device));
+    ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
+    ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, &device));
   }
 
   ESP_ERROR_CHECK(rtc_gpio_set_direction((gpio_num_t)DIO0, RTC_GPIO_MODE_INPUT_ONLY));

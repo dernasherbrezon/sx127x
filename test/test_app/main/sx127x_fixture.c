@@ -57,13 +57,16 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
       .dummy_bits = 0,
       .mode = 0};
   spi_device_handle_t spi_device;
-  sx127x *device = NULL;
+  sx127x *device = malloc(sizeof(struct sx127x_t));
+  if( device == NULL ) {
+    return -1;
+  }
   ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_config, &spi_device));
-  ERROR_CHECK(sx127x_create(spi_device, &device));
+  ERROR_CHECK(sx127x_create(spi_device, device));
 
   sx127x_fixture_t *result = malloc(sizeof(sx127x_fixture_t));
   if (result == NULL) {
-    return SX127X_ERR_NO_MEM;
+    return -1;
   }
   *result = (sx127x_fixture_t) {0};
   result->device = device;
@@ -156,7 +159,7 @@ void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
     return;
   }
   if (fixture->device != NULL) {
-    sx127x_destroy(fixture->device);
+    free(fixture->device);
     fixture->device = NULL;
   }
   gpio_uninstall_isr_service();

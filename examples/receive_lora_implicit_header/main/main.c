@@ -14,7 +14,7 @@
 #define RST 23
 #define DIO0 26
 
-sx127x *device = NULL;
+sx127x device;
 TaskHandle_t handle_interrupt;
 int total_packets_received = 0;
 static const char *TAG = "sx127x";
@@ -80,32 +80,31 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_lora_reset_fifo(device));
-  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device));
-  ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
+  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  ESP_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
+  ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+  ESP_ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, &device));
+  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
   sx127x_implicit_header_t header = {
       .coding_rate = SX127x_CR_4_5,
       .enable_crc = true,
       .length = 2};
-  ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
-  ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, device));
-  ESP_ERROR_CHECK(sx127x_set_preamble_length(8, device));
-  sx127x_rx_set_callback(rx_callback, device);
+  ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(&header, &device));
+  ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, &device));
+  ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
+  ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
+  sx127x_rx_set_callback(rx_callback, &device);
 
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);
-    sx127x_destroy(device);
     return;
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)DIO0, device);
+  setup_gpio_interrupts((gpio_num_t)DIO0, &device);
 
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, &device));
 }

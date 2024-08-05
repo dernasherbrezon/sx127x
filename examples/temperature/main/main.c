@@ -22,20 +22,20 @@
 
 static const char *TAG = "sx127x";
 
-sx127x *device = NULL;
+sx127x device;
 
 void app_read_temperature() {
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_FSRX, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_FSRX, SX127x_MODULATION_FSK, &device));
   //enable temp monitoring
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_temp_monitor(true, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_temp_monitor(true, &device));
   // a little bit longer for FSRX mode to kick off
   ets_delay_us(150);
   //disable temp monitoring
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_temp_monitor(false, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_temp_monitor(false, &device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, &device));
 
   int8_t raw_temperature;
-  ESP_ERROR_CHECK(sx127x_fsk_ook_get_raw_temperature(device, &raw_temperature));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_get_raw_temperature(&device, &raw_temperature));
   ESP_LOGI(TAG, "raw temperature: %d", raw_temperature);
 }
 
@@ -61,7 +61,7 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, &device));
 
   while (1) {
     app_read_temperature();

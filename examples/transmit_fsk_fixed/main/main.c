@@ -23,7 +23,7 @@
 
 static const char *TAG = "sx127x";
 
-sx127x *device = NULL;
+sx127x device;
 int messages_sent = 0;
 TaskHandle_t handle_interrupt;
 
@@ -104,34 +104,33 @@ void app_main() {
   spi_device_handle_t spi_device;
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_cfg, &spi_device));
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
-  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
-  ESP_ERROR_CHECK(sx127x_set_preamble_length(4, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, &device));
+  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, &device));
+  ESP_ERROR_CHECK(sx127x_set_preamble_length(4, &device));
   uint8_t syncWord[] = {0x12, 0xAD};
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_SCRAMBLED, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
-  ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
-  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
-  ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_SCRAMBLED, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, &device));
+  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, &device));
+  ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, &device));
 
-  sx127x_tx_set_callback(tx_callback, device);
+  sx127x_tx_set_callback(tx_callback, &device);
 
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196 * 2, device, 2, &handle_interrupt, xPortGetCoreID());
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196 * 2, &device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);
-    sx127x_destroy(device);
     return;
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t) DIO0, device, GPIO_INTR_POSEDGE);
-  setup_gpio_interrupts((gpio_num_t) DIO1, device, GPIO_INTR_NEGEDGE);
-  setup_gpio_interrupts((gpio_num_t) DIO2, device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO0, &device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO1, &device, GPIO_INTR_NEGEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO2, &device, GPIO_INTR_POSEDGE);
 
-  tx_callback(device);
+  tx_callback(&device);
 }

@@ -574,16 +574,15 @@ void test_lora() {
 
 void test_init_failure() {
   spi_mock_registers(registers, SX127X_ERR_INVALID_ARG);
-  TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_ARG, sx127x_create(NULL, &device));
+  TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_ARG, sx127x_create(NULL, device));
   registers[0x42] = 0x13;
   spi_mock_registers(registers, SX127X_OK);
-  TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_VERSION, sx127x_create(NULL, &device));
+  TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_VERSION, sx127x_create(NULL, device));
 }
 
 void tearDown() {
   if (device != NULL) {
-    sx127x_destroy(device);
-    sx127x_destroy(NULL); // no-op. check no panic or access violation
+    free(device);
     device = NULL;
   }
   if (registers != NULL) {
@@ -601,7 +600,8 @@ void setUp() {
   memset(registers, 0, registers_length);
   registers[0x42] = 0x12;
   spi_mock_registers(registers, SX127X_OK);
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_create(NULL, &device));
+  device = malloc(sizeof(struct sx127x_t));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_create(NULL, device));
   spi_mock_write(SX127X_OK);
 }
 

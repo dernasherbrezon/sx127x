@@ -185,30 +185,30 @@ int main() {
   int max_speed = 4000000;
   LINUX_ERROR_CHECK(ioctl(spi_device_fd, SPI_IOC_WR_MAX_SPEED_HZ, &max_speed));
 
-  sx127x *device = NULL;
+  sx127x device;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
-  LINUX_ERROR_CHECK(sx127x_set_frequency(437200000, device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, &device));
+  LINUX_ERROR_CHECK(sx127x_set_frequency(437200000, &device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_auto(true, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(5000.0, &device));
   uint8_t syncWord[] = {0x12, 0xAD};
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
-  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_calibrate(device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, &device));
+  LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_calibrate(&device));
 
-  sx127x_rx_set_callback(rx_callback, device);
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
+  sx127x_rx_set_callback(rx_callback, &device);
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, &device));
 
-  return setup_and_wait_for_interrupt(device);
+  return setup_and_wait_for_interrupt(&device);
 }
