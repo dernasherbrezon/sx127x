@@ -25,6 +25,7 @@ This library supports all standard LoRa features:
 * TX with +20dbm power
 * Explicit and implicit headers
 * Granular sx127x register configuration
+* Frequency hopping spread spectrum (FHSS)
 
 And FSK/OOK features:
 
@@ -113,6 +114,7 @@ Where:
 
 * ```receive_lora``` - RX in LoRa mode and explicit header. Uses CAD to quickly detect presence of the message and switch into RX mode.
 * ```receive_lora_deepsleep``` - RX in LoRa mode while in the deep sleep
+* ```receive_lora_fhss``` - RX in LoRa mode with FHSS enabled 
 * ```receive_lora_implicit_header``` - RX in LoRa mode and implicit header (without header)
 * ```receive_lora_raspberrypi``` - RX in LoRa mode on RaspberryPI via GPIO pins and onboard SPI. Tested on module RA-02
 * ```receive_fsk``` - RX in FSK mode. Variable packet length, NRZ encoding, CRC, AFC on.
@@ -121,6 +123,7 @@ Where:
 * ```receive_fsk_raspberry``` - RX in FSK mode on RaspberryPI via GPIO pins and onboard SPI. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```receive_ook``` - RX in OOK mode. Variable packet length, NRZ encoding, CRC, AFC on.
 * ```transmit_lora``` - TX in LoRa mode and explicit header. Several messages of different sizes and at all supported power levels
+* ```transmit_lora_fhss``` - TX in LoRa mode with FHSS enabled
 * ```transmit_lora_implicit_header``` - TX in LoRa mode and implicit header (without header)
 * ```transmit_lora_raspberrypi``` - TX messages using LoRa mode from RaspberryPI. Tested on module RA-02
 * ```transmit_fsk``` - TX in FSK mode. Variable packet length, NRZ encoding, CRC, AFC on. Sending several messages: small 2 byte, messages that can fit into FIFO fully, max messages for variable packet type - 255 bytes and same messages, but for node address 0x11 and 0x00.
