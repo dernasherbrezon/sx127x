@@ -136,7 +136,7 @@ void test_fsk_ook_rx() {
   spi_mock_fifo(payload, 64, SX127X_OK);
   registers[0x3f] = 0b00000100;  // payload_ready
   sx127x_handle_interrupt(device);
-  TEST_ASSERT_EQUAL_INT(registers[0x3f], 0b00010000);  // fifo_overrun
+  TEST_ASSERT_EQUAL_INT(0b00010000, registers[0x3f]);  // fifo_overrun
   TEST_ASSERT_EQUAL_INT(0, rx_callback_data_length);
 
   // 10. Small payload with ignored CRC
@@ -158,29 +158,29 @@ void test_fsk_ook_beacon() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(data), device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 1000, device));
   spi_assert_write(data, sizeof(data));
-  TEST_ASSERT_EQUAL_INT(registers[0x39], 243);
-  TEST_ASSERT_EQUAL_INT(registers[0x3a], 57);
-  TEST_ASSERT_EQUAL_INT(registers[0x38], 0b00001001);
+  TEST_ASSERT_EQUAL_INT(243, registers[0x39]);
+  TEST_ASSERT_EQUAL_INT(57, registers[0x3a]);
+  TEST_ASSERT_EQUAL_INT(0b00001001, registers[0x38]);
 
-  TEST_ASSERT_EQUAL_INT(registers[0x35], 0b10011111);
-  TEST_ASSERT_EQUAL_INT(registers[0x3f], 0b00010000);
-  TEST_ASSERT_EQUAL_INT(registers[0x31], 0b00001000);
-  TEST_ASSERT_EQUAL_INT(registers[0x36], 0b10100100); // sequencer
+  TEST_ASSERT_EQUAL_INT(0b10011111, registers[0x35]);
+  TEST_ASSERT_EQUAL_INT(0b00010000, registers[0x3f]);
+  TEST_ASSERT_EQUAL_INT(0b00001000, registers[0x31]);
+  TEST_ASSERT_EQUAL_INT(0b10100100, registers[0x36]); // sequencer
 
   // test different timer settings
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 15, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x39], 234);
-  TEST_ASSERT_EQUAL_INT(registers[0x3a], 0);
-  TEST_ASSERT_EQUAL_INT(registers[0x38], 0b00000111);
+  TEST_ASSERT_EQUAL_INT(234, registers[0x39]);
+  TEST_ASSERT_EQUAL_INT(0, registers[0x3a]);
+  TEST_ASSERT_EQUAL_INT(0b00000111, registers[0x38]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 20, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x39], 156);
-  TEST_ASSERT_EQUAL_INT(registers[0x3a], 156);
-  TEST_ASSERT_EQUAL_INT(registers[0x38], 0b00000101);
+  TEST_ASSERT_EQUAL_INT(156, registers[0x39]);
+  TEST_ASSERT_EQUAL_INT(156, registers[0x3a]);
+  TEST_ASSERT_EQUAL_INT(0b00000101, registers[0x38]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_stop_beacon(device));
-  TEST_ASSERT_EQUAL_INT(registers[0x36], 0b01000000); //stop sequencer
-  TEST_ASSERT_EQUAL_INT(registers[0x3f], 0b00010000);
-  TEST_ASSERT_EQUAL_INT(registers[0x31], 0b00000000);
+  TEST_ASSERT_EQUAL_INT(0b01000000, registers[0x36]); //stop sequencer
+  TEST_ASSERT_EQUAL_INT(0b00010000, registers[0x3f]);
+  TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x31]);
 }
 
 void test_fsk_ook_tx() {
@@ -314,12 +314,12 @@ void test_lora_tx() {
     payload[i] = i;
   }
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_for_transmission(payload, sizeof(payload), device));
-  TEST_ASSERT_EQUAL_INT(registers[0x0d], 0x00);
-  TEST_ASSERT_EQUAL_INT(registers[0x22], sizeof(payload));
+  TEST_ASSERT_EQUAL_INT(0x00, registers[0x0d]);
+  TEST_ASSERT_EQUAL_INT(sizeof(payload), registers[0x22]);
   spi_assert_write(payload, sizeof(payload));
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x40], 0b01010000);
+  TEST_ASSERT_EQUAL_INT(0b01010000, registers[0x40]);
 
   // simulate interrupt
   registers[0x12] = 0b00001000;  // tx done
@@ -329,7 +329,7 @@ void test_lora_tx() {
 
 void test_lora_rx() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x40], 0b00000000);
+  TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x40]);
   uint8_t payload[255];
   for (int i = 0; i < sizeof(payload); i++) {
     payload[i] = i;
@@ -348,9 +348,9 @@ void test_lora_rx() {
       .enable_crc = true,
       .length = 2};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(&header, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x1d], 0b00000011);
-  TEST_ASSERT_EQUAL_INT(registers[0x22], header.length);
-  TEST_ASSERT_EQUAL_INT(registers[0x1e], 0b00000100);
+  TEST_ASSERT_EQUAL_INT(0b00000011, registers[0x1d]);
+  TEST_ASSERT_EQUAL_INT(header.length, registers[0x22]);
+  TEST_ASSERT_EQUAL_INT(0b00000100, registers[0x1e]);
   spi_mock_fifo(payload, sizeof(payload), SX127X_OK);
   sx127x_handle_interrupt(device);
   TEST_ASSERT_EQUAL_INT(header.length, rx_callback_data_length);
@@ -358,7 +358,7 @@ void test_lora_rx() {
 
 void test_lora_cad() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x40], 0b10000000);
+  TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x40]);
   sx127x_lora_cad_set_callback(cad_callback, device);
   registers[0x12] = 0b00000101;  // cad detected
   sx127x_handle_interrupt(device);
@@ -376,7 +376,7 @@ void test_fsk_ook_rssi() {
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_NOT_FOUND, sx127x_rx_get_packet_rssi(device, &rssi));
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x41], 0b11000001);
+  TEST_ASSERT_EQUAL_INT(0b11000001, registers[0x41]);
 
   // simulate interrupt
   registers[0x3e] = 0b00000010;
@@ -405,77 +405,77 @@ void test_fsk_ook_rssi() {
 
 void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x01], 0b00000000);
+  TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x01]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_frequency(437200012, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x06], 0x6d);
-  TEST_ASSERT_EQUAL_INT(registers[0x07], 0x4c);
-  TEST_ASSERT_EQUAL_INT(registers[0x08], 0xcd);
+  TEST_ASSERT_EQUAL_INT(0x6d, registers[0x06]);
+  TEST_ASSERT_EQUAL_INT(0x4c, registers[0x07]);
+  TEST_ASSERT_EQUAL_INT(0xcd, registers[0x08]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x02], 0x1A);
-  TEST_ASSERT_EQUAL_INT(registers[0x03], 0x0A);
-  TEST_ASSERT_EQUAL_INT(registers[0x5d], 0x0A);
+  TEST_ASSERT_EQUAL_INT(0x1A, registers[0x02]);
+  TEST_ASSERT_EQUAL_INT(0x0A, registers[0x03]);
+  TEST_ASSERT_EQUAL_INT(0x0A, registers[0x5d]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(5000.0, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x04], 0x00);
-  TEST_ASSERT_EQUAL_INT(registers[0x05], 0x51);
+  TEST_ASSERT_EQUAL_INT(0x00, registers[0x04]);
+  TEST_ASSERT_EQUAL_INT(0x51, registers[0x05]);
   uint8_t syncWord[] = {0x12, 0xAD};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_syncword(syncWord, 2, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x28], 0x12);
-  TEST_ASSERT_EQUAL_INT(registers[0x29], 0xAD);
+  TEST_ASSERT_EQUAL_INT(0x12, registers[0x28]);
+  TEST_ASSERT_EQUAL_INT(0xAD, registers[0x29]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_encoding(SX127X_SCRAMBLED, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x33], 0x11);
-  TEST_ASSERT_EQUAL_INT(registers[0x34], 0x12);
+  TEST_ASSERT_EQUAL_INT(0x11, registers[0x33]);
+  TEST_ASSERT_EQUAL_INT(0x12, registers[0x34]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x31], 0b00000000);
-  TEST_ASSERT_EQUAL_INT(registers[0x32], 0xFF);
+  TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x31]);
+  TEST_ASSERT_EQUAL_INT(0xFF, registers[0x32]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_preamble_type(SX127X_PREAMBLE_55, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_auto(true, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x13], 0x14);
+  TEST_ASSERT_EQUAL_INT(0x14, registers[0x13]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x12], 0x16);
+  TEST_ASSERT_EQUAL_INT(0x16, registers[0x12]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_collision_restart(true, 10, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x0f], 10);
+  TEST_ASSERT_EQUAL_INT(10, registers[0x0f]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x30], 0b11011100);
+  TEST_ASSERT_EQUAL_INT(0b11011100, registers[0x30]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, 2047, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x31], 0b00000111);
-  TEST_ASSERT_EQUAL_INT(registers[0x32], 0xFF);
+  TEST_ASSERT_EQUAL_INT(0b00000111, registers[0x31]);
+  TEST_ASSERT_EQUAL_INT(0xFF, registers[0x32]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_OOK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_ARG, sx127x_fsk_ook_set_bitrate(800, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x02], 0x1A);
-  TEST_ASSERT_EQUAL_INT(registers[0x03], 0x0A);
+  TEST_ASSERT_EQUAL_INT(0x1A, registers[0x02]);
+  TEST_ASSERT_EQUAL_INT(0x0A, registers[0x03]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, device));
 
-  TEST_ASSERT_EQUAL_INT(registers[0x0d], 0b10010111);
-  TEST_ASSERT_EQUAL_INT(registers[0x0c], 0b10000000);
-  TEST_ASSERT_EQUAL_INT(registers[0x27], 0b01110001);
-  TEST_ASSERT_EQUAL_INT(registers[0x0a], 0b01001001);
-  TEST_ASSERT_EQUAL_INT(registers[0x0e], 0b00000010);
-  TEST_ASSERT_EQUAL_INT(registers[0x1f], 0b10101010);
+  TEST_ASSERT_EQUAL_INT(0b10010111, registers[0x0d]);
+  TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x0c]);
+  TEST_ASSERT_EQUAL_INT(0b01110001, registers[0x27]);
+  TEST_ASSERT_EQUAL_INT(0b01001001, registers[0x0a]);
+  TEST_ASSERT_EQUAL_INT(0b00000010, registers[0x0e]);
+  TEST_ASSERT_EQUAL_INT(0b10101010, registers[0x1f]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_set_data_shaping(SX127X_1_BIT_RATE, SX127X_PA_RAMP_10, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x0a], 0b00101001);
+  TEST_ASSERT_EQUAL_INT(0b00101001, registers[0x0a]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_fixed_mode(0x11, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x14], 0b00000000);
-  TEST_ASSERT_EQUAL_INT(registers[0x15], 0x11);
+  TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x14]);
+  TEST_ASSERT_EQUAL_INT(0x11, registers[0x15]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_avg_mode(SX127X_2_DB, SX127X_4_PI, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x14], 0b00010000);
-  TEST_ASSERT_EQUAL_INT(registers[0x16], 0b00000110);
+  TEST_ASSERT_EQUAL_INT(0b00010000, registers[0x14]);
+  TEST_ASSERT_EQUAL_INT(0b00000110, registers[0x16]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_preamble_length(8, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x25], 0x00);
-  TEST_ASSERT_EQUAL_INT(registers[0x26], 0x08);
+  TEST_ASSERT_EQUAL_INT(0x00, registers[0x25]);
+  TEST_ASSERT_EQUAL_INT(0x08, registers[0x26]);
 
   registers[0x1b] = 0xFF;
   registers[0x1c] = 0xF0;
@@ -487,7 +487,7 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_STATE, sx127x_fsk_ook_rx_calibrate(device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_calibrate(device));
-  TEST_ASSERT_EQUAL_INT(registers[0x3b], 0b01000000); // start calibration attempted
+  TEST_ASSERT_EQUAL_INT(0b01000000, registers[0x3b]); // start calibration attempted
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
   TEST_ASSERT_EQUAL_INT(registers[0x0d], 0b10011111); // + previous configuration
@@ -501,19 +501,19 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(11, raw_temperature);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_temp_monitor(false, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x3b], 0b01000001); // + previous configuration
+  TEST_ASSERT_EQUAL_INT(0b01000001, registers[0x3b]); // + previous configuration
 }
 
 void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x01], 0b10000000);
+  TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x01]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_frequency(437200012, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x06], 0x6d);
-  TEST_ASSERT_EQUAL_INT(registers[0x07], 0x4c);
-  TEST_ASSERT_EQUAL_INT(registers[0x08], 0xcd);
+  TEST_ASSERT_EQUAL_INT(0x6d, registers[0x06]);
+  TEST_ASSERT_EQUAL_INT(0x4c, registers[0x07]);
+  TEST_ASSERT_EQUAL_INT(0xcd, registers[0x08]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_reset_fifo(device));
-  TEST_ASSERT_EQUAL_INT(registers[0x0e], 0x00);
-  TEST_ASSERT_EQUAL_INT(registers[0x0f], 0x00);
+  TEST_ASSERT_EQUAL_INT(0x00, registers[0x0e]);
+  TEST_ASSERT_EQUAL_INT(0x00, registers[0x0f]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_bandwidth(SX127x_BW_125000, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(NULL, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
@@ -524,18 +524,18 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
 
-  TEST_ASSERT_EQUAL_INT(registers[0x1d], 0b01110000);
-  TEST_ASSERT_EQUAL_INT(registers[0x31], 0xc3);
-  TEST_ASSERT_EQUAL_INT(registers[0x37], 0x0a);
-  TEST_ASSERT_EQUAL_INT(registers[0x1e], 0b10010000);
-  TEST_ASSERT_EQUAL_INT(registers[0x39], 18);
-  TEST_ASSERT_EQUAL_INT(registers[0x20], 0);
-  TEST_ASSERT_EQUAL_INT(registers[0x21], 8);
-  TEST_ASSERT_EQUAL_INT(registers[0x26], 0b00001000);
-  TEST_ASSERT_EQUAL_INT(registers[0x0c], 0b10000011);
-  TEST_ASSERT_EQUAL_INT(registers[0x4d], 0b10000100);
-  TEST_ASSERT_EQUAL_INT(registers[0x09], 0b10000010);
-  TEST_ASSERT_EQUAL_INT(registers[0x0b], 0x28);
+  TEST_ASSERT_EQUAL_INT(0b01110000, registers[0x1d]);
+  TEST_ASSERT_EQUAL_INT(0xc3, registers[0x31]);
+  TEST_ASSERT_EQUAL_INT(0x0a, registers[0x37]);
+  TEST_ASSERT_EQUAL_INT(0b10010000, registers[0x1e]);
+  TEST_ASSERT_EQUAL_INT(18, registers[0x39]);
+  TEST_ASSERT_EQUAL_INT(0, registers[0x20]);
+  TEST_ASSERT_EQUAL_INT(8, registers[0x21]);
+  TEST_ASSERT_EQUAL_INT(0b00001000, registers[0x26]);
+  TEST_ASSERT_EQUAL_INT(0b10000011, registers[0x0c]);
+  TEST_ASSERT_EQUAL_INT(0b10000100, registers[0x4d]);
+  TEST_ASSERT_EQUAL_INT(0b10000010, registers[0x09]);
+  TEST_ASSERT_EQUAL_INT(0x28, registers[0x0b]);
 
   uint32_t bandwidth;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_bandwidth(device, &bandwidth));
@@ -562,14 +562,14 @@ void test_lora() {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x1d], 0b01110010);
-  TEST_ASSERT_EQUAL_INT(registers[0x1e], 0b10010100);
+  TEST_ASSERT_EQUAL_INT(0b01110010, registers[0x1d]);
+  TEST_ASSERT_EQUAL_INT(0b10010100, registers[0x1e]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x27], 8);
+  TEST_ASSERT_EQUAL_INT(8, registers[0x27]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x26], 0b00001100); // + previous config
+  TEST_ASSERT_EQUAL_INT(0b00001100, registers[0x26]); // + previous config
 }
 
 void test_init_failure() {
