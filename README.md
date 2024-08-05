@@ -16,6 +16,7 @@ There are several similar libraries exist, but this one is much better:
 * No busy loops for handling RX and TX events. See examples on how to configure and handle interrupts.
 * Good documentation.
 * Can be used on ESP32 or RaspberryPI or any other linux with GPIO pins.
+* Cache for SPI registers. Improve power consumption and performance while communicating via SPI bus
 * [debug registers](debug_registers/README.md)
 
 This library supports all standard LoRa features:
