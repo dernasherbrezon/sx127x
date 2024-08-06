@@ -18,6 +18,10 @@
 extern "C" {
 #endif
 
+// optional standard esp-idf configuration
+#ifdef IDF_VER
+#include "sdkconfig.h"
+#endif
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -30,6 +34,10 @@ extern "C" {
 #define SX127X_ERR_INVALID_STATE 0x103   /*!< Invalid state. Most likely function is not applicable for the selected modem */
 #define SX127X_ERR_NOT_FOUND 0x105       /*!< Requested resource not found */
 #define SX127X_ERR_INVALID_VERSION 0x10A /*!< Version was invalid */
+
+#ifndef CONFIG_SX127X_MAX_PACKET_SIZE
+#define CONFIG_SX127X_MAX_PACKET_SIZE MAX_PACKET_SIZE_FSK_FIXED
+#endif
 
 /*
  * This structure used to change mode
@@ -311,8 +319,10 @@ typedef enum {
  */
 typedef struct {
   void *spi_device;
+#ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   uint8_t shadow_registers[MAX_NUMBER_OF_REGISTERS];
   uint8_t shadow_registers_sync[MAX_NUMBER_OF_REGISTERS];
+#endif
 } shadow_spi_device_t;
 
 /**
@@ -332,7 +342,7 @@ struct sx127x_t {
 
   void (*cad_callback)(sx127x *, int);
 
-  uint8_t packet[MAX_PACKET_SIZE_FSK_FIXED];
+  uint8_t packet[CONFIG_SX127X_MAX_PACKET_SIZE];
   uint16_t expected_packet_length;
   uint16_t fsk_ook_packet_sent_received;
   bool fsk_rssi_available;

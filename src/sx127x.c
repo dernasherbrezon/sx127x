@@ -14,7 +14,6 @@
 #include "sx127x.h"
 
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sx127x_spi.h>
 
@@ -177,6 +176,9 @@ typedef enum {
 } sx127x_header_mode_t;
 
 int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
+#ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
+  return sx127x_spi_read_registers(reg, spi_device->spi_device, data_length, result);
+#else
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return sx127x_spi_read_registers(reg, spi_device->spi_device, data_length, result);
   }
@@ -204,6 +206,7 @@ int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, s
   memcpy(spi_device->shadow_registers + reg, pointer, data_length);
   memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, data_length);
   return code;
+#endif
 }
 
 int sx127x_shadow_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
@@ -213,25 +216,35 @@ int sx127x_shadow_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length
 
 int sx127x_shadow_spi_write_register(int reg, const uint8_t *data, size_t data_length, shadow_spi_device_t *spi_device) {
   int code = sx127x_spi_write_register(reg, data, data_length, spi_device->spi_device);
+#ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return code;
   }
   memcpy(spi_device->shadow_registers + reg, data, data_length);
   memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, data_length);
+#endif
   return code;
 }
 
 int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
   int code = sx127x_spi_write_buffer(reg, buffer, buffer_length, spi_device->spi_device);
+#ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     return code;
   }
   memcpy(spi_device->shadow_registers + reg, buffer, buffer_length);
   memset(spi_device->shadow_registers_sync + reg, SHADOW_CACHED, buffer_length);
+#endif
   return code;
 }
 
 int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *result) {
+#ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
+  uint32_t value;
+  ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
+  *result = (uint8_t) value;
+  return SX127X_OK;
+#else
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
     uint32_t value;
     ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
@@ -248,6 +261,7 @@ int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *resu
   spi_device->shadow_registers_sync[reg] = SHADOW_CACHED;
   spi_device->shadow_registers[reg] = *result;
   return SX127X_OK;
+#endif
 }
 
 int sx127x_append_register(int reg, uint8_t value, uint8_t mask, shadow_spi_device_t *spi_device) {
@@ -578,6 +592,7 @@ void sx127x_handle_interrupt(sx127x *device) {
 int sx127x_create(void *spi_device, sx127x *result) {
   memset(result, 0, sizeof(struct sx127x_t));
   result->spi_device.spi_device = spi_device;
+#ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   result->spi_device.shadow_registers_sync[REG_FIFO] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REG_FIFO_RX_CURRENT_ADDR] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REG_RSSI_VALUE_FSK] = SHADOW_IGNORE;
@@ -592,6 +607,7 @@ int sx127x_create(void *spi_device, sx127x *result) {
   result->spi_device.shadow_registers_sync[REG_TEMP] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_1] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REG_IRQ_FLAGS_2] = SHADOW_IGNORE;
+#endif
 
   uint8_t version;
   int code = sx127x_read_register(REG_VERSION, &result->spi_device, &version);
