@@ -331,8 +331,9 @@ int sx127x_reload_low_datarate_optimization(sx127x *device) {
   if (symbol_duration > 16) {
     // force low data rate optimization
     return sx127x_lora_set_low_datarate_optimization(true, device);
+  } else {
+    return sx127x_lora_set_low_datarate_optimization(false, device);
   }
-  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_read_fixed_packet_length(sx127x *device, uint16_t *packet_length) {
