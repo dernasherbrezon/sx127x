@@ -922,7 +922,7 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, 
   return sx127x_shadow_spi_write_buffer(REGFIFO, device->packet, to_send, &device->spi_device);
 }
 
-int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device) {
+int sx127x_fsk_ook_tx_set_for_transmission(const uint8_t *data, uint16_t data_length, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (device->fsk_ook_format == SX127X_VARIABLE && data_length > MAX_PACKET_SIZE) {
     return SX127X_ERR_INVALID_ARG;
@@ -941,7 +941,7 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
   return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(data_length, device);
 }
 
-int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
+int sx127x_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (device->fsk_ook_format == SX127X_VARIABLE && data_length > (MAX_PACKET_SIZE - 1)) {
     return SX127X_ERR_INVALID_ARG;
@@ -962,7 +962,7 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
   return sx127x_fsk_ook_tx_set_for_transmission_with_remaining(packet_length, device);
 }
 
-int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device) {
+int sx127x_fsk_ook_tx_start_beacon(const uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (device->fsk_ook_format != SX127X_FIXED) {
     return SX127X_ERR_INVALID_STATE;
@@ -1161,7 +1161,7 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
   return sx127x_append_register(REGRXCONFIG, trigger, 0b11111000, &device->spi_device);
 }
 
-int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device) {
+int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (syncword_length == 0 || syncword_length > 8) {
     return SX127X_ERR_INVALID_ARG;

@@ -685,7 +685,7 @@ int sx127x_lora_tx_set_for_transmission(const uint8_t *data, uint8_t data_length
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, sx127x *device);
+int sx127x_fsk_ook_tx_set_for_transmission(const uint8_t *data, uint16_t data_length, sx127x *device);
 
 /**
  * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
@@ -698,7 +698,7 @@ int sx127x_fsk_ook_tx_set_for_transmission(uint8_t *data, uint16_t data_length, 
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device);
+int sx127x_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x *device);
 
 /**
  * @brief Start transmitting periodic beacon using FSK/OOK modulation. Packet format must be configured as SX127X_FIXED.
@@ -712,7 +712,7 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(uint8_t *data, uint16_t 
  *         - SX127X_ERR_INVALID_STATE if configured packet format is not SX127X_FIXED or selected modem is not FSK/OOK
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_tx_start_beacon(uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device);
+int sx127x_fsk_ook_tx_start_beacon(const uint8_t *data, uint8_t data_length, uint32_t interval_ms, sx127x *device);
 
 /**
  * @brief Stop transmitting periodic beacon.
@@ -764,7 +764,7 @@ int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_fsk_ook_set_syncword(uint8_t *syncword, uint8_t syncword_length, sx127x *device);
+int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length, sx127x *device);
 
 /**
  * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
