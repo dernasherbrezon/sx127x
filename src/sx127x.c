@@ -167,6 +167,10 @@ int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer
   return code;
 }
 
+int sx127x_write_register(int reg, uint8_t value, shadow_spi_device_t *spi_device) {
+  return sx127x_shadow_spi_write_register(reg, &value, 1, spi_device);
+}
+
 int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *result) {
 #ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
   uint32_t value;

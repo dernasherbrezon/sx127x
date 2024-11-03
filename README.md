@@ -131,6 +131,7 @@ Where:
 * ```transmit_fsk_fixed``` - TX in FSK mode. Fixed packet length - 2047 bytes, NRZ encoding, CRC, AFC on.
 * ```transmit_ook``` - TX in OOK mode. Variable packet length, NRZ encoding, CRC, AFC on. Sending several messages: small 2 byte, messages that can fit into FIFO fully, max messages for variable packet type - 255 bytes and same messages, but for node address 0x11 and 0x00.
 * ```temperature``` - Constantly read raw temperature value from the internal sensor. Must be calibrated first using well-known temperature. Available in FSK mode.
+* ```low_level``` - Example for direct register manipulation.
 
 # Tests
 

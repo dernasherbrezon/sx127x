@@ -994,6 +994,28 @@ int sx127x_fsk_ook_set_temp_monitor(bool enable, sx127x *device);
  */
 int sx127x_fsk_ook_get_raw_temperature(sx127x *device, int8_t *raw_temperature);
 
+/**
+ * Low-level API to read single register. No validation is performed
+ * @param reg - the register id defined in sx127x_registers.h
+ * @param spi_device - wrapper around spi_device. Use device->spi_device.
+ * @param result - the result
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   on any SPI transfer errors
+ *         - SX127X_OK                on success
+ */
+int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *result);
+
+/**
+ * Low-level API to write single register. No validation is performed
+ * @param reg - the register id defined in sx127x_registers.h
+ * @param value - value to write
+ * @param spi_device - wrapper around spi_device. Use device->spi_device.
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   on any SPI transfer errors
+ *         - SX127X_OK                on success
+ */
+int sx127x_write_register(int reg, uint8_t value, shadow_spi_device_t *spi_device);
+
 #ifdef __cplusplus
 }
 #endif
