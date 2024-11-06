@@ -1,4 +1,4 @@
-version: "3.2.1"
+version: "4.0.0"
 description: "Library to work with Semtech chips SX1276/SX1277/SX1278/SX1279"
 url: "https://github.com/dernasherbrezon/sx127x"
 license: "Apache-2.0"
