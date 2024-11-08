@@ -34,5 +34,8 @@
             "**/.gitignore",
             "**/*_linux_*"
         ]
+    },
+    "build": {
+        "extraScript": "extra_script.py"
     }
 }
