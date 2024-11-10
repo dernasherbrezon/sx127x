@@ -33,7 +33,7 @@ sx127x device;
 volatile int interrupt_received = 0;
 /* USER CODE BEGIN PV */
 
-int stm_log(const char *format, ...) {
+void stm_log(const char *format, ...) {
   char temp[1024];
   memset(temp, '\0', 1024);
   va_list args;
