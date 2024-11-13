@@ -12,6 +12,9 @@ extern int HAL_SPI_Transmit(void *hspi, uint8_t *pData, uint16_t Size, uint32_t 
 extern int HAL_SPI_TransmitReceive(void *hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size, uint32_t Timeout);
 
 int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uint32_t *result) {
+  if (data_length == 0 || data_length > 4) {
+    return -1;
+  }
   uint64_t tx_buf = ((uint8_t)reg & 0x7F);
   uint64_t rx_buf = 0;
   int code = HAL_SPI_TransmitReceive(spi_device, (uint8_t *)&tx_buf, (uint8_t *)&rx_buf, data_length + 1, SPI_TIMEOUT);
