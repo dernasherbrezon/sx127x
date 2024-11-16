@@ -64,6 +64,14 @@ void tx_callback(sx127x *device) {
   messages_sent++;
 }
 
+void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device) {
+  gpio_set_direction(gpio, GPIO_MODE_INPUT);
+  gpio_pulldown_en(gpio);
+  gpio_pullup_dis(gpio);
+  gpio_set_intr_type(gpio, GPIO_INTR_POSEDGE);
+  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
+}
+
 void app_main() {
   ESP_LOGI(TAG, "starting up");
   spi_bus_config_t config = {
@@ -76,7 +84,7 @@ void app_main() {
   };
   ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &config, 1));
   spi_device_interface_config_t dev_cfg = {
-      .clock_speed_hz = 8E6,
+      .clock_speed_hz = 4E6,
       .spics_io_num = SS,
       .queue_size = 16,
       .command_bits = 0,
@@ -103,12 +111,8 @@ void app_main() {
     return;
   }
 
-  gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT);
-  gpio_pulldown_en((gpio_num_t)DIO0);
-  gpio_pullup_dis((gpio_num_t)DIO0);
-  gpio_set_intr_type((gpio_num_t)DIO0, GPIO_INTR_POSEDGE);
   gpio_install_isr_service(0);
-  gpio_isr_handler_add((gpio_num_t)DIO0, handle_interrupt_fromisr, (void *)&device);
+  setup_gpio_interrupts((gpio_num_t)DIO0, &device);
 
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
   sx127x_tx_header_t header = {
