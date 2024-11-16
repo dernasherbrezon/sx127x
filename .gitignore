@@ -63,3 +63,5 @@ cmake-build-remote
 .idea/
 dist/
 debug/
+/examples/receive_lora_cubeide_stm32/receive_lora_cubeide_stm32.launch
+/examples/receive_lora_cubeide_stm32/STM32F103RBTX_FLASH.ld
