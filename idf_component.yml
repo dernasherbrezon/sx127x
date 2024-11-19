@@ -11,3 +11,6 @@ files:
     - "**/.github/**/*"
     - "**/.gitignore"
     - "**/*_linux_*"
+    - "./test/**/*"
+    - "./.github/**/*"
+    - "**/*_cubeide_*/**/*"

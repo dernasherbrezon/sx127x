@@ -24,6 +24,7 @@
             "**/build",
             "**/dist",
             "**/debug",
+            "**/Debug",
             "**/sdkconfig",
             "**/sdkconfig.old",
             "**/dependencies.lock",
@@ -31,8 +32,11 @@
             "**/.idea",
             "**/.DS_Store",
             "**/.git",
+            "**/.settings",
             "**/.gitignore",
-            "**/*_linux_*"
+            "**/*_linux_*",
+            "./test",
+            "./.github"
         ]
     },
     "build": {
