@@ -27,6 +27,14 @@ sx127x device;
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_INPUT_OUTPUT));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
+  vTaskDelay(pdMS_TO_TICKS(5));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
+  vTaskDelay(pdMS_TO_TICKS(10));
+  ESP_LOGI(TAG, "sx127x was reset");
+  ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
+
   spi_bus_config_t config = {
       .mosi_io_num = MOSI,
       .miso_io_num = MISO,

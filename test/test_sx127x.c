@@ -169,9 +169,9 @@ void test_fsk_ook_beacon() {
 
   // test different timer settings
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 15, device));
-  TEST_ASSERT_EQUAL_INT(234, registers[0x39]);
-  TEST_ASSERT_EQUAL_INT(0, registers[0x3a]);
-  TEST_ASSERT_EQUAL_INT(0b00000111, registers[0x38]);
+  TEST_ASSERT_EQUAL_INT(117, registers[0x39]);
+  TEST_ASSERT_EQUAL_INT(117, registers[0x3a]);
+  TEST_ASSERT_EQUAL_INT(0b00000101, registers[0x38]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 20, device));
   TEST_ASSERT_EQUAL_INT(156, registers[0x39]);
   TEST_ASSERT_EQUAL_INT(156, registers[0x3a]);

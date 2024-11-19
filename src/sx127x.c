@@ -980,10 +980,7 @@ int sx127x_fsk_ook_tx_start_beacon(const uint8_t *data, uint8_t data_length, uin
   float timer2_resolution = 0.0f;
   uint8_t timer2_coefficient = 0;
 
-  if (interval_ms <= 255 * p1) {
-    timer1_resolution = p1;
-    timer1_coefficient = (uint8_t) (interval_ms / p1);
-  } else if (interval_ms <= 255 * p1 * 2) {
+  if (interval_ms <= 255 * p1 * 2) {
     timer1_resolution = p1;
     timer2_resolution = p1;
     timer1_coefficient = (uint8_t) (interval_ms / p1 / 2);
@@ -1008,10 +1005,7 @@ int sx127x_fsk_ook_tx_start_beacon(const uint8_t *data, uint8_t data_length, uin
     timer2_resolution = p3;
     timer1_coefficient = (uint8_t) (interval_ms / p3 / 2);
   }
-
-  if (timer2_resolution != 0) {
-    timer2_coefficient = (uint8_t) ((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
-  }
+  timer2_coefficient = (uint8_t) ((interval_ms - timer1_resolution * timer1_coefficient) / timer2_resolution);
 
   uint8_t timer_resolution = 0b00000000;
   if (timer1_resolution == p1) {
