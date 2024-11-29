@@ -4,6 +4,7 @@
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 #include <sx127x.h>
 
 #define SCK 5
@@ -20,17 +21,19 @@ static const char *TAG = "sx127x";
 
 sx127x device;
 int messages_sent = 0;
-TaskHandle_t handle_interrupt;
 uint64_t frequencies[] = {437700000, 438200000, 437200012};
+static SemaphoreHandle_t xBinarySemaphore;
+static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
-  xTaskResumeFromISR(handle_interrupt);
+  xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
 }
 
 void handle_interrupt_task(void *arg) {
   while (1) {
-    vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *) arg);
+    if (xSemaphoreTake(xBinarySemaphore, portMAX_DELAY) == pdTRUE) {
+      sx127x_handle_interrupt((sx127x *) arg);
+    }
   }
 }
 
@@ -119,6 +122,13 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
   sx127x_tx_set_callback(tx_callback, &device);
 
+  xBinarySemaphore = xSemaphoreCreateBinary();
+  if (xBinarySemaphore == NULL) {
+    ESP_LOGE(TAG, "unable to create semaphore");
+    return;
+  }
+
+  TaskHandle_t handle_interrupt;
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);

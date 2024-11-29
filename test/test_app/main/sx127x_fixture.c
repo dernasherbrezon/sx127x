@@ -17,15 +17,18 @@
   } while (0)
 
 static const char *TAG = "sx127x_test";
+static SemaphoreHandle_t xBinarySemaphore;
+static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
-  xTaskResumeFromISR(((sx127x_fixture_t *) arg)->handle_interrupt);
+  xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
 }
 
 void handle_interrupt_task(void *arg) {
   while (1) {
-    vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *) arg);
+    if (xSemaphoreTake(xBinarySemaphore, portMAX_DELAY) == pdTRUE) {
+      sx127x_handle_interrupt((sx127x *) arg);
+    }
   }
 }
 
@@ -73,7 +76,6 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
   result->tx_done = xSemaphoreCreateBinary();
   result->rx_done = xSemaphoreCreateBinary();
   result->spi_device = spi_device;
-  result->handle_interrupt = NULL;
 
   *fixture = result;
   return SX127X_OK;
@@ -136,6 +138,13 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
     ERROR_CHECK(sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, result->device));
     ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, result->device));
   } else {
+    return SX127X_ERR_INVALID_ARG;
+  }
+
+  xBinarySemaphore = xSemaphoreCreateBinary();
+  if (xBinarySemaphore == NULL) {
+    ESP_LOGE(TAG, "unable to create semaphore");
+    sx127x_fixture_destroy(result);
     return SX127X_ERR_INVALID_ARG;
   }
 

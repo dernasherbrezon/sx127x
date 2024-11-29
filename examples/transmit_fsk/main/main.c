@@ -4,6 +4,7 @@
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 #include <sx127x.h>
 
 // TTGO lora32 v2.1 1.6.1
@@ -25,16 +26,18 @@ static const char *TAG = "sx127x";
 
 sx127x device;
 int messages_sent = 0;
-TaskHandle_t handle_interrupt;
+static SemaphoreHandle_t xBinarySemaphore;
+static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
-  xTaskResumeFromISR(handle_interrupt);
+  xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
 }
 
 void handle_interrupt_task(void *arg) {
   while (1) {
-    vTaskSuspend(NULL);
-    sx127x_handle_interrupt((sx127x *)arg);
+    if (xSemaphoreTake(xBinarySemaphore, portMAX_DELAY) == pdTRUE) {
+      sx127x_handle_interrupt((sx127x *) arg);
+    }
   }
 }
 
@@ -82,7 +85,7 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type
   gpio_pulldown_en(gpio);
   gpio_pullup_dis(gpio);
   gpio_set_intr_type(gpio, type);
-  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
+  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) device);
 }
 
 void app_main() {
@@ -132,6 +135,13 @@ void app_main() {
 
   sx127x_tx_set_callback(tx_callback, &device);
 
+  xBinarySemaphore = xSemaphoreCreateBinary();
+  if (xBinarySemaphore == NULL) {
+    ESP_LOGE(TAG, "unable to create semaphore");
+    return;
+  }
+
+  TaskHandle_t handle_interrupt;
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);
@@ -139,9 +149,9 @@ void app_main() {
   }
 
   gpio_install_isr_service(0);
-  setup_gpio_interrupts((gpio_num_t)DIO0, &device, GPIO_INTR_POSEDGE);
-  setup_gpio_interrupts((gpio_num_t)DIO1, &device, GPIO_INTR_NEGEDGE);
-  setup_gpio_interrupts((gpio_num_t)DIO2, &device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO0, &device, GPIO_INTR_POSEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO1, &device, GPIO_INTR_NEGEDGE);
+  setup_gpio_interrupts((gpio_num_t) DIO2, &device, GPIO_INTR_POSEDGE);
 
   tx_callback(&device);
 }
