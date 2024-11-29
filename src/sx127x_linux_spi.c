@@ -17,7 +17,8 @@
 #include <string.h>
 #include <sx127x_spi.h>
 #include <sys/ioctl.h>
-#include <stdlib.h>
+
+#define SPI_MAX_TRANSFER_SIZE 2047
 
 int sx127x_spi_read_registers(int reg, void *spi_device, size_t data_length, uint32_t *result) {
   if (data_length == 0 || data_length > 4) {
@@ -45,24 +46,22 @@ int sx127x_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, void 
   if (buffer_length < 1) {
     return 0;
   }
-  uint8_t *tmp = malloc(buffer_length + 1);
-  if (tmp == NULL) {
+  if (buffer_length > SPI_MAX_TRANSFER_SIZE) {
     return ENOMEM;
   }
-  struct spi_ioc_transfer tr;
-  memset(&tr, 0, sizeof(tr));
-  uint64_t tx_buf = ((uint8_t) reg & 0x7F);
-  tr.tx_buf = (__u64) &tx_buf;
-  tr.rx_buf = (__u64) tmp;
+  uint8_t rx_buf[SPI_MAX_TRANSFER_SIZE + 1] = {0};
+  uint8_t tx_buf[SPI_MAX_TRANSFER_SIZE + 1] = {0};
+  struct spi_ioc_transfer tr = {0};
+  tx_buf[0] = ((uint8_t) reg & 0x7F);
+  tr.tx_buf = (__u64)tx_buf;
+  tr.rx_buf = (__u64)rx_buf;
   tr.len = buffer_length + 1;
   int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
   if (code == -1) {
-    free(tmp);
     return errno;
   }
   // shift 1 byte to the right
-  memcpy(buffer, tmp + 1, buffer_length);
-  free(tmp);
+  memcpy(buffer, rx_buf + 1, buffer_length);
   return 0;
 }
 
@@ -85,18 +84,19 @@ int sx127x_spi_write_register(int reg, const uint8_t *data, size_t data_length, 
 }
 
 int sx127x_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, void *spi_device) {
-  uint8_t *tmp = malloc(buffer_length + 1);
-  if (tmp == NULL) {
+  if (buffer_length < 1) {
+    return 0;
+  }
+  if (buffer_length > SPI_MAX_TRANSFER_SIZE) {
     return ENOMEM;
   }
-  tmp[0] = reg | 0x80;
-  memcpy(tmp + 1, buffer, buffer_length);
-  struct spi_ioc_transfer tr;
-  memset(&tr, 0, sizeof(tr));
-  tr.tx_buf = (__u64) tmp;
+  uint8_t tx_buf[SPI_MAX_TRANSFER_SIZE + 1] = {0};
+  struct spi_ioc_transfer tr = {0};
+  memcpy(tx_buf + 1, buffer, buffer_length);
+  tx_buf[0] = reg | 0x80;
+  tr.tx_buf = (__u64) tx_buf;
   tr.len = buffer_length + 1;
   int code = ioctl(*(int *) spi_device, SPI_IOC_MESSAGE(1), &tr);
-  free(tmp);
   if (code == -1) {
     return errno;
   }
