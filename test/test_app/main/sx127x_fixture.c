@@ -18,10 +18,13 @@
 
 static const char *TAG = "sx127x_test";
 static SemaphoreHandle_t xBinarySemaphore;
-static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
 }
 
 void handle_interrupt_task(void *arg) {
