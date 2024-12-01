@@ -24,10 +24,13 @@ sx127x device;
 int total_packets_received = 0;
 uint64_t frequencies[] = {437700000, 438200000, 437200012};
 static SemaphoreHandle_t xBinarySemaphore;
-static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
 }
 
 void handle_interrupt_task(void *arg) {
@@ -129,17 +132,17 @@ void app_main() {
     return;
   }
 
-  TaskHandle_t handle_interrupt;
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
-  if (task_code != pdPASS) {
-    ESP_LOGE(TAG, "can't create task %d", task_code);
-    return;
-  }
-
   gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t)DIO0, &device, GPIO_INTR_POSEDGE);
   setup_gpio_interrupts((gpio_num_t)DIO1, &device, GPIO_INTR_POSEDGE);
   setup_gpio_interrupts((gpio_num_t)DIO2, &device, GPIO_INTR_POSEDGE);
 
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, &device));
+
+  TaskHandle_t handle_interrupt;
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
+  if (task_code != pdPASS) {
+    ESP_LOGE(TAG, "can't create task %d", task_code);
+    return;
+  }
 }

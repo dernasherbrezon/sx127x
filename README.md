@@ -156,5 +156,6 @@ Run the following command to test:
 ```
 cd test/test_app
 idf.py build
+export ESPBAUD=460800
 pytest --target esp32 --port="/dev/ttyACM0|/dev/ttyACM1" pytest_*
 ```

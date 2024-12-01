@@ -19,10 +19,13 @@ static const char *TAG = "sx127x";
 sx127x device;
 int messages_sent = 0;
 static SemaphoreHandle_t xBinarySemaphore;
-static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
 }
 
 void handle_interrupt_task(void *arg) {
@@ -80,13 +83,6 @@ void app_main() {
     return;
   }
 
-  TaskHandle_t handle_interrupt;
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
-  if (task_code != pdPASS) {
-    ESP_LOGE(TAG, "can't create task %d", task_code);
-    return;
-  }
-
   gpio_set_direction((gpio_num_t)DIO0, GPIO_MODE_INPUT);
   gpio_pulldown_en((gpio_num_t)DIO0);
   gpio_pullup_dis((gpio_num_t)DIO0);
@@ -101,4 +97,11 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, &device));
   ESP_LOGI(TAG, "transmitting");
+
+  TaskHandle_t handle_interrupt;
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
+  if (task_code != pdPASS) {
+    ESP_LOGE(TAG, "can't create task %d", task_code);
+    return;
+  }
 }
