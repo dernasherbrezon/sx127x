@@ -29,5 +29,6 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length);
 void sx127x_reset();
 void sx127x_init_spi(spi_device_handle_t *handle);
 esp_err_t setup_task(sx127x *device);
+esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(sx127x *device));
 
 #endif

@@ -1,5 +1,3 @@
-#include <driver/gpio.h>
-#include <driver/spi_common.h>
 #include <driver/spi_master.h>
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
