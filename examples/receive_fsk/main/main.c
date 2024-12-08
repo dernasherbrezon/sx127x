@@ -45,5 +45,4 @@ void app_main() {
   setup_gpio_interrupts((gpio_num_t) DIO2, &device, GPIO_INTR_POSEDGE);
 
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, &device));
-
 }
