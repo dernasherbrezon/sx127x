@@ -386,8 +386,6 @@ void sx127x_fsk_ook_reset_state(sx127x *device) {
 void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REGIRQFLAGS2, &device->spi_device, &irq));
-  // clear the irq
-  ERROR_CHECK_NOCODE(sx127x_shadow_spi_write_register(REGIRQFLAGS2, &irq, 1, &device->spi_device));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
     if (device->fsk_crc_type != SX127X_CRC_NONE && (irq & SX127X_FSK_IRQ_CRC_OK) != SX127X_FSK_IRQ_CRC_OK) {
       irq = SX127X_FSK_IRQ_FIFO_OVERRUN;
@@ -442,8 +440,6 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     } else {
       // if not RX irq, then try preamble detect
       ERROR_CHECK_NOCODE(sx127x_read_register(REGIRQFLAGS1, &device->spi_device, &irq));
-      //  clear the irq
-      ERROR_CHECK_NOCODE(sx127x_shadow_spi_write_register(REGIRQFLAGS1, &irq, 1, &device->spi_device));
       if ((irq & SX127X_FSK_IRQ_PREAMBLE_DETECT) != 0 && !device->fsk_rssi_available) {
         sx127x_fsk_ook_get_rssi(device);
         return;
