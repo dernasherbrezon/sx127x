@@ -1,55 +1,27 @@
 #include <driver/gpio.h>
-#include <driver/spi_common.h>
 #include <driver/spi_master.h>
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
 #include <freertos/task.h>
-#include <freertos/semphr.h>
 #include <sx127x.h>
-
-#define SCK 5
-#define MISO 19
-#define MOSI 27
-#define SS 18
-#define RST 23
-#define DIO0 26
-// older versions of TTGO require manual wiring of pins below
-#define DIO1 33
-#define DIO2 32
+#include <esp_utils.h>
 
 static const char *TAG = "sx127x";
 
 sx127x device;
 int messages_sent = 0;
 uint64_t frequencies[] = {437700000, 438200000, 437200012};
-static SemaphoreHandle_t xBinarySemaphore;
-
-void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
-  if (xHigherPriorityTaskWoken == pdTRUE) {
-    portYIELD_FROM_ISR();
-  }
-}
-
-void handle_interrupt_task(void *arg) {
-  while (1) {
-    if (xSemaphoreTake(xBinarySemaphore, portMAX_DELAY) == pdTRUE) {
-      sx127x_handle_interrupt((sx127x *) arg);
-    }
-  }
-}
 
 void tx_callback(sx127x *device) {
   if (messages_sent > 0) {
     ESP_LOGI(TAG, "transmitted");
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
   if (messages_sent == 0) {
     uint8_t data[] = {0xCA, 0xFE};
     ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
     ESP_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), device));
   } else if (messages_sent == 1) {
-    vTaskDelay(pdMS_TO_TICKS(1000));
     // 200 bytes
     uint8_t data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
                       0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b,
@@ -59,7 +31,6 @@ void tx_callback(sx127x *device) {
     ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
     ESP_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), device));
   } else if (messages_sent == 2) {
-    vTaskDelay(pdMS_TO_TICKS(1000));
     // 255 bytes
     uint8_t data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
                       0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b,
@@ -77,42 +48,13 @@ void tx_callback(sx127x *device) {
   messages_sent++;
 }
 
-void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type) {
-  gpio_set_direction(gpio, GPIO_MODE_INPUT);
-  gpio_pulldown_en(gpio);
-  gpio_pullup_dis(gpio);
-  gpio_set_intr_type(gpio, type);
-  gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device);
-}
-
 void app_main() {
   ESP_LOGI(TAG, "starting up");
-  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_INPUT_OUTPUT));
-  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
-  vTaskDelay(pdMS_TO_TICKS(5));
-  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
-  vTaskDelay(pdMS_TO_TICKS(10));
-  ESP_LOGI(TAG, "sx127x was reset");
-  ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
-  spi_bus_config_t config = {
-      .mosi_io_num = MOSI,
-      .miso_io_num = MISO,
-      .sclk_io_num = SCK,
-      .quadwp_io_num = -1,
-      .quadhd_io_num = -1,
-      .max_transfer_sz = 0,
-  };
-  ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &config, 1));
-  spi_device_interface_config_t dev_cfg = {
-      .clock_speed_hz = 8E6,
-      .spics_io_num = SS,
-      .queue_size = 16,
-      .command_bits = 0,
-      .address_bits = 8,
-      .dummy_bits = 0,
-      .mode = 0};
+  sx127x_reset();
+
   spi_device_handle_t spi_device;
-  ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_cfg, &spi_device));
+  sx127x_init_spi(&spi_device);
+
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
   ESP_ERROR_CHECK(sx127x_lora_set_frequency_hopping(5, frequencies, sizeof(frequencies) / sizeof(uint64_t), &device));
@@ -125,12 +67,6 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
   sx127x_tx_set_callback(tx_callback, &device);
 
-  xBinarySemaphore = xSemaphoreCreateBinary();
-  if (xBinarySemaphore == NULL) {
-    ESP_LOGE(TAG, "unable to create semaphore");
-    return;
-  }
-
   gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t)DIO0, &device, GPIO_INTR_POSEDGE);
   setup_gpio_interrupts((gpio_num_t)DIO1, &device, GPIO_INTR_POSEDGE);
@@ -142,12 +78,5 @@ void app_main() {
       .coding_rate = SX127x_CR_4_5};
   ESP_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 
-  tx_callback(&device);
-
-  TaskHandle_t handle_interrupt;
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, &device, 2, &handle_interrupt, xPortGetCoreID());
-  if (task_code != pdPASS) {
-    ESP_LOGE(TAG, "can't create task %d", task_code);
-    return;
-  }
+  ESP_ERROR_CHECK(setup_tx_task(&device, tx_callback));
 }

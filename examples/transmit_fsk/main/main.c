@@ -81,7 +81,5 @@ void app_main() {
   setup_gpio_interrupts((gpio_num_t) DIO1, &device, GPIO_INTR_NEGEDGE);
   setup_gpio_interrupts((gpio_num_t) DIO2, &device, GPIO_INTR_POSEDGE);
 
-  tx_callback(&device);
-
-  ESP_ERROR_CHECK(setup_task(&device));
+  ESP_ERROR_CHECK(setup_tx_task(&device, tx_callback));
 }
