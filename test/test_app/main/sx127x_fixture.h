@@ -26,6 +26,7 @@ typedef struct {
     spi_device_handle_t spi_device;
     SemaphoreHandle_t tx_done;
     SemaphoreHandle_t rx_done;
+    SemaphoreHandle_t xMutex;
 
     TaskHandle_t handle_interrupt;
     uint8_t rx_data[2048];
@@ -35,6 +36,10 @@ typedef struct {
 int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t modulation, sx127x_fixture_t **fixture);
 
 int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture);
+
+int sx127x_fixture_fsk_ook_tx_set_for_transmission(const uint8_t *data, uint16_t data_length, sx127x_fixture_t *fixture);
+
+int sx127x_fixture_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x_fixture_t *fixture);
 
 void sx127x_fixture_destroy(sx127x_fixture_t *fixture);
 

@@ -17,20 +17,22 @@
   } while (0)
 
 static const char *TAG = "sx127x_test";
-static SemaphoreHandle_t xBinarySemaphore;
+const UBaseType_t xArrayIndex = 0;
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
+  sx127x_fixture_t *fixture = (sx127x_fixture_t *) arg;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherPriorityTaskWoken);
-  if (xHigherPriorityTaskWoken == pdTRUE) {
-    portYIELD_FROM_ISR();
-  }
+  vTaskNotifyGiveIndexedFromISR(fixture->handle_interrupt, xArrayIndex, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void handle_interrupt_task(void *arg) {
+  sx127x_fixture_t *fixture = (sx127x_fixture_t *) arg;
   while (1) {
-    if (xSemaphoreTake(xBinarySemaphore, portMAX_DELAY) == pdTRUE) {
-      sx127x_handle_interrupt((sx127x *) arg);
+    if (ulTaskNotifyTakeIndexed(xArrayIndex, pdTRUE, portMAX_DELAY) > 0) {
+      xSemaphoreTake(fixture->xMutex, portMAX_DELAY);
+      sx127x_handle_interrupt(fixture->device);
+      xSemaphoreGive(fixture->xMutex);
     }
   }
 }
@@ -64,7 +66,7 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
       .mode = 0};
   spi_device_handle_t spi_device;
   sx127x *device = malloc(sizeof(struct sx127x_t));
-  if( device == NULL ) {
+  if (device == NULL) {
     return -1;
   }
   ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_config, &spi_device));
@@ -144,14 +146,14 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
     return SX127X_ERR_INVALID_ARG;
   }
 
-  xBinarySemaphore = xSemaphoreCreateBinary();
-  if (xBinarySemaphore == NULL) {
+  result->xMutex = xSemaphoreCreateMutex();
+  if (result->xMutex == NULL) {
     ESP_LOGE(TAG, "unable to create semaphore");
     sx127x_fixture_destroy(result);
     return SX127X_ERR_INVALID_ARG;
   }
 
-  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, result->device, 2, &(result->handle_interrupt), xPortGetCoreID());
+  BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, result, 2, &(result->handle_interrupt), xPortGetCoreID());
   if (task_code != pdPASS) {
     ESP_LOGE(TAG, "can't create task %d", task_code);
     sx127x_fixture_destroy(result);
@@ -164,6 +166,30 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
 
   *fixture = result;
   return SX127X_OK;
+}
+
+int sx127x_fixture_fsk_ook_tx_set_for_transmission(const uint8_t *data, uint16_t data_length, sx127x_fixture_t *fixture) {
+  xSemaphoreTake(fixture->xMutex, portMAX_DELAY);
+  int code = sx127x_fsk_ook_tx_set_for_transmission(data, data_length, fixture->device);
+  if (code != SX127X_OK) {
+    xSemaphoreGive(fixture->xMutex);
+    return code;
+  }
+  code = sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device);
+  xSemaphoreGive(fixture->xMutex);
+  return code;
+}
+
+int sx127x_fixture_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uint16_t data_length, uint8_t address_to, sx127x_fixture_t *fixture) {
+  xSemaphoreTake(fixture->xMutex, portMAX_DELAY);
+  int code = sx127x_fsk_ook_tx_set_for_transmission_with_address(data, data_length, address_to, fixture->device);
+  if (code != SX127X_OK) {
+    xSemaphoreGive(fixture->xMutex);
+    return code;
+  }
+  code = sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, fixture->device);
+  xSemaphoreGive(fixture->xMutex);
+  return code;
 }
 
 void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
@@ -187,6 +213,9 @@ void sx127x_fixture_destroy(sx127x_fixture_t *fixture) {
   }
   if (fixture->rx_done != NULL) {
     vSemaphoreDelete(fixture->rx_done);
+  }
+  if (fixture->xMutex != NULL) {
+    vSemaphoreDelete(fixture->xMutex);
   }
   free(fixture);
 }
