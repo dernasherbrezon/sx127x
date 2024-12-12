@@ -25,20 +25,20 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifndef SX127X_CHIP
-#define SX127X_CHIP SX1276
+#ifndef CONFIG_SX127X_CHIP
+#define CONFIG_SX127X_CHIP 1276
 #endif
 
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
   #define SX127x_VERSION 0x12
   #define SX127x_MIN_FREQUENCY  137000000
   #define SX127x_MAX_FREQUENCY 1020000000
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
   #define SX127x_VERSION 0x22
   #define SX127x_MIN_FREQUENCY  860000000
   #define SX127x_MAX_FREQUENCY 1020000000
 #else
-  #error "Unexpected value of SX127X_CHIP."
+  #error "Unexpected value of CONFIG_SX127X_CHIP."
 #endif
 
 #define MAX_PACKET_SIZE 255
@@ -221,7 +221,7 @@ typedef enum {
  * @note In the lower band (169MHz), signal bandwidths 8&9 (250k and 500k) are not supported
  *
  */
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
 typedef enum {
   SX127x_BW_7800 = 0b00000000,
   SX127x_BW_10400 = 0b00010000,
@@ -234,7 +234,7 @@ typedef enum {
   SX127x_BW_250000 = 0b10000000,
   SX127x_BW_500000 = 0b10010000
 } sx127x_bw_t;
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
 typedef enum {
   SX127x_BW_125000 = 0b00000000, // default
   SX127x_BW_250000 = 0b01000000,
@@ -242,14 +242,14 @@ typedef enum {
 } sx127x_bw_t;
 #endif
 
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
 typedef enum {
   SX127x_CR_4_5 = 0b00000010, // default
   SX127x_CR_4_6 = 0b00000100,
   SX127x_CR_4_7 = 0b00000110,
   SX127x_CR_4_8 = 0b00001000
 } sx127x_cr_t;
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
 typedef enum {
   SX127x_CR_4_5 = 0b00001000, // default
   SX127x_CR_4_6 = 0b00010000,

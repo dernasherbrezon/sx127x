@@ -17,9 +17,9 @@
 #include <string.h>
 #include <sx127x_spi.h>
 
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
 #include <sx127x_registers.h>
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
 #include <sx1272_registers.h>
 #endif
 
@@ -102,12 +102,12 @@
     }                                                                                           \
   } while (0)
 
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
 typedef enum {
   SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
   SX127x_HEADER_MODE_IMPLICIT = 0b00000001
 } sx127x_header_mode_t;
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
 typedef enum {
   SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
   SX127x_HEADER_MODE_IMPLICIT = 0b00000100
@@ -216,10 +216,10 @@ int sx127x_append_register(int reg, uint8_t value, uint8_t mask, shadow_spi_devi
 
 int sx127x_lora_set_low_datarate_optimization(bool enable, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
   uint8_t value = (enable ? 0b00001000 : 0b00000000);
   ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, value, 0b11110111, &device->spi_device));
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
   uint8_t value = (enable ? 0b00000001 : 0b00000000);
   ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, value, 0b11111110, &device->spi_device));
 #endif
@@ -643,12 +643,12 @@ int sx127x_lora_reset_fifo(sx127x *device) {
 
 int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
     if (gain == SX127x_LNA_GAIN_AUTO) {
       return sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
     }
     ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, &device->spi_device));
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
     if (gain == SX127x_LNA_GAIN_AUTO) {
       return sx127x_append_register(REGMODEMCONFIG2, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
     }
@@ -674,9 +674,9 @@ int sx127x_rx_set_lna_boost_hf(bool enable, sx127x *device) {
 
 int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
   ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, bandwidth, 0b00001111, &device->spi_device));
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
   ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, bandwidth, 0b00111111, &device->spi_device));
 #endif
   return sx127x_reload_low_datarate_optimization(device);
@@ -725,7 +725,7 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
 
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if SX127X_CHIP == SX1276
+#if CONFIG_SX127X_CHIP == 1276
   if (header == NULL) {
     device->expected_packet_length = 0;
     device->use_implicit_header = false;
@@ -738,7 +738,7 @@ int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *de
     uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
     ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device));
   }
-#elif SX127X_CHIP == SX1272
+#elif CONFIG_SX127X_CHIP == 1272
   if (header == NULL) {
     device->expected_packet_length = 0;
     device->use_implicit_header = false;

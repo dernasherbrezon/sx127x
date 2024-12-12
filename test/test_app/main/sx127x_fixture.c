@@ -47,6 +47,13 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x_fixture_t *fixture, gpio_int_
 
 int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t **fixture) {
   ESP_LOGI(TAG, "starting up");
+  sx127x_fixture_t *result = malloc(sizeof(sx127x_fixture_t));
+  if (result == NULL) {
+    return -1;
+  }
+  *result = (sx127x_fixture_t) {0};
+  *fixture = result;
+
   spi_bus_config_t bus_config = {
       .mosi_io_num = config->mosi,
       .miso_io_num = config->miso,
@@ -64,25 +71,15 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
       .address_bits = 8,
       .dummy_bits = 0,
       .mode = 0};
-  spi_device_handle_t spi_device;
-  sx127x *device = malloc(sizeof(struct sx127x_t));
-  if (device == NULL) {
+  result->device = malloc(sizeof(struct sx127x_t));
+  if (result->device == NULL) {
     return -1;
   }
-  ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_config, &spi_device));
-  ERROR_CHECK(sx127x_create(spi_device, device));
+  ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_config, &result->spi_device));
+  ERROR_CHECK(sx127x_create(result->spi_device, result->device));
 
-  sx127x_fixture_t *result = malloc(sizeof(sx127x_fixture_t));
-  if (result == NULL) {
-    return -1;
-  }
-  *result = (sx127x_fixture_t) {0};
-  result->device = device;
   result->tx_done = xSemaphoreCreateBinary();
   result->rx_done = xSemaphoreCreateBinary();
-  result->spi_device = spi_device;
-
-  *fixture = result;
   return SX127X_OK;
 }
 
