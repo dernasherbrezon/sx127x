@@ -15,7 +15,7 @@
 // GPIO 27
 #define GPIO_DIO0_PIN 27
 #define GPIO_POLL_TIMEOUT -1
-
+#define TEST_FREQUENCY 868200000
 #define LINUX_ERROR_CHECK(x)                                                       \
   do {                                                                             \
     int __err_rc = (x);                                                            \
