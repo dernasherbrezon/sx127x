@@ -26,10 +26,10 @@ jobs:
                       cd build
                       cmake ..
                       make
-                      cd ../..
+                      cd ../../..
                   else
                       echo "No CMakeLists.txt found in $dir, skipping..."
-                      cd ..
+                      cd ../..
                   fi
               fi
           done
