@@ -15,87 +15,38 @@ jobs:
           restore-keys: ${{ runner.os }}-ccache
       - name: Build examples
         run: |
+          echo "Processing linux-based builds..."
+          for dir in examples/*/; do
+              if [[ ${dir} == *"raspberry"* ]]; then
+                  echo "Entering directory: $dir"
+                  cd "$dir"
+                  if [ -f "CMakeLists.txt" ]; then
+                      echo "Running cmake build in $dir"
+                      mkdir -p build
+                      cd build
+                      cmake ..
+                      make
+                      cd ../..
+                  else
+                      echo "No CMakeLists.txt found in $dir, skipping..."
+                      cd ..
+                  fi
+              fi
+          done
+
           export IDF_TARGET=$(echo "esp32" | tr '[:upper:]' '[:lower:]' | tr -d '_-')
           export CCACHE_DIR="${HOME}/ccache"
           mkdir -p ${CCACHE_DIR}
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_fsk" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py build'
+          echo -e "\nProcessing esp builds..."
+          for dir in examples/*/; do
+              if [[ ${dir} != *"raspberry"* && ${dir} != *"common"* && ${dir} != *"cubeide"* ]]; then
+                  echo "Building: $dir"
+                  cd "$dir"
+                  docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
+                  -w "/app/${{ github.repository }}/${dir}" espressif/idf:v5.1.2 \
+                  /bin/bash -c 'git config --global --add safe.directory "*" && idf.py build'
+                  cd ../..
+              fi
+          done
           
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_fsk_beacon" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_fsk_filtered" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_fsk_fixed" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_lora" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_lora_deepsleep" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_lora_implicit_header" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/receive_ook" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/temperature" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_fsk" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_fsk_beacon" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_fsk_fixed" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_lora" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_lora_implicit_header" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/examples/transmit_ook" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-
-          docker run -t -e IDF_TARGET="${IDF_TARGET}" -e IDF_CCACHE_ENABLE="1" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
-          -w "/app/${{ github.repository }}/test/test_app" espressif/idf:v5.1.2 \
-          /bin/bash -c 'git config --global --add safe.directory "*" && idf.py --ccache build'
-          
-          BASEDIR=$(pwd)
-          mkdir -p ${BASEDIR}/examples/receive_fsk_raspberrypi/build
-          cd ${BASEDIR}/examples/receive_fsk_raspberrypi/build
-          cmake ..
-          make
-          
-          mkdir -p ${BASEDIR}/examples/receive_lora_raspberrypi/build
-          cd ${BASEDIR}/examples/receive_lora_raspberrypi/build
-          cmake ..
-          make
-          
-          mkdir -p ${BASEDIR}/examples/transmit_lora_raspberrypi/build
-          cd ${BASEDIR}/examples/transmit_lora_raspberrypi/build
-          cmake ..
-          make        
-
         shell: bash
