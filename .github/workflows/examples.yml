@@ -41,11 +41,9 @@ jobs:
           for dir in examples/*/; do
               if [[ ${dir} != *"raspberry"* && ${dir} != *"common"* && ${dir} != *"cubeide"* ]]; then
                   echo "Building: $dir"
-                  cd "$dir"
                   docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
                   -w "/app/${{ github.repository }}" espressif/idf:v5.1.2 \
                   /bin/bash -c 'git config --global --add safe.directory "*" && cd /app/${{ github.repository }}/${dir} && idf.py build'
-                  cd ../..
               fi
           done
           
