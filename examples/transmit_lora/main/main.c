@@ -52,7 +52,7 @@ void app_main() {
 
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
-  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  ESP_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ESP_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
   ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
@@ -67,7 +67,7 @@ void app_main() {
 
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
   sx127x_tx_header_t header = {
-      .enable_crc = true,
+      .enable_crc = false,
       .coding_rate = SX127x_CR_4_5};
   ESP_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 

@@ -24,6 +24,9 @@
 //#define DIO1 35
 //#define DIO2 34
 
+// Make sure radio parameters are the same across multiple tests and examples
+#define TEST_FREQUENCY 868200000
+
 void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type);
 void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length);
 void lora_rx_callback(sx127x *device, uint8_t *data, uint16_t data_length);

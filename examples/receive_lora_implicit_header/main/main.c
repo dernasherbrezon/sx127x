@@ -22,7 +22,7 @@ void app_main() {
 
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
-  ESP_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  ESP_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ESP_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
   ESP_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));

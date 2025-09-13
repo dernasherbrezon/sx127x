@@ -127,7 +127,7 @@ int main(void)
   ERROR_CHECK(sx127x_create(&hspi2, &device));
   stm_log("sx127x connected\r\n");
   ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
-  ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ERROR_CHECK(sx127x_lora_reset_fifo(&device));
   ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));
   ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
@@ -150,6 +150,7 @@ int main(void)
   {
 	if (interrupt_received > 0) {
 	  interrupt_received = 0;
+	  //stm_log("interrupt\n");
 	  sx127x_handle_interrupt(&device);
 	}
     /* USER CODE END WHILE */
@@ -276,8 +277,8 @@ static void MX_USART1_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -330,8 +331,8 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -347,6 +348,7 @@ void stm_log(const char *format, ...) {
 }
 
 void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+//  stm_log("rx callback\n");
   uint8_t payload[514];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
@@ -465,8 +467,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

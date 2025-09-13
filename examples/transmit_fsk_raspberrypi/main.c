@@ -22,7 +22,7 @@
 #define GPIO_DIO0_PIN 27
 #define GPIO_RESET_PIN 6
 #define GPIO_POLL_TIMEOUT (-1)
-
+#define TEST_FREQUENCY 868200000
 #define LINUX_ERROR_CHECK(x)                                                       \
   do {                                                                             \
     int __err_rc = (x);                                                            \
@@ -231,7 +231,7 @@ int main() {
   sx127x device;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, &device));
-  LINUX_ERROR_CHECK(sx127x_set_frequency(437200012, &device));
+  LINUX_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, &device));
   LINUX_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, &device));
   LINUX_ERROR_CHECK(sx127x_fsk_set_fdev(5000.0, &device));

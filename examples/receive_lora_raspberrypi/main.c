@@ -18,7 +18,7 @@
 // GPIO 27
 #define GPIO_DIO0_PIN 27
 #define GPIO_POLL_TIMEOUT -1
-
+#define TEST_FREQUENCY 868200000
 #define LINUX_ERROR_CHECK(x)                                                       \
   do {                                                                             \
     int __err_rc = (x);                                                            \
@@ -186,7 +186,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
-  LINUX_ERROR_CHECK(sx127x_set_frequency(437200000, &device));
+  LINUX_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   LINUX_ERROR_CHECK(sx127x_lora_set_ppm_offset(4000, &device));
   LINUX_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
   LINUX_ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));

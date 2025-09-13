@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <driver/gpio.h>
 
+#define TEST_FREQUENCY 868200000
+
 typedef struct {
     int sck;
     int miso;
