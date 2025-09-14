@@ -3,6 +3,7 @@
 #include <esp_log.h>
 #include <sx127x.h>
 #include <esp_utils.h>
+#include <freertos/task.h>
 
 static const char *TAG = "sx127x";
 
