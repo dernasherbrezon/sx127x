@@ -39,7 +39,7 @@ jobs:
           mkdir -p ${CCACHE_DIR}
           echo -e "\nProcessing esp builds..."
           for dir in examples/*/; do
-              if [[ ${dir} != *"raspberry"* && ${dir} != *"common"* && ${dir} != *"cubeide"* ]]; then
+              if [[ ${dir} != *"raspberry"* && ${dir} != *"common"* && ${dir} != *"cubeide"* && ${dir} != *"clion"* ]]; then
                   echo "Building: $dir"
                   docker run -t -e IDF_TARGET="${IDF_TARGET}" -e CCACHE_DIR=/ccache -v ${CCACHE_DIR}:/ccache -v "${GITHUB_WORKSPACE}:/app/${{ github.repository }}" \
                   -w "/app/${{ github.repository }}/${dir}" espressif/idf:v5.1.2 \
