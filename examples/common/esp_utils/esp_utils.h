@@ -34,6 +34,6 @@ void cad_callback(void *device, int cad_detected);
 void sx127x_reset();
 void sx127x_init_spi(spi_device_handle_t *handle);
 esp_err_t setup_task(sx127x *device);
-esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(sx127x *device));
+esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(void *device));
 
 #endif
