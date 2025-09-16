@@ -21,7 +21,7 @@ void app_main() {
 
   esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
   if (cpu0WakeupReason == ESP_SLEEP_WAKEUP_EXT0) {
-    sx127x_rx_set_callback(lora_rx_callback, &device);
+    sx127x_rx_set_callback(lora_rx_callback, &device, &device);
     sx127x_handle_interrupt(&device);
   } else {
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, &device));

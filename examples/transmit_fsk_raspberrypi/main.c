@@ -245,7 +245,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, &device));
   LINUX_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, &device));
 
-  sx127x_tx_set_callback(tx_callback, &device);
+  sx127x_tx_set_callback(tx_callback, &device, &device);
 
   return setup_and_wait_for_interrupt(&device);
 }

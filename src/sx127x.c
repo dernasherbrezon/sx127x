@@ -397,7 +397,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       // read remaining of FIFO into the packet
       sx127x_fsk_ook_read_payload_batch(false, device);
       if (device->rx_callback != NULL) {
-        device->rx_callback(device, device->packet, device->expected_packet_length);
+        device->rx_callback(device->rx_callback_ctx, device->packet, device->expected_packet_length);
       }
     }
     sx127x_fsk_ook_reset_state(device);
@@ -406,7 +406,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   if ((irq & SX127X_FSK_IRQ_PACKET_SENT) != 0) {
     sx127x_fsk_ook_reset_state(device);
     if (device->tx_callback != NULL) {
-      device->tx_callback(device);
+      device->tx_callback(device->tx_callback_ctx);
     }
     return;
   }
@@ -415,7 +415,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
       // TX sequencer clears PACKET_SENT IRQ so only FIFO_EMPTY interrupt can be used to detect if message was actually sent
       sx127x_fsk_ook_reset_state(device);
       if (device->tx_callback != NULL) {
-        device->tx_callback(device);
+        device->tx_callback(device->tx_callback_ctx);
       }
       return;
     }
@@ -478,7 +478,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
   ERROR_CHECK_NOCODE(sx127x_shadow_spi_write_register(REGIRQFLAGS, &value, 1, &device->spi_device));
   if ((value & SX127x_IRQ_FLAG_CADDONE) != 0) {
     if (device->cad_callback != NULL) {
-      device->cad_callback(device, value & SX127x_IRQ_FLAG_CAD_DETECTED);
+      device->cad_callback(device->cad_callback_ctx, value & SX127x_IRQ_FLAG_CAD_DETECTED);
     }
     return;
   }
@@ -489,7 +489,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
   if ((value & SX127x_IRQ_FLAG_RXDONE) != 0) {
     ERROR_CHECK_NOCODE(sx127x_lora_rx_read_payload(device));
     if (device->rx_callback != NULL) {
-      device->rx_callback(device, device->packet, device->expected_packet_length);
+      device->rx_callback(device->rx_callback_ctx, device->packet, device->expected_packet_length);
     }
     device->expected_packet_length = 0;
     device->current_frequency = 0;
@@ -498,7 +498,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
   if ((value & SX127x_IRQ_FLAG_TXDONE) != 0) {
     device->current_frequency = 0;
     if (device->tx_callback != NULL) {
-      device->tx_callback(device);
+      device->tx_callback(device->tx_callback_ctx);
     }
     return;
   }
@@ -693,8 +693,9 @@ int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device)
   return sx127x_reload_low_datarate_optimization(device);
 }
 
-void sx127x_rx_set_callback(void (*rx_callback)(sx127x *, uint8_t *, uint16_t), sx127x *device) {
+void sx127x_rx_set_callback(void (*rx_callback)(void *, uint8_t *, uint16_t), void *ctx, sx127x *device) {
   device->rx_callback = rx_callback;
+  device->rx_callback_ctx = ctx;
 }
 
 int sx127x_lora_set_syncword(uint8_t value, sx127x *device) {
@@ -836,8 +837,9 @@ int sx127x_dump_registers(uint8_t *output, sx127x *device) {
   return sx127x_spi_read_buffer(0x01, output + 1, MAX_NUMBER_OF_REGISTERS - 1, device->spi_device.spi_device);
 }
 
-void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device) {
+void sx127x_tx_set_callback(void (*tx_callback)(void *), void *ctx, sx127x *device) {
   device->tx_callback = tx_callback;
+  device->tx_callback_ctx = ctx;
 }
 
 int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
@@ -1084,8 +1086,9 @@ int sx127x_fsk_ook_tx_stop_beacon(sx127x *device) {
   return sx127x_append_register(REGPACKETCONFIG2, value, 0b11110111, &device->spi_device);
 }
 
-void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device) {
+void sx127x_lora_cad_set_callback(void (*cad_callback)(void *, int), void *ctx, sx127x *device) {
   device->cad_callback = cad_callback;
+  device->cad_callback_ctx = ctx;
 }
 
 int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {

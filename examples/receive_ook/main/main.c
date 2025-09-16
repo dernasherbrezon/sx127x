@@ -36,7 +36,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, &device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_rx_calibrate(&device));
 
-  sx127x_rx_set_callback(rx_callback, &device);
+  sx127x_rx_set_callback(rx_callback, &device, &device);
 
   ESP_ERROR_CHECK(setup_task(&device));
 

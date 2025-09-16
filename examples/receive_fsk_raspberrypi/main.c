@@ -207,7 +207,7 @@ int main() {
   LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, &device));
   LINUX_ERROR_CHECK(sx127x_fsk_ook_rx_calibrate(&device));
 
-  sx127x_rx_set_callback(rx_callback, &device);
+  sx127x_rx_set_callback(rx_callback, &device, &device);
   LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, &device));
 
   return setup_and_wait_for_interrupt(&device);

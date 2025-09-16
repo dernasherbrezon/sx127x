@@ -344,11 +344,14 @@ struct sx127x_t {
 
   bool use_implicit_header;
 
-  void (*rx_callback)(sx127x *, uint8_t *, uint16_t);
+  void (*rx_callback)(void *, uint8_t *, uint16_t);
+  void *rx_callback_ctx;
 
-  void (*tx_callback)(sx127x *);
+  void (*tx_callback)(void *);
+  void *tx_callback_ctx;
 
-  void (*cad_callback)(sx127x *, int);
+  void (*cad_callback)(void *, int);
+  void *cad_callback_ctx;
 
   uint8_t packet[CONFIG_SX127X_MAX_PACKET_SIZE];
   uint16_t expected_packet_length;
@@ -577,7 +580,7 @@ int sx127x_rx_set_lna_boost_hf(bool value, sx127x *device);
  * @param rx_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_rx_set_callback(void (*rx_callback)(sx127x *, uint8_t *, uint16_t), sx127x *device);
+void sx127x_rx_set_callback(void (*rx_callback)(void *, uint8_t *, uint16_t), void *arg, sx127x *device);
 
 /**
  * @brief RSSI of the latest packet received (dBm)
@@ -671,7 +674,7 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
  * @param tx_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_tx_set_callback(void (*tx_callback)(sx127x *), sx127x *device);
+void sx127x_tx_set_callback(void (*tx_callback)(void *), void *ctx, sx127x *device);
 
 /**
  * @brief Write packet into sx127x's FIFO for transmittion. Once packet is written, set opmod to TX.
@@ -740,7 +743,7 @@ int sx127x_fsk_ook_tx_stop_beacon(sx127x *device);
  * @param cad_callback Callback function. Should accept pointer to variable to hold the device handle.
  * @param device Pointer to variable to hold the device handle
  */
-void sx127x_lora_cad_set_callback(void (*cad_callback)(sx127x *, int), sx127x *device);
+void sx127x_lora_cad_set_callback(void (*cad_callback)(void *, int), void *ctx, sx127x *device);
 
 /**
  * @brief Set the bit rate for the modulation. Bit rate is the FXOSC / bitrate. FSK modulation utilize fractional bits to make this ratio more precise.

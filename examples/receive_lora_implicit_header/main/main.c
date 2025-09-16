@@ -36,7 +36,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, &device));
   ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
-  sx127x_rx_set_callback(lora_rx_callback, &device);
+  sx127x_rx_set_callback(lora_rx_callback, &device, &device);
 
   ESP_ERROR_CHECK(setup_task(&device));
 

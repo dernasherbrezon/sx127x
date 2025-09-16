@@ -14,23 +14,23 @@ uint8_t registers_length = 255;
 uint8_t *rx_callback_data = NULL;
 uint16_t rx_callback_data_length = 0;
 
-void tx_callback(sx127x *local_device) {
+void tx_callback(void *local_device) {
   transmitted = 1;
 }
 
-void rx_callback(sx127x *local_device, uint8_t *data, uint16_t data_length) {
+void rx_callback(void *local_device, uint8_t *data, uint16_t data_length) {
   rx_callback_data = data;
   rx_callback_data_length = data_length;
 }
 
-void cad_callback(sx127x *local_device, int cad_detected) {
+void cad_callback(void *local_device, int cad_detected) {
   cad_status = cad_detected;
 }
 
 void test_fsk_ook_rx() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
-  sx127x_rx_set_callback(rx_callback, device);
+  sx127x_rx_set_callback(rx_callback, device, device);
 
   uint8_t payload[2048];
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
@@ -186,7 +186,7 @@ void test_fsk_ook_beacon() {
 void test_fsk_ook_tx() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
-  sx127x_tx_set_callback(tx_callback, device);
+  sx127x_tx_set_callback(tx_callback, device, device);
 
   uint8_t payload[2048];
   for (int i = 1; i < (sizeof(payload) - 1); i++) {
@@ -305,7 +305,7 @@ void test_fsk_ook_tx() {
 }
 
 void test_lora_tx() {
-  sx127x_tx_set_callback(tx_callback, device);
+  sx127x_tx_set_callback(tx_callback, device, device);
 
   transmitted = 0;
 
@@ -334,7 +334,7 @@ void test_lora_rx() {
   for (int i = 0; i < sizeof(payload); i++) {
     payload[i] = i;
   }
-  sx127x_rx_set_callback(rx_callback, device);
+  sx127x_rx_set_callback(rx_callback, device, device);
   spi_mock_fifo(payload, sizeof(payload), SX127X_OK);
   registers[0x12] = 0b01000000;  // rx done
   registers[0x13] = sizeof(payload);
@@ -359,7 +359,7 @@ void test_lora_rx() {
 void test_lora_cad() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
   TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x40]);
-  sx127x_lora_cad_set_callback(cad_callback, device);
+  sx127x_lora_cad_set_callback(cad_callback, device, device);
   registers[0x12] = 0b00000101;  // cad detected
   sx127x_handle_interrupt(device);
   TEST_ASSERT_EQUAL_INT(1, cad_status);

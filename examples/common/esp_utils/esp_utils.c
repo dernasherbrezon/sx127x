@@ -1,14 +1,15 @@
 #include "esp_utils.h"
+
 #include <esp_log.h>
-#include <inttypes.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <inttypes.h>
 
 int total_packets_received = 0;
 const UBaseType_t xArrayIndex = 0;
 TaskHandle_t handle_interrupt;
 static const char *TAG = "esp_utils";
-void (*global_tx_callback)(sx127x *device);
+void (*global_tx_callback)(void *device);
 
 void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -19,21 +20,22 @@ void IRAM_ATTR handle_interrupt_fromisr(void *arg) {
 void handle_interrupt_task(void *arg) {
   while (1) {
     if (ulTaskNotifyTakeIndexed(xArrayIndex, pdTRUE, portMAX_DELAY) > 0) {
-      sx127x_handle_interrupt((sx127x *) arg);
+      sx127x_handle_interrupt((sx127x *)arg);
     }
   }
 }
 
 void handle_interrupt_tx_task(void *arg) {
-  global_tx_callback((sx127x *) arg);
+  global_tx_callback(arg);
   while (1) {
     if (ulTaskNotifyTakeIndexed(xArrayIndex, pdTRUE, portMAX_DELAY) > 0) {
-      sx127x_handle_interrupt((sx127x *) arg);
+      sx127x_handle_interrupt((sx127x *)arg);
     }
   }
 }
 
-void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
+  sx127x *device = (sx127x *)ctx;
   uint8_t payload[2090 * 2];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
@@ -55,7 +57,8 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
   total_packets_received++;
 }
 
-void lora_rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+void lora_rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
+  sx127x *device = (sx127x *)ctx;
   uint8_t payload[514];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
@@ -75,7 +78,8 @@ void lora_rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
   total_packets_received++;
 }
 
-void cad_callback(sx127x *device, int cad_detected) {
+void cad_callback(void *ctx, int cad_detected) {
+  sx127x *device = (sx127x *)ctx;
   if (cad_detected == 0) {
     ESP_LOGI(TAG, "cad not detected");
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
@@ -91,7 +95,7 @@ void setup_gpio_interrupts(gpio_num_t gpio, sx127x *device, gpio_int_type_t type
   ESP_ERROR_CHECK(gpio_pulldown_en(gpio));
   ESP_ERROR_CHECK(gpio_pullup_dis(gpio));
   ESP_ERROR_CHECK(gpio_set_intr_type(gpio, type));
-  ESP_ERROR_CHECK(gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *) device));
+  ESP_ERROR_CHECK(gpio_isr_handler_add(gpio, handle_interrupt_fromisr, (void *)device));
 }
 
 esp_err_t setup_task(sx127x *device) {
@@ -103,7 +107,7 @@ esp_err_t setup_task(sx127x *device) {
   return ESP_OK;
 }
 
-esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(sx127x *device)) {
+esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(void *device)) {
   global_tx_callback = tx_callback;
   BaseType_t task_code = xTaskCreatePinnedToCore(handle_interrupt_tx_task, "handle interrupt", 8196, device, 2, &handle_interrupt, xPortGetCoreID());
   if (task_code != pdPASS) {
@@ -114,10 +118,10 @@ esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(sx127x *device)) {
 }
 
 void sx127x_reset() {
-  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t) RST, GPIO_MODE_OUTPUT));
-  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 0));
+  ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t)RST, GPIO_MODE_OUTPUT));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t)RST, 0));
   vTaskDelay(pdMS_TO_TICKS(5));
-  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
+  ESP_ERROR_CHECK(gpio_set_level((gpio_num_t)RST, 1));
   vTaskDelay(pdMS_TO_TICKS(10));
   ESP_LOGI(TAG, "sx127x was reset");
 }
