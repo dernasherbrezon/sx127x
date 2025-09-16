@@ -605,8 +605,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
 
 int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
   uint64_t min_frequency = device->chip_version == SX1276_VERSION ? SX1276_MIN_FREQUENCY : SX1272_MIN_FREQUENCY;
-  uint64_t max_frequency = device->chip_version == SX1276_VERSION ? SX1276_MIN_FREQUENCY : SX1272_MIN_FREQUENCY;
-  if (frequency < min_frequency || frequency > max_frequency) {
+  if (frequency < min_frequency || frequency > SX127x_MAX_FREQUENCY) {
     return SX127X_ERR_INVALID_ARG;
   }
   uint64_t adjusted = (frequency << 19) / SX127x_OSCILLATOR_FREQUENCY;
