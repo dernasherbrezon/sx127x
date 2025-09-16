@@ -16,12 +16,7 @@
 #include <math.h>
 #include <string.h>
 #include <sx127x_spi.h>
-
-#if CONFIG_SX127X_CHIP == 1276
 #include <sx127x_registers.h>
-#elif CONFIG_SX127X_CHIP == 1272
-#include <sx1272_registers.h>
-#endif
 
 #define SX127x_OSCILLATOR_FREQUENCY 32000000.0f
 #define SX127x_FREQ_ERROR_FACTOR ((1 << 24) / SX127x_OSCILLATOR_FREQUENCY)
@@ -68,7 +63,6 @@
 #define TX_START_CONDITION_FIFO_LEVEL 0b00000000
 #define TX_START_CONDITION_FIFO_EMPTY 0b10000000
 
-#define SHADOW_NOT_CACHED 0
 #define SHADOW_CACHED 1
 #define SHADOW_IGNORE 2
 
@@ -102,17 +96,10 @@
     }                                                                                           \
   } while (0)
 
-#if CONFIG_SX127X_CHIP == 1276
-typedef enum {
-  SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
-  SX127x_HEADER_MODE_IMPLICIT = 0b00000001
-} sx127x_header_mode_t;
-#elif CONFIG_SX127X_CHIP == 1272
-typedef enum {
-  SX127x_HEADER_MODE_EXPLICIT = 0b00000000,
-  SX127x_HEADER_MODE_IMPLICIT = 0b00000100
-} sx127x_header_mode_t;
-#endif
+static uint8_t sx1276_bw[] = {0b00000000, 0b00010000, 0b00100000, 0b00110000, 0b01000000, 0b01010000, 0b01100000, 0b01110000, 0b10000000, 0b10010000};
+static uint8_t sx1272_bw[] = {0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b01000000, 0b10000000};
+static uint8_t sx1276_cr[] = {0b00000010, 0b00000100, 0b00000110, 0b00001000};
+static uint8_t sx1272_cr[] = {0b00001000, 0b00010000, 0b00011000, 0b00100000};
 
 int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
 #ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
@@ -149,7 +136,7 @@ int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, s
 }
 
 int sx127x_shadow_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
-  //it's always REG_FIFO
+  // it's always REG_FIFO
   return sx127x_spi_read_buffer(reg, buffer, buffer_length, spi_device->spi_device);
 }
 
@@ -185,7 +172,7 @@ int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *resu
 #ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
   uint32_t value;
   ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
-  *result = (uint8_t) value;
+  *result = (uint8_t)value;
   return SX127X_OK;
 #else
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
@@ -216,13 +203,13 @@ int sx127x_append_register(int reg, uint8_t value, uint8_t mask, shadow_spi_devi
 
 int sx127x_lora_set_low_datarate_optimization(bool enable, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if CONFIG_SX127X_CHIP == 1276
-  uint8_t value = (enable ? 0b00001000 : 0b00000000);
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, value, 0b11110111, &device->spi_device));
-#elif CONFIG_SX127X_CHIP == 1272
-  uint8_t value = (enable ? 0b00000001 : 0b00000000);
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, value, 0b11111110, &device->spi_device));
-#endif
+  if (device->chip_version == SX1276_VERSION) {
+    uint8_t value = (enable ? 0b00001000 : 0b00000000);
+    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, value, 0b11110111, &device->spi_device));
+  } else {
+    uint8_t value = (enable ? 0b00000001 : 0b00000000);
+    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, value, 0b11111110, &device->spi_device));
+  }
   return SX127X_OK;
 }
 
@@ -515,8 +502,8 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
     }
     return;
   }
-  //always last because if message was sent or received,
-  //then no need to change freq
+  // always last because if message was sent or received,
+  // then no need to change freq
   if ((value & SX127x_IRQ_FLAG_FHSSCHANGECHANNEL) != 0) {
     if (device->current_frequency >= device->frequencies_length) {
       device->current_frequency = 0;
@@ -555,12 +542,11 @@ int sx127x_create(void *spi_device, sx127x *result) {
   result->spi_device.shadow_registers_sync[REGIRQFLAGS2] = SHADOW_IGNORE;
 #endif
 
-  uint8_t version;
-  int code = sx127x_read_register(REGVERSION, &result->spi_device, &version);
+  int code = sx127x_read_register(REGVERSION, &result->spi_device, &result->chip_version);
   if (code != SX127X_OK) {
     return code;
   }
-  if (version != SX127x_VERSION) {
+  if (result->chip_version != SX1276_VERSION && result->chip_version != SX1272_VERSION) {
     return SX127X_ERR_INVALID_VERSION;
   }
   result->active_modem = SX127x_MODULATION_LORA;
@@ -618,7 +604,9 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
 }
 
 int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
-  if (frequency < SX127x_MIN_FREQUENCY || frequency > SX127x_MAX_FREQUENCY) {
+  uint64_t min_frequency = device->chip_version == SX1276_VERSION ? SX1276_MIN_FREQUENCY : SX1272_MIN_FREQUENCY;
+  uint64_t max_frequency = device->chip_version == SX1276_VERSION ? SX1276_MIN_FREQUENCY : SX1272_MIN_FREQUENCY;
+  if (frequency < min_frequency || frequency > max_frequency) {
     return SX127X_ERR_INVALID_ARG;
   }
   uint64_t adjusted = (frequency << 19) / SX127x_OSCILLATOR_FREQUENCY;
@@ -643,17 +631,17 @@ int sx127x_lora_reset_fifo(sx127x *device) {
 
 int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
-#if CONFIG_SX127X_CHIP == 1276
-    if (gain == SX127x_LNA_GAIN_AUTO) {
-      return sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
+    if (device->chip_version == SX1276_VERSION) {
+      if (gain == SX127x_LNA_GAIN_AUTO) {
+        return sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
+      }
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, &device->spi_device));
+    } else {
+      if (gain == SX127x_LNA_GAIN_AUTO) {
+        return sx127x_append_register(REGMODEMCONFIG2, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
+      }
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG2, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, &device->spi_device));
     }
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG3, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, &device->spi_device));
-#elif CONFIG_SX127X_CHIP == 1272
-    if (gain == SX127x_LNA_GAIN_AUTO) {
-      return sx127x_append_register(REGMODEMCONFIG2, SX127x_REG_MODEM_CONFIG_3_AGC_ON, 0b11111011, &device->spi_device);
-    }
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG2, SX127x_REG_MODEM_CONFIG_3_AGC_OFF, 0b11111011, &device->spi_device));
-#endif
     return sx127x_append_register(REGLNA, gain, 0b00011111, &device->spi_device);
   } else if (device->active_modem == SX127x_MODULATION_FSK || device->active_modem == SX127x_MODULATION_OOK) {
     if (gain == SX127x_LNA_GAIN_AUTO) {
@@ -674,11 +662,14 @@ int sx127x_rx_set_lna_boost_hf(bool enable, sx127x *device) {
 
 int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if CONFIG_SX127X_CHIP == 1276
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, bandwidth, 0b00001111, &device->spi_device));
-#elif CONFIG_SX127X_CHIP == 1272
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, bandwidth, 0b00111111, &device->spi_device));
-#endif
+  if (device->chip_version == SX1272_VERSION) {
+    if (((uint8_t) bandwidth) < (uint8_t) SX127x_BW_125000 || ((uint8_t) bandwidth) > (uint8_t) SX127x_BW_500000) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, sx1272_bw[bandwidth], 0b00111111, &device->spi_device));
+  } else {
+    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, sx1276_bw[bandwidth], 0b00001111, &device->spi_device));
+  }
   return sx127x_reload_low_datarate_optimization(device);
 }
 
@@ -725,31 +716,32 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device) {
 
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-#if CONFIG_SX127X_CHIP == 1276
-  if (header == NULL) {
-    device->expected_packet_length = 0;
-    device->use_implicit_header = false;
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, SX127x_HEADER_MODE_EXPLICIT, 0b11111110, &device->spi_device));
+  if (device->chip_version == SX1276_VERSION) {
+    if (header == NULL) {
+      device->expected_packet_length = 0;
+      device->use_implicit_header = false;
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, 0b00000000, 0b11111110, &device->spi_device));
+    } else {
+      device->expected_packet_length = header->length;
+      device->use_implicit_header = true;
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, 0b00000001 | sx1276_cr[header->coding_rate], 0b11110000, &device->spi_device));
+      ERROR_CHECK(sx127x_shadow_spi_write_register(REGPAYLOADLENGTH, &(header->length), 1, &device->spi_device));
+      uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device));
+    }
   } else {
-    device->expected_packet_length = header->length;
-    device->use_implicit_header = true;
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, SX127x_HEADER_MODE_IMPLICIT | header->coding_rate, 0b11110000, &device->spi_device));
-    ERROR_CHECK(sx127x_shadow_spi_write_register(REGPAYLOADLENGTH, &(header->length), 1, &device->spi_device));
-    uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device));
+    if (header == NULL) {
+      device->expected_packet_length = 0;
+      device->use_implicit_header = false;
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, 0b00000000, 0b11111011, &device->spi_device));
+    } else {
+      device->expected_packet_length = header->length;
+      device->use_implicit_header = true;
+      ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, 0b00000100 | sx1272_cr[header->coding_rate] | (header->enable_crc ? 0b00000010 : 0b00000000), 0b11000001, &device->spi_device));
+      ERROR_CHECK(sx127x_shadow_spi_write_register(REGPAYLOADLENGTH, &(header->length), 1, &device->spi_device));
+    }
   }
-#elif CONFIG_SX127X_CHIP == 1272
-  if (header == NULL) {
-    device->expected_packet_length = 0;
-    device->use_implicit_header = false;
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, SX127x_HEADER_MODE_EXPLICIT, 0b11111011, &device->spi_device));
-  } else {
-    device->expected_packet_length = header->length;
-    device->use_implicit_header = true;
-    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, SX127x_HEADER_MODE_IMPLICIT | header->coding_rate | (header->enable_crc ? 0b00000010 : 0b00000000), 0b11000001, &device->spi_device));
-    ERROR_CHECK(sx127x_shadow_spi_write_register(REGPAYLOADLENGTH, &(header->length), 1, &device->spi_device));
-  }
-#endif
+
   return SX127X_OK;
 }
 
@@ -838,10 +830,10 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
 }
 
 int sx127x_dump_registers(uint8_t *output, sx127x *device) {
-  //Reading from 0x00 register will actually read from fifo
-  //skip it
+  // Reading from 0x00 register will actually read from fifo
+  // skip it
   output[0] = 0x00;
-  //bypass shadow registers
+  // bypass shadow registers
   return sx127x_spi_read_buffer(0x01, output + 1, MAX_NUMBER_OF_REGISTERS - 1, device->spi_device.spi_device);
 }
 
@@ -862,7 +854,8 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
   } else {
     data[0] = SX127x_HIGH_POWER_OFF;
   }
-  ERROR_CHECK(sx127x_shadow_spi_write_register(REGPADAC, data, 1, &device->spi_device));
+  int reg = device->chip_version == SX1276_VERSION ? SX1276_REGPADAC : SX1272_REGPADAC;
+  ERROR_CHECK(sx127x_shadow_spi_write_register(reg, data, 1, &device->spi_device));
   uint8_t max_current;
   // according to 2.5.1. Power Consumption
   if (pin == SX127x_PA_PIN_BOOST) {
@@ -925,7 +918,8 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
   }
   device->use_implicit_header = false;
   device->expected_packet_length = 0;
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, header->coding_rate | SX127x_HEADER_MODE_EXPLICIT, 0b11110000, &device->spi_device));
+  uint8_t coding_rate = device->chip_version == SX1276_VERSION ? sx1276_cr[header->coding_rate] : sx1272_cr[header->coding_rate];
+  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, coding_rate | 0b00000000, 0b11110000, &device->spi_device));
   uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
   return sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device);
 }
@@ -1117,7 +1111,8 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   }
   uint8_t data[] = {(uint8_t) (bitrate_value >> 8), (uint8_t) (bitrate_value >> 0)};
   ERROR_CHECK(sx127x_shadow_spi_write_register(REGBITRATEMSB, data, 2, &device->spi_device));
-  return sx127x_shadow_spi_write_register(REGBITRATEFRAC, &bitrate_fractional, 1, &device->spi_device);
+  int reg = device->chip_version == SX1276_VERSION ? SX1276_REGBITRATEFRAC : SX1272_REGBITRATEFRAC;
+  return sx127x_shadow_spi_write_register(reg, &bitrate_fractional, 1, &device->spi_device);
 }
 
 int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device) {
@@ -1295,10 +1290,10 @@ int sx127x_fsk_ook_rx_calibrate(sx127x *device) {
     return SX127X_ERR_INVALID_STATE;
   }
 
-  uint8_t value = 0b01000000; // ImageCalStart
+  uint8_t value = 0b01000000;  // ImageCalStart
   ERROR_CHECK(sx127x_append_register(REGIMAGECAL, value, 0b10111111, &device->spi_device));
 
-  uint8_t calibration_running = 0b00100000; // ImageCalRunning
+  uint8_t calibration_running = 0b00100000;  // ImageCalRunning
   do {
     ERROR_CHECK(sx127x_read_register(REGIMAGECAL, &device->spi_device, &value));
   } while ((value & calibration_running) == calibration_running);

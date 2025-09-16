@@ -8,18 +8,4 @@ menu "sx127x"
         default 2047
         help
             Expected max packet size. Used to initialize internal buffer. Can be fine-tuned to reduce memory footprint.
-    choice SX127X_CHIP_SEL
-        prompt "Chip selection"
-        default SX1276
-        help
-            Select the chip. sx1272 has slightly different performance and register map
-        config SX1276
-            bool "SX1276/77/78/79"
-        config SX1272
-            bool "SX1272/73"
-    endchoice
-    config SX127X_CHIP
-        int
-        default 1276 if SX1276
-        default 1272 if SX1272
 endmenu

@@ -25,21 +25,13 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifndef CONFIG_SX127X_CHIP
-#define CONFIG_SX127X_CHIP 1276
-#endif
+#define SX1276_MIN_FREQUENCY 137000000
+#define SX1276_MAX_FREQUENCY 1020000000
+#define SX1272_MIN_FREQUENCY 860000000
+#define SX1272_MAX_FREQUENCY 1020000000
 
-#if CONFIG_SX127X_CHIP == 1276
-  #define SX127x_VERSION 0x12
-  #define SX127x_MIN_FREQUENCY  137000000
-  #define SX127x_MAX_FREQUENCY 1020000000
-#elif CONFIG_SX127X_CHIP == 1272
-  #define SX127x_VERSION 0x22
-  #define SX127x_MIN_FREQUENCY  860000000
-  #define SX127x_MAX_FREQUENCY 1020000000
-#else
-  #error "Unexpected value of CONFIG_SX127X_CHIP."
-#endif
+#define SX1276_VERSION 0x12
+#define SX1272_VERSION 0x22
 
 #define MAX_PACKET_SIZE 255
 #define MAX_PACKET_SIZE_FSK_FIXED 2047
@@ -71,7 +63,7 @@ typedef enum {
 
 typedef enum {
   SX127x_MODULATION_LORA = 0b10000000,
-  SX127x_MODULATION_FSK = 0b00000000, // default
+  SX127x_MODULATION_FSK = 0b00000000,  // default
   SX127x_MODULATION_OOK = 0b00100000
 } sx127x_modulation_t;
 
@@ -219,44 +211,29 @@ typedef enum {
  * @brief Signal bandwidth.
  *
  * @note In the lower band (169MHz), signal bandwidths 8&9 (250k and 500k) are not supported
+ * @note sx1272 supports only 125,250 and 500kHz
  *
  */
-#if CONFIG_SX127X_CHIP == 1276
 typedef enum {
-  SX127x_BW_7800 = 0b00000000,
-  SX127x_BW_10400 = 0b00010000,
-  SX127x_BW_15600 = 0b00100000,
-  SX127x_BW_20800 = 0b00110000,
-  SX127x_BW_31250 = 0b01000000,
-  SX127x_BW_41700 = 0b01010000,
-  SX127x_BW_62500 = 0b01100000,
-  SX127x_BW_125000 = 0b01110000, // default
-  SX127x_BW_250000 = 0b10000000,
-  SX127x_BW_500000 = 0b10010000
+  SX127x_BW_7800,
+  SX127x_BW_10400,
+  SX127x_BW_15600,
+  SX127x_BW_20800,
+  SX127x_BW_31250,
+  SX127x_BW_41700,
+  SX127x_BW_62500,
+  SX127x_BW_125000,
+  SX127x_BW_250000,
+  SX127x_BW_500000
 } sx127x_bw_t;
-#elif CONFIG_SX127X_CHIP == 1272
-typedef enum {
-  SX127x_BW_125000 = 0b00000000, // default
-  SX127x_BW_250000 = 0b01000000,
-  SX127x_BW_500000 = 0b10000000
-} sx127x_bw_t;
-#endif
 
-#if CONFIG_SX127X_CHIP == 1276
 typedef enum {
-  SX127x_CR_4_5 = 0b00000010, // default
-  SX127x_CR_4_6 = 0b00000100,
-  SX127x_CR_4_7 = 0b00000110,
-  SX127x_CR_4_8 = 0b00001000
+  SX127x_CR_4_5,
+  SX127x_CR_4_6,
+  SX127x_CR_4_7,
+  SX127x_CR_4_8
 } sx127x_cr_t;
-#elif CONFIG_SX127X_CHIP == 1272
-typedef enum {
-  SX127x_CR_4_5 = 0b00001000, // default
-  SX127x_CR_4_6 = 0b00010000,
-  SX127x_CR_4_7 = 0b00011000,
-  SX127x_CR_4_8 = 0b00100000
-} sx127x_cr_t;
-#endif
+
 /**
  * @brief SF rate (expressed as a base-2 logarithm)
  *
@@ -388,6 +365,8 @@ struct sx127x_t {
   uint64_t *frequencies;
   uint8_t frequencies_length;
   uint8_t current_frequency;
+
+  uint8_t chip_version;
 };
 
 /**
@@ -734,12 +713,12 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uin
 
 /**
  * @brief Start transmitting periodic beacon using FSK/OOK modulation. Packet format must be configured as SX127X_FIXED.
- * 
+ *
  * @param data Data to be transmitted periodically. Can only be changed after beacon stopped.
  * @param data_length Length of data to be transmitted. Cannot exceed 64 bytes.
  * @param interval_ms Period for beacon transmittion in milliseconds. Cannot exceed 255 * 2 * 262 ms = 133620 ms = ~ 2.2 min.
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_ERR_INVALID_STATE if configured packet format is not SX127X_FIXED or selected modem is not FSK/OOK
  *         - SX127X_OK                on success
@@ -748,9 +727,9 @@ int sx127x_fsk_ook_tx_start_beacon(const uint8_t *data, uint8_t data_length, uin
 
 /**
  * @brief Stop transmitting periodic beacon.
- * 
+ *
  * @param device Pointer to variable to hold the device handle
- * @return int 
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
