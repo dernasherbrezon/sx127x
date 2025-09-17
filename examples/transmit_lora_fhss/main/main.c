@@ -12,7 +12,8 @@ sx127x device;
 int messages_sent = 0;
 uint64_t frequencies[] = {TEST_FREQUENCY + 500000, TEST_FREQUENCY + 1000000, TEST_FREQUENCY};
 
-void tx_callback(sx127x *device) {
+void tx_callback(void *ctx) {
+  sx127x *device = (sx127x *)ctx;
   if (messages_sent > 0) {
     ESP_LOGI(TAG, "transmitted");
     vTaskDelay(100 / portTICK_PERIOD_MS);

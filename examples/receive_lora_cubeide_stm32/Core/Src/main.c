@@ -79,8 +79,8 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 void stm_log(const char *format, ...);
-void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length);
-void cad_callback(sx127x *device, int cad_detected);
+void rx_callback(void *ctx, uint8_t *data, uint16_t data_length);
+void cad_callback(void *ctx, int cad_detected);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
 /* USER CODE END PFP */
@@ -347,8 +347,8 @@ void stm_log(const char *format, ...) {
   va_end(args);
 }
 
-void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
-//  stm_log("rx callback\n");
+void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
+  sx127x *device = (sx127x *)ctx;
   uint8_t payload[514];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {
@@ -367,7 +367,8 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
   stm_log("received: %d %s rssi: %d snr: %f freq_error: %" PRId32 "\r\n", data_length, payload, rssi, snr, frequency_error);
 }
 
-void cad_callback(sx127x *device, int cad_detected) {
+void cad_callback(void *ctx, int cad_detected) {
+  sx127x *device = (sx127x *)ctx;
   if (cad_detected == 0) {
     stm_log("cad not detected\r\n");
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));

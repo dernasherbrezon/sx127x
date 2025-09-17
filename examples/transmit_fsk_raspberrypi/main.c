@@ -63,7 +63,8 @@ int msleep(long msec) {
   return res;
 }
 
-void tx_callback(sx127x *device) {
+void tx_callback(void *ctx) {
+  sx127x *device = (sx127x *)ctx;
   if (messages_sent > 0) {
     fprintf(stdout, "transmitted\n");
     msleep(1000);

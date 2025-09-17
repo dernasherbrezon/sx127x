@@ -57,7 +57,7 @@ sx127x_implicit_header_t explicit_header = {
     .enable_crc = true,
     .length = 2};
 
-void tx_callback(sx127x *device) {
+void tx_callback(void *ctx) {
   xSemaphoreGive(fixture->tx_done);
   ESP_LOGI("sx127x_test", "sent");
 }

@@ -2,9 +2,9 @@
 #include <driver/spi_master.h>
 #include <esp_intr_alloc.h>
 #include <esp_log.h>
+#include <esp_utils.h>
 #include <freertos/task.h>
 #include <sx127x.h>
-#include <esp_utils.h>
 
 static const char *TAG = "sx127x";
 
@@ -14,7 +14,8 @@ int supported_power_levels[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
 int supported_power_levels_count = sizeof(supported_power_levels) / sizeof(int);
 int current_power_level = 0;
 
-void tx_callback(sx127x *device) {
+void tx_callback(void *ctx) {
+  sx127x *device = (sx127x *)ctx;
   if (messages_sent > 0) {
     ESP_LOGI(TAG, "transmitted");
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -67,7 +68,7 @@ void app_main() {
 
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
   sx127x_tx_header_t header = {
-      .enable_crc = false,
+      .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
   ESP_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 

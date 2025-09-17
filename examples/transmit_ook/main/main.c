@@ -10,7 +10,8 @@ static const char *TAG = "sx127x";
 sx127x device;
 int messages_sent = 0;
 
-void tx_callback(sx127x *device) {
+void tx_callback(void *ctx) {
+  sx127x *device = (sx127x *)ctx;
   if (messages_sent > 0) {
     ESP_LOGI(TAG, "transmitted");
     vTaskDelay(100 / portTICK_PERIOD_MS);
