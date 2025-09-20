@@ -71,6 +71,10 @@ void Error_Handler(void);
 #define DIO0_Pin GPIO_PIN_2
 #define DIO0_GPIO_Port GPIOB
 #define DIO0_EXTI_IRQn EXTI2_IRQn
+#define RXSWITCH_Pin GPIO_PIN_11
+#define RXSWITCH_GPIO_Port GPIOB
+#define TXSWITCH_Pin GPIO_PIN_12
+#define TXSWITCH_GPIO_Port GPIOB
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

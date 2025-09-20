@@ -65,7 +65,7 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
       .quadhd_io_num = -1,
       .max_transfer_sz = 0,
   };
-  ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &bus_config, 1));
+  ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus_config, 1));
   spi_device_interface_config_t dev_config = {
       .clock_speed_hz = 3000000,
       .spics_io_num = config->ss,
@@ -78,7 +78,7 @@ int sx127x_fixture_create_base(sx127x_fixture_config_t *config, sx127x_fixture_t
   if (result->device == NULL) {
     return -1;
   }
-  ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &dev_config, &result->spi_device));
+  ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_config, &result->spi_device));
   ERROR_CHECK(sx127x_create(result->spi_device, result->device));
 
   result->tx_done = xSemaphoreCreateBinary();
