@@ -1117,6 +1117,24 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device) {
   return sx127x_shadow_spi_write_register(reg, &bitrate_fractional, 1, &device->spi_device);
 }
 
+int sx127x_fsk_ook_get_bitrate(sx127x *device, float *bitrate) {
+  if (device->active_modem == SX127x_MODULATION_LORA) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  uint32_t bitrate_raw;
+  ERROR_CHECK(sx127x_shadow_spi_read_registers(REGBITRATEMSB, &device->spi_device, 2, &bitrate_raw));
+  int reg = device->chip_version == SX1276_VERSION ? SX1276_REGBITRATEFRAC : SX1272_REGBITRATEFRAC;
+
+  float value = (float) bitrate_raw;
+  if (device->active_modem == SX127x_MODULATION_FSK) {
+    uint32_t bitrate_fractional;
+    ERROR_CHECK(sx127x_shadow_spi_read_registers(reg, &device->spi_device, 1, &bitrate_fractional));
+    value += (float) bitrate_fractional / 16.0f;
+  }
+  *bitrate = SX127x_OSCILLATOR_FREQUENCY / value;
+  return SX127X_OK;
+}
+
 int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_FSK);
   if (frequency_deviation < 600 || frequency_deviation > 200000) {
@@ -1125,6 +1143,14 @@ int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device) {
   uint16_t value = (uint16_t) (frequency_deviation / SX127x_FSTEP);
   uint8_t data[] = {(uint8_t) (value >> 8), (uint8_t) (value >> 0)};
   return sx127x_shadow_spi_write_register(REGFDEVMSB, data, 2, &device->spi_device);
+}
+
+int sx127x_fsk_get_fdev(sx127x *device, float *frequency_deviation) {
+  CHECK_MODULATION(device, SX127x_MODULATION_FSK);
+  uint32_t raw;
+  ERROR_CHECK(sx127x_shadow_spi_read_registers(REGFDEVMSB, &device->spi_device, 2, &raw));
+  *frequency_deviation = (float) raw * SX127x_FSTEP;
+  return SX127X_OK;
 }
 
 int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
@@ -1157,6 +1183,14 @@ int sx127x_fsk_ook_rx_set_afc_auto(bool afc_auto, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   uint8_t value = (afc_auto ? 0b00010000 : 0b00000000);
   return sx127x_append_register(REGRXCONFIG, value, 0b11101111, &device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_get_afc_auto(sx127x *device, bool *afc_auto) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGRXCONFIG, &device->spi_device, &raw));
+  *afc_auto = (raw & 0b00010000) > 0;
+  return SX127X_OK;
 }
 
 uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
@@ -1207,6 +1241,14 @@ int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length
   return sx127x_shadow_spi_write_buffer(REGSYNCVALUE1, syncword, syncword_length, &device->spi_device);
 }
 
+int sx127x_fsk_ook_get_syncword(sx127x *device, uint8_t *syncword, uint8_t *syncword_length) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGSYNCCONFIG, &device->spi_device, &raw));
+  *syncword_length = (raw & 0b111) + 1;
+  ERROR_CHECK(sx127x_shadow_spi_read_buffer(REGSYNCVALUE1, syncword, *syncword_length, &device->spi_device));
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (offset < -16 || offset > 15) {
@@ -1221,6 +1263,14 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
   return sx127x_append_register(REGPACKETCONFIG1, encoding, 0b10011111, &device->spi_device);
 }
 
+int sx127x_fsk_ook_get_packet_encoding(sx127x *device, sx127x_packet_encoding_t *encoding) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPACKETCONFIG1, &device->spi_device, &raw));
+  *encoding = raw & 0b01100000;
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   int result = sx127x_append_register(REGPACKETCONFIG1, (uint8_t) crc_type, 0b11100110, &device->spi_device);
@@ -1228,6 +1278,14 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
     device->fsk_crc_type = crc_type;
   }
   return result;
+}
+
+int sx127x_fsk_ook_get_crc(sx127x *device, sx127x_crc_type_t *crc_type) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPACKETCONFIG1, &device->spi_device, &raw));
+  *crc_type = raw & 0b11001;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device) {
@@ -1248,6 +1306,15 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
   return SX127X_OK;
 }
 
+int sx127x_fsk_ook_get_packet_format(sx127x *device, sx127x_packet_format_t *format, uint16_t *max_payload_length) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint32_t raw;
+  ERROR_CHECK(sx127x_spi_read_registers(REGPACKETCONFIG1, &device->spi_device, 3, &raw));
+  *format = (raw >> 16) & 0b10000000;
+  *max_payload_length = raw & 0x7FF; //11 bit
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   if (type == SX127X_FILTER_NODE_AND_BROADCAST) {
@@ -1259,10 +1326,36 @@ int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_
   return sx127x_append_register(REGPACKETCONFIG1, type, 0b11111001, &device->spi_device);
 }
 
+int sx127x_fsk_ook_get_address_filtering(sx127x *device, sx127x_address_filtering_t *type, uint8_t *node_address, uint8_t *broadcast_address) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPACKETCONFIG1, &device->spi_device, &raw));
+  *type = raw & 0b110;
+  if (*type == SX127X_FILTER_NONE) {
+    *node_address = 0;
+    *broadcast_address = 0;
+    return SX127X_OK;
+  }
+  ERROR_CHECK(sx127x_read_register(REGNODEADRS, &device->spi_device, node_address));
+  if (*type == SX127X_FILTER_NODE_AND_BROADCAST) {
+    ERROR_CHECK(sx127x_read_register(REGBROADCASTADRS, &device->spi_device, broadcast_address));
+  }
+  return SX127X_OK;
+}
+
 int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_FSK);
   uint8_t value = (data_shaping | pa_ramp);
   return sx127x_shadow_spi_write_register(REGPARAMP, &value, 1, &device->spi_device);
+}
+
+int sx127x_fsk_get_data_shaping(sx127x *device, sx127x_fsk_data_shaping_t *data_shaping, sx127x_pa_ramp_t *pa_ramp) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPARAMP, &device->spi_device, &raw));
+  *data_shaping = raw & 0b01100000;
+  *pa_ramp = raw & 0b1111;
+  return SX127X_OK;
 }
 
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device) {
@@ -1274,6 +1367,14 @@ int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_p
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   return sx127x_append_register(REGSYNCCONFIG, type, 0b11011111, &device->spi_device);
+}
+
+int sx127x_fsk_ook_get_preamble_type(sx127x *device, sx127x_preamble_type_t *type) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGSYNCCONFIG, &device->spi_device, &raw));
+  *type = raw & 0b00100000;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device) {

@@ -410,29 +410,84 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(0x6d, registers[0x06]);
   TEST_ASSERT_EQUAL_INT(0x4c, registers[0x07]);
   TEST_ASSERT_EQUAL_INT(0xcd, registers[0x08]);
+  uint64_t frequency;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_frequency(device, &frequency));
+  TEST_ASSERT_EQUAL(437200000, frequency);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
   TEST_ASSERT_EQUAL_INT(0x1A, registers[0x02]);
   TEST_ASSERT_EQUAL_INT(0x0A, registers[0x03]);
   TEST_ASSERT_EQUAL_INT(0x0A, registers[0x5d]);
+  float bitrate;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_bitrate(device, &bitrate));
+  TEST_ASSERT_EQUAL(4800.0, bitrate);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_fdev(5000.0, device));
   TEST_ASSERT_EQUAL_INT(0x00, registers[0x04]);
   TEST_ASSERT_EQUAL_INT(0x51, registers[0x05]);
+  float frequency_deviation;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_get_fdev(device, &frequency_deviation));
+  TEST_ASSERT_EQUAL(4943.0, frequency_deviation);
+
   uint8_t syncWord[] = {0x12, 0xAD};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_syncword(syncWord, 2, device));
   TEST_ASSERT_EQUAL_INT(0x12, registers[0x28]);
   TEST_ASSERT_EQUAL_INT(0xAD, registers[0x29]);
+  uint8_t syncword[8];
+  uint8_t syncword_length;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_syncword(device, syncword, &syncword_length));
+  TEST_ASSERT_EQUAL_INT(2, syncword_length);
+  TEST_ASSERT_EQUAL_INT(0x12, syncword[0]);
+  TEST_ASSERT_EQUAL_INT(0xAD, syncword[1]);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_encoding(SX127X_SCRAMBLED, device));
+  sx127x_packet_encoding_t encoding;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_packet_encoding(device, &encoding));
+  TEST_ASSERT_EQUAL(SX127X_SCRAMBLED, encoding);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, device));
+  sx127x_crc_type_t crc_type;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_crc(device, &crc_type));
+  TEST_ASSERT_EQUAL(SX127X_CRC_CCITT, crc_type);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NODE_AND_BROADCAST, 0x11, 0x12, device));
   TEST_ASSERT_EQUAL_INT(0x11, registers[0x33]);
   TEST_ASSERT_EQUAL_INT(0x12, registers[0x34]);
+  sx127x_address_filtering_t filter_type;
+  uint8_t node_address;
+  uint8_t broadcast_address;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_address_filtering(device, &filter_type, &node_address, &broadcast_address));
+  TEST_ASSERT_EQUAL(SX127X_FILTER_NODE_AND_BROADCAST, filter_type);
+  TEST_ASSERT_EQUAL_INT(0x11, node_address);
+  TEST_ASSERT_EQUAL_INT(0x12, broadcast_address);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x31]);
   TEST_ASSERT_EQUAL_INT(0xFF, registers[0x32]);
+  sx127x_packet_format_t format;
+  uint16_t max_payload_length;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_packet_format(device, &format, &max_payload_length));
+  TEST_ASSERT_EQUAL(SX127X_VARIABLE, format);
+  TEST_ASSERT_EQUAL_INT(255, max_payload_length);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_set_data_shaping(SX127X_BT_0_5, SX127X_PA_RAMP_10, device));
+  sx127x_fsk_data_shaping_t data_shaping;
+  sx127x_pa_ramp_t pa_ramp;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_get_data_shaping(device, &data_shaping, &pa_ramp));
+  TEST_ASSERT_EQUAL(SX127X_BT_0_5, data_shaping);
+  TEST_ASSERT_EQUAL(SX127X_PA_RAMP_10, pa_ramp);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_preamble_type(SX127X_PREAMBLE_55, device));
+  sx127x_preamble_type_t preamble_type;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_get_preamble_type(device, &preamble_type));
+  TEST_ASSERT_EQUAL(SX127X_PREAMBLE_55, preamble_type);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_auto(true, device));
+  bool afc_auto;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_afc_auto(device, &afc_auto));
+  TEST_ASSERT_EQUAL(true, afc_auto);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
   TEST_ASSERT_EQUAL_INT(0x14, registers[0x13]);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));

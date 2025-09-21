@@ -757,6 +757,15 @@ void sx127x_lora_cad_set_callback(void (*cad_callback)(void *, int), void *ctx, 
 int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device);
 
 /**
+ * @brief Get bit rate. Only works when modem in FSK or OOK modes.
+ * @param device Pointer to variable to hold the device handle
+ * @param bitrate Result bit rate. Can differ to the previously set, because of imprecise storage using fractional bits
+ * @return int
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_bitrate(sx127x *device, float *bitrate);
+
+/**
  * @brief Set frequency deviation for FSK modulation. It is most efficient when the modulation index of the signal is greater than 0.5 and below 10.
  *
  * @param frequency_deviation Minimum 600 hz, maximum - 200 khz. Default: 5 kHz
@@ -766,6 +775,16 @@ int sx127x_fsk_ook_set_bitrate(float bitrate, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device);
+
+/**
+ * Get frequency deviation for FSK modulation.
+ * @param device Pointer to variable to hold the device handle
+ * @param frequency_deviation Result
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_get_fdev(sx127x *device, float *frequency_deviation);
 
 /**
  * @brief Configure sync word. Sync word can be used to separate several different networks.
@@ -780,6 +799,16 @@ int sx127x_fsk_set_fdev(float frequency_deviation, sx127x *device);
 int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length, sx127x *device);
 
 /**
+ * @brief Get configured syncword for FSK and OOK modems.
+ *
+ * @param device Pointer to variable to hold the device handle
+ * @param syncword Pre-allocated buffer to store the result. Must be size of at least 8 bytes
+ * @param syncword_length The actual size of the syncword stored in the syncword buffer
+ * @return
+ */
+int sx127x_fsk_ook_get_syncword(sx127x *device, uint8_t *syncword, uint8_t *syncword_length);
+
+/**
  * @brief Set data whitening or scrambling is widely used for randomizing the user data before radio transmission. Scrambling can improve bit synchronizer accuracy.
  *
  * @param encoding Can be NRZ (none) (default), MANCHESTER or SCRAMBLED. Scrambled data is passed through proper LFSR polynomial
@@ -789,6 +818,16 @@ int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device);
+
+/**
+ * @brief Get packet encoding.
+ * @param encoding Result
+ * @param device Pointer to variable to hold the device handle
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_packet_encoding(sx127x *device, sx127x_packet_encoding_t *encoding);
 
 /**
  * @brief Set checksum generation for TX or validation for RX.
@@ -802,6 +841,15 @@ int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
 
 /**
+ * @brief Get checksum generation
+ * @param device Pointer to variable to hold the device handle
+ * @param crc_type Result
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_crc(sx127x *device, sx127x_crc_type_t *crc_type);
+/**
  * @brief Set the packet format.
  *
  * @param format Packet format can be FIXED or VARIABLE (default) (Unlimit is not supported). FIXED should have fixed length known to RX.
@@ -813,6 +861,14 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
  */
 int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max_payload_length, sx127x *device);
 
+/**
+ * @brief Get packet format
+ * @param device Pointer to variable to hold the device handle
+ * @param format Result format
+ * @param max_payload_length Result maximum payload length
+ * @return
+ */
+int sx127x_fsk_ook_get_packet_format(sx127x *device, sx127x_packet_format_t *format, uint16_t *max_payload_length);
 /**
  * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
  *
@@ -827,6 +883,18 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
 int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_t node_address, uint8_t broadcast_address, sx127x *device);
 
 /**
+ * @brief Get address filtering configuration.
+ * @param device Pointer to variable to hold the device handle
+ * @param type Type of filtering.
+ * @param node_address Address of this node.
+ * @param broadcast_address Broadcast address of this node.
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_address_filtering(sx127x *device, sx127x_address_filtering_t *type, uint8_t *node_address, uint8_t *broadcast_address);
+
+/**
  * @brief Set FSK modulation shaping. Used to improve the narrow band response of the transmitter.
  *
  * @param data_shaping Modulation shaping. Can be NONE (default) or Gaussian filtered with BT 0.3, 0.5 or 1.0
@@ -837,6 +905,17 @@ int sx127x_fsk_ook_set_address_filtering(sx127x_address_filtering_t type, uint8_
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_set_data_shaping(sx127x_fsk_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
+
+/**
+ * @brief Get FSK data shaping settings
+ * @param device Pointer to variable to hold the device handle
+ * @param data_shaping Result data shaping
+ * @param pa_ramp Result PA ramp
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_get_data_shaping(sx127x *device, sx127x_fsk_data_shaping_t *data_shaping, sx127x_pa_ramp_t *pa_ramp);
 
 /**
  * @brief Set OOK modulation shaping. Used to improve the narrow band response of the transmitter.
@@ -861,6 +940,15 @@ int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_p
  */
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device);
 
+/**
+ * @brief Get preamble type
+ * @param device Pointer to variable to hold the device handle
+ * @param type Result type
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_get_preamble_type(sx127x *device, sx127x_preamble_type_t *type);
 /**
  * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects PEAK mode and configure its parameters.
  *
@@ -907,6 +995,16 @@ int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_av
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_set_afc_auto(bool afc_auto, sx127x *device);
+
+/**
+ * @brief Check if AFC will be enabled on each received startup
+ * @param device Pointer to variable to hold the device handle
+ * @param afc_auto Result. ON - AFC is performed at each receiver startup. OFF (default) No AFC performed at receiver startup
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_afc_auto(sx127x *device, bool *afc_auto);
 
 /**
  * @brief Configure alternate receiver bandwidth during the AFC phase. This allow the accommodation of larger frequency errors. In a typical receiver application the, once the AFC is performed, the radio will revert to the receiver communication or channel bandwidth (RegRxBw) for the ensuing communication phase.
