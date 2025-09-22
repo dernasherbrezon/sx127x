@@ -930,6 +930,17 @@ int sx127x_fsk_get_data_shaping(sx127x *device, sx127x_fsk_data_shaping_t *data_
 int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_pa_ramp_t pa_ramp, sx127x *device);
 
 /**
+ * @brief Get OOK modulation shaping configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param data_shaping Modulation shaping. Can be NONE (default) or filtered with fcutoff = bit_rate or fcutoff = 2*bit_rate
+ * @param pa_ramp Rise/Fall time of ramp up/down in FSK
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_get_data_shaping(sx127x *device, sx127x_ook_data_shaping_t *data_shaping, sx127x_pa_ramp_t *pa_ramp);
+
+/**
  * @brief Sets the polarity of the Preamble to be 0xAA (default) or 0x55
  *
  * @param type Preamble Polarity 0xAA (default) or 0x55
@@ -962,8 +973,10 @@ int sx127x_fsk_ook_get_preamble_type(sx127x *device, sx127x_preamble_type_t *typ
  */
 int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device);
 
+int sx127x_ook_rx_get_peak_mode(sx127x *device, sx127x_ook_peak_thresh_step_t *step, uint8_t *floor_threshold, sx127x_ook_peak_thresh_dec_t *decrement);
+
 /**
- * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects FIXED mode and configure its parameters.
+ * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This function set FIXED mode and configure its parameters.
  *
  * @param fixed_threshold Fixed threshold for the Data Slicer in OOK mode. Default: 0x0C
  * @param device Pointer to variable to hold the device handle
@@ -972,6 +985,16 @@ int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floo
  *         - SX127X_OK                on success
  */
 int sx127x_ook_rx_set_fixed_mode(uint8_t fixed_threshold, sx127x *device);
+
+/**
+ * @brief Get OOK fixed mode threshold
+ * @param device Pointer to variable to hold the device handle
+ * @param fixed_threshold Fixed threshold for the Data Slicer in OOK mode.
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_ook_rx_get_fixed_mode(sx127x *device, uint8_t *fixed_threshold);
 
 /**
  * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects AVERAGE mode and configure its parameters.
@@ -1125,6 +1148,17 @@ int sx127x_fsk_ook_rx_get_trigger(sx127x *device, sx127x_rx_trigger_t *trigger);
  */
 int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, uint8_t detector_tolerance, sx127x *device);
 
+/**
+ * @brief Get preamble detector settings
+ * @param device Pointer to variable to hold the device handle
+ * @param enable Enable or disable
+ * @param detector_size Number of Preamble bytes to detect to trigger an interrupt. Maximum 3 bytes
+ * @param detector_tolerance Number or chip errors tolerated over detector_size
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_preamble_detector(sx127x *device, bool *enable, uint8_t *detector_size, uint8_t *detector_tolerance);
 /**
  * @brief Perform manual image and RSSI calibration. Can be performed only in the standby mode.
  * @param device Pointer to variable to hold the device handle

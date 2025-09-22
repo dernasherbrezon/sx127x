@@ -1160,10 +1160,27 @@ int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floo
   return sx127x_append_register(REGOOKPEAK, (0b00001000 | step), 0b11100000, &device->spi_device);
 }
 
+int sx127x_ook_rx_get_peak_mode(sx127x *device, sx127x_ook_peak_thresh_step_t *step, uint8_t *floor_threshold, sx127x_ook_peak_thresh_dec_t *decrement) {
+  CHECK_MODULATION(device, SX127x_MODULATION_OOK);
+  ERROR_CHECK(sx127x_read_register(REGOOKFIX, &device->spi_device, floor_threshold));
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGOOKAVG, &device->spi_device, &raw));
+  *decrement = raw & 0b11100000;
+  ERROR_CHECK(sx127x_read_register(REGOOKPEAK, &device->spi_device, &raw));
+  *step = raw & 0b111;
+  return SX127X_OK;
+}
+
 int sx127x_ook_rx_set_fixed_mode(uint8_t fixed_threshold, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_OOK);
   ERROR_CHECK(sx127x_shadow_spi_write_register(REGOOKFIX, &fixed_threshold, 1, &device->spi_device));
   return sx127x_append_register(REGOOKPEAK, 0b00000000, 0b11100111, &device->spi_device);
+}
+
+int sx127x_ook_rx_get_fixed_mode(sx127x *device, uint8_t *fixed_threshold) {
+  CHECK_MODULATION(device, SX127x_MODULATION_OOK);
+  ERROR_CHECK(sx127x_read_register(REGOOKFIX, &device->spi_device, fixed_threshold));
+  return SX127X_OK;
 }
 
 int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_avg_thresh_t avg_thresh, sx127x *device) {
@@ -1426,6 +1443,15 @@ int sx127x_ook_set_data_shaping(sx127x_ook_data_shaping_t data_shaping, sx127x_p
   return sx127x_shadow_spi_write_register(REGPARAMP, &value, 1, &device->spi_device);
 }
 
+int sx127x_ook_get_data_shaping(sx127x *device, sx127x_ook_data_shaping_t *data_shaping, sx127x_pa_ramp_t *pa_ramp) {
+  CHECK_MODULATION(device, SX127x_MODULATION_OOK);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPARAMP, &device->spi_device, &raw));
+  *data_shaping = raw & 0b01100000;
+  *pa_ramp = raw & 0b1111;
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   return sx127x_append_register(REGSYNCCONFIG, type, 0b11011111, &device->spi_device);
@@ -1447,6 +1473,16 @@ int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, 
   uint8_t value = (enable ? 0b10000000 : 0b00000000);
   value = value | ((detector_size - 1) << 5) | (detector_tolerance & 0b00011111);
   return sx127x_shadow_spi_write_register(REGPREAMBLEDETECT, &value, 1, &device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_get_preamble_detector(sx127x *device, bool *enable, uint8_t *detector_size, uint8_t *detector_tolerance) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPREAMBLEDETECT, &device->spi_device, &raw));
+  *enable = (raw & 0b10000000) > 0;
+  *detector_tolerance = raw & 0b11111;
+  *detector_size = ((raw >> 5) & 0b11) + 1;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_rx_calibrate(sx127x *device) {
