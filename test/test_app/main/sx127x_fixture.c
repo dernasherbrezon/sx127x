@@ -111,7 +111,8 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
     ERROR_CHECK(sx127x_set_preamble_length(8, (*fixture)->device));
   } else if (modulation == SX127x_MODULATION_FSK) {
     ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, (*fixture)->device));
-    ERROR_CHECK(sx127x_fsk_set_fdev(9600.0, (*fixture)->device));
+    ERROR_CHECK(sx127x_fsk_set_fdev(2400.0, (*fixture)->device));
+    ERROR_CHECK(sx127x_fsk_ook_rx_set_bandwidth(2400.0, (*fixture)->device));
     uint8_t syncWord[] = {0x12, 0xAD};
     ERROR_CHECK(sx127x_fsk_ook_set_syncword(syncWord, 2, (*fixture)->device));
     ERROR_CHECK(sx127x_fsk_ook_set_address_filtering(SX127X_FILTER_NONE, 0, 0, (*fixture)->device));

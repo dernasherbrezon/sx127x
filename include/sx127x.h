@@ -1018,6 +1018,15 @@ int sx127x_fsk_ook_rx_get_afc_auto(sx127x *device, bool *afc_auto);
 int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
 
 /**
+ * @brief Get receiver bandwidth during AFC phase
+ * @param device Pointer to variable to hold the device handle
+ * @param bandwidth Result
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_afc_bandwidth(sx127x *device, float *bandwidth);
+/**
  * @brief Configure bandwidth of channel filter. The role of the channel filter is to reject noise and interference outside of the wanted channel. Channel filtering is implemented with a 16-tap finite impulse response (FIR) filter. To respect sampling criterion in the decimation chain of the receiver, the communication bit rate cannot be set at a higher than twice the single side receiver bandwidth (BitRate < 2 x RxBw)
  *
  * @param bandwidth The single-side channel filter bandwidth. Defined by 2 numbers: mantissa and exponent. Thus approximate requested bandwidth. Minimum is 2600 hz, maximum - 250000 hz. Default: 10400 hz.
@@ -1027,6 +1036,16 @@ int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device);
+
+/**
+ * @brief Get channel filter bandwidth
+ * @param device Pointer to variable to hold the device handle
+ * @param bandwidth Result bandwidth
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_bandwidth(sx127x *device, float *bandwidth);
 
 /**
  * @brief Configure RSSI calculation
@@ -1041,6 +1060,16 @@ int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device);
 int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t offset, sx127x *device);
 
 /**
+ * @brief Get RSSI calculation config
+ * @param device Pointer to variable to hold the device handle
+ * @param smoothing Result the number of samples taken to average the RSSI result
+ * @param offset Result Signed RSSI offset, to compensate for the possible losses/gains in the front-end (LNA, SAW filter...). 1dB / LSB, 2’s complement format
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_rssi_config(sx127x *device, sx127x_rssi_smoothing_t *smoothing, int8_t *offset);
+/**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
  *
  * @param enable Enable or disable. Default: disabled
@@ -1053,6 +1082,17 @@ int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t 
 int sx127x_fsk_ook_rx_set_collision_restart(bool enable, uint8_t threshold, sx127x *device);
 
 /**
+ * @brief Get collision restart settings
+ * @param device Pointer to variable to hold the device handle
+ * @param enable True if collision is enabled
+ * @param threshold Sensitivity of the system in 1 dB steps that detect sudden change in RSSI. Default: 10dB
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_collision_restart(sx127x *device, bool *enable, uint8_t *threshold);
+
+/**
  * @brief Configure trigger that will start receiver.
  *
  * @param trigger Interrupt that will start receiver. Can be either NONE, Rssi, PreambleDetect (default) or BOTH
@@ -1063,6 +1103,15 @@ int sx127x_fsk_ook_rx_set_collision_restart(bool enable, uint8_t threshold, sx12
  */
 int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
 
+/**
+ * @brief Get trigger configuration for FSK receiver
+ * @param device Pointer to variable to hold the device handle
+ * @param trigger Interrupt that will start receiver. Can be either NONE, Rssi, PreambleDetect (default) or BOTH
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_fsk_ook_rx_get_trigger(sx127x *device, sx127x_rx_trigger_t *trigger);
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
  *

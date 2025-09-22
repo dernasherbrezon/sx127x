@@ -1179,6 +1179,15 @@ int sx127x_fsk_ook_rx_set_collision_restart(bool enable, uint8_t threshold, sx12
   return sx127x_append_register(REGRXCONFIG, value, 0b01111111, &device->spi_device);
 }
 
+int sx127x_fsk_ook_rx_get_collision_restart(sx127x *device, bool *enable, uint8_t *threshold) {
+  CHECK_FSK_OOK_MODULATION(device);
+  ERROR_CHECK(sx127x_read_register(REGRSSICOLLISION, &device->spi_device, threshold));
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGRXCONFIG, &device->spi_device, &raw));
+  *enable = (raw & 0b10000000) > 0;
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_rx_set_afc_auto(bool afc_auto, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   uint8_t value = (afc_auto ? 0b00010000 : 0b00000000);
@@ -1209,10 +1218,38 @@ uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
   return result;
 }
 
+static float sx127x_fsk_ook_calculate_bw(uint8_t value) {
+  uint8_t mantissa;
+  switch (((value & 0b11000) >> 3)) {
+    case 0b10:
+      mantissa = 24;
+      break;
+    case 0b01:
+      mantissa = 20;
+      break;
+    case 0b00:
+      mantissa = 16;
+      break;
+    case 0b11:
+      // invalid - should fail
+      mantissa = 0;
+      break;
+  }
+  return SX127x_OSCILLATOR_FREQUENCY / (mantissa * ((uint32_t) 1 << ((value & 0b111) + 2)));
+}
+
 int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   uint8_t value = sx127x_fsk_ook_calculate_bw_register(bandwidth);
   return sx127x_shadow_spi_write_register(REGAFCBW, &value, 1, &device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_get_afc_bandwidth(sx127x *device, float *bandwidth) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGAFCBW, &device->spi_device, &raw));
+  *bandwidth = sx127x_fsk_ook_calculate_bw(raw);
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device) {
@@ -1221,9 +1258,25 @@ int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth, sx127x *device) {
   return sx127x_shadow_spi_write_register(REGRXBW, &value, 1, &device->spi_device);
 }
 
+int sx127x_fsk_ook_rx_get_bandwidth(sx127x *device, float *bandwidth) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGRXBW, &device->spi_device, &raw));
+  *bandwidth = sx127x_fsk_ook_calculate_bw(raw);
+  return SX127X_OK;
+}
+
 int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
   return sx127x_append_register(REGRXCONFIG, trigger, 0b11111000, &device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_get_trigger(sx127x *device, sx127x_rx_trigger_t *trigger) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGRXCONFIG, &device->spi_device, &raw));
+  *trigger = raw & 0b111;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_set_syncword(const uint8_t *syncword, uint8_t syncword_length, sx127x *device) {
@@ -1256,6 +1309,15 @@ int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t 
   }
   uint8_t value = (offset << 3) | smoothing;
   return sx127x_shadow_spi_write_register(REGRSSICONFIG, &value, 1, &device->spi_device);
+}
+
+int sx127x_fsk_ook_rx_get_rssi_config(sx127x *device, sx127x_rssi_smoothing_t *smoothing, int8_t *offset) {
+  CHECK_FSK_OOK_MODULATION(device);
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGRSSICONFIG, &device->spi_device, &raw));
+  *smoothing = raw & 0b111;
+  *offset = (int8_t) (raw >> 3);
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding, sx127x *device) {

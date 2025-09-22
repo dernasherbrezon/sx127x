@@ -490,12 +490,36 @@ void test_fsk_ook() {
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_afc_bandwidth(20000.0, device));
   TEST_ASSERT_EQUAL_INT(0x14, registers[0x13]);
+  float afc_bandwidth;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_afc_bandwidth(device, &afc_bandwidth));
+  TEST_ASSERT_EQUAL(20833.0, afc_bandwidth);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_bandwidth(5000.0, device));
   TEST_ASSERT_EQUAL_INT(0x16, registers[0x12]);
+  float bandwidth;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_bandwidth(device, &bandwidth));
+  TEST_ASSERT_EQUAL(5208.0, bandwidth);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_rssi_config(SX127X_8, 0, device));
+  sx127x_rssi_smoothing_t smoothing;
+  int8_t offset;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_rssi_config(device, &smoothing, &offset));
+  TEST_ASSERT_EQUAL(SX127X_8, smoothing);
+  TEST_ASSERT_EQUAL_INT(0, offset);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_collision_restart(true, 10, device));
   TEST_ASSERT_EQUAL_INT(10, registers[0x0f]);
+  bool enable;
+  uint8_t threshold;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_collision_restart(device, &enable, &threshold));
+  TEST_ASSERT_EQUAL(true, enable);
+  TEST_ASSERT_EQUAL(10, threshold);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_trigger(SX127X_RX_TRIGGER_RSSI_PREAMBLE, device));
+  sx127x_rx_trigger_t trigger;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_get_trigger(device, &trigger));
+  TEST_ASSERT_EQUAL(SX127X_RX_TRIGGER_RSSI_PREAMBLE, trigger);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_set_preamble_detector(true, 2, 0x0A, device));
   TEST_ASSERT_EQUAL_INT(0b11011100, registers[0x30]);
 
