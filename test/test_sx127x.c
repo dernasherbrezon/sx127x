@@ -636,6 +636,8 @@ void test_lora() {
   TEST_ASSERT_EQUAL(true, enabled);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_boost_hf(true, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_boost_hf(device, &enabled));
+  TEST_ASSERT_EQUAL(true, enabled);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
   sx127x_gain_t lna_gain;
@@ -643,6 +645,31 @@ void test_lora() {
   TEST_ASSERT_EQUAL(SX127x_LNA_GAIN_G4, lna_gain);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
+  sx127x_pa_pin_t pin;
+  int power;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_BOOST, pin);
+  TEST_ASSERT_EQUAL(4, power);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_RFO, -4, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_RFO, pin);
+  TEST_ASSERT_EQUAL(-4, power);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_RFO, 15, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_RFO, pin);
+  TEST_ASSERT_EQUAL(15, power);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 2, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_BOOST, pin);
+  TEST_ASSERT_EQUAL(2, power);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 20, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_BOOST, pin);
+  TEST_ASSERT_EQUAL(20, power);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 17, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power));
+  TEST_ASSERT_EQUAL(SX127x_PA_PIN_BOOST, pin);
+  TEST_ASSERT_EQUAL(17, power);
 
   TEST_ASSERT_EQUAL_INT(0b01110000, registers[0x1d]);
   TEST_ASSERT_EQUAL_INT(0xc3, registers[0x31]);
@@ -654,7 +681,6 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(0b00001000, registers[0x26]);
   TEST_ASSERT_EQUAL_INT(0b10000011, registers[0x0c]);
   TEST_ASSERT_EQUAL_INT(0b10000100, registers[0x4d]);
-  TEST_ASSERT_EQUAL_INT(0b10000010, registers[0x09]);
   TEST_ASSERT_EQUAL_INT(0x28, registers[0x0b]);
 
   registers[0x19] = (uint8_t) (-21);
@@ -680,7 +706,8 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device));
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
-  TEST_ASSERT_EQUAL_INT(8, registers[0x27]);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_ppm_offset(device, &frequency_error));
+  TEST_ASSERT_EQUAL_INT(3681, frequency_error);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain));

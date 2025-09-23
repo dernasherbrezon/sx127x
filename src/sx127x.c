@@ -735,6 +735,13 @@ int sx127x_rx_set_lna_boost_hf(bool enable, sx127x *device) {
   return sx127x_append_register(REGLNA, value, 0b11111100, &device->spi_device);
 }
 
+int sx127x_rx_get_lna_boost_hf(sx127x *device, bool *value) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGLNA, &device->spi_device, &raw));
+  *value = (raw & 0b00000011) > 0;
+  return SX127X_OK;
+}
+
 int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   if (device->chip_version == SX1272_VERSION) {
@@ -998,11 +1005,7 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
       max_current = 87;
     }
   } else {
-    if (power > 7) {
-      max_current = 29;
-    } else {
-      max_current = 20;
-    }
+    max_current = 45;
   }
   ERROR_CHECK(sx127x_tx_set_ocp(true, max_current, device));
   uint8_t value;
@@ -1021,6 +1024,26 @@ int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device) {
     }
   }
   return sx127x_shadow_spi_write_register(REGPACONFIG, &value, 1, &device->spi_device);
+}
+
+int sx127x_tx_get_pa_config(sx127x *device, sx127x_pa_pin_t *pin, int *power) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGPACONFIG, &device->spi_device, &raw));
+  *pin = raw & 0b10000000;
+  uint8_t max_power = (raw & 0b1110000) >> 4;
+  uint8_t output_power = (raw & 0b1111);
+  if (*pin == SX127x_PA_PIN_BOOST) {
+    int reg = device->chip_version == SX1276_VERSION ? SX1276_REGPADAC : SX1272_REGPADAC;
+    ERROR_CHECK(sx127x_read_register(reg, &device->spi_device, &raw));
+    if (raw == SX127x_HIGH_POWER_ON) {
+      *power = 20;
+    } else {
+      *power = 17 - (15 - output_power);
+    }
+  } else {
+    *power = (int) (10.8 + 0.6 * max_power - (15 - output_power));
+  }
+  return SX127X_OK;
 }
 
 int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
@@ -1071,10 +1094,21 @@ int sx127x_lora_tx_set_for_transmission(const uint8_t *data, uint8_t data_length
 }
 
 int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device) {
+  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   uint64_t frequency;
   ERROR_CHECK(sx127x_get_frequency(device, &frequency));
-  uint8_t value = (uint8_t) (0.95f * ((float) frequency_error / (frequency / 1E6f)));
+  uint8_t value = (uint8_t) (0.95f * ((float) frequency_error / ((double) frequency / 1E6)));
   return sx127x_shadow_spi_write_register(0x27, &value, 1, &device->spi_device);
+}
+
+int sx127x_lora_get_ppm_offset(sx127x *device, int32_t *frequency_error) {
+  CHECK_MODULATION(device, SX127x_MODULATION_LORA);
+  uint64_t frequency;
+  ERROR_CHECK(sx127x_get_frequency(device, &frequency));
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(0x27, &device->spi_device, &raw));
+  *frequency_error = (int32_t) (((double) frequency * (double) raw) / (0.95 * 1E6));
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, sx127x *device) {

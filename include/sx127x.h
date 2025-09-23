@@ -671,6 +671,16 @@ int sx127x_rx_get_lna_gain(sx127x *device, sx127x_gain_t *gain);
 int sx127x_rx_set_lna_boost_hf(bool value, sx127x *device);
 
 /**
+ * @brief Get LNA HF boost configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param value Return true if boosted, false - otherwise
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_rx_get_lna_boost_hf(sx127x *device, bool *value);
+
+/**
  * @brief Set callback function for rxdone interrupt.
  *
  * @param rx_callback Callback function. Should accept pointer to variable to hold the device handle.
@@ -695,7 +705,7 @@ int sx127x_rx_get_packet_rssi(sx127x *device, int16_t *rssi);
  *
  * @param device Pointer to variable to hold the device handle
  * @param snr SNR
- * @return
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
@@ -705,11 +715,21 @@ int sx127x_lora_rx_get_packet_snr(sx127x *device, float *snr);
  * @brief Compensate reference oscillator drift. The frequency error should be calculated as follows: send the LoRa message at the known stable frequency, get the frequency error on receiver. Please note the frequency should be manually adjusted and configured using sx127x_set_frequency function
  * @param frequency_error The frequency error as measured at the receiver. Just make sure transmitter has stable oscillator before the measurement.
  * @param device Pointer to variable to hold the device handle
+ * @return int
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
- * @return
  */
 int sx127x_lora_set_ppm_offset(int32_t frequency_error, sx127x *device);
+
+/**
+ * @brief Get current frequency error configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param frequency_error Return pre-configured frequency error
+ * @return int
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_ppm_offset(sx127x *device, int32_t *frequency_error);
 
 /**
  * @brief Read estimated frequency error from modem.
@@ -740,6 +760,17 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *frequency_error);
  *         - SX127X_OK                on success
  */
 int sx127x_tx_set_pa_config(sx127x_pa_pin_t pin, int power, sx127x *device);
+
+/**
+ * @brief Get power amplifier (PA) configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param pin Which pin to use
+ * @param power Output power in dbm
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_tx_get_pa_config(sx127x *device, sx127x_pa_pin_t *pin, int *power);
 
 /**
  * @brief Configure overload current protection (OCP) for PA.
