@@ -1067,6 +1067,23 @@ int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
   return sx127x_shadow_spi_write_register(REGOCP, &value, 1, &device->spi_device);
 }
 
+int sx127x_tx_get_ocp(sx127x *device, bool *enable, uint8_t *milliamps) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGOCP, &device->spi_device, &raw));
+  *enable = (raw & 0b00100000) > 0;
+  uint8_t ocp_trim = raw & 0b11111;
+  if (*enable) {
+    if (ocp_trim <= 15) {
+      *milliamps = 45 + 5 * ocp_trim;
+    } else if (ocp_trim <= 27) {
+      *milliamps = -30 + 10 * ocp_trim;
+    } else {
+      *milliamps = 240;
+    }
+  }
+  return SX127X_OK;
+}
+
 int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
   if (header == NULL) {
@@ -1075,9 +1092,29 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
   device->use_implicit_header = false;
   device->expected_packet_length = 0;
   uint8_t coding_rate = device->chip_version == SX1276_VERSION ? sx1276_cr[header->coding_rate] : sx1272_cr[header->coding_rate];
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, coding_rate | 0b00000000, 0b11110000, &device->spi_device));
+  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, coding_rate | 0b00000001, 0b11110000, &device->spi_device));
   uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
   return sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device);
+}
+
+int sx127x_lora_tx_get_explicit_header(sx127x *device, bool *enabled, sx127x_tx_header_t *header) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGMODEMCONFIG1, &device->spi_device, &raw));
+  if (device->chip_version == SX1276_VERSION) {
+    *enabled = (raw & 0b00000001) > 0;
+    if (*enabled) {
+      header->coding_rate = ((raw & 0b1110) >> 1) - 1;
+      ERROR_CHECK(sx127x_read_register(REGMODEMCONFIG2, &device->spi_device, &raw));
+      header->enable_crc = (raw & 0b00000100) > 0;
+    }
+  } else {
+    *enabled = (raw & 0b00000100) > 0;
+    if (*enabled) {
+      header->coding_rate = ((raw & 0b111000) >> 3) - 1;
+      header->enable_crc = (raw & 0b10) > 0;
+    }
+  }
+  return SX127X_OK;
 }
 
 int sx127x_lora_tx_set_for_transmission(const uint8_t *data, uint8_t data_length, sx127x *device) {

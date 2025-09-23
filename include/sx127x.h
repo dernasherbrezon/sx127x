@@ -22,6 +22,7 @@ extern "C" {
 #ifdef IDF_VER
 #include "sdkconfig.h"
 #endif
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -345,12 +346,15 @@ struct sx127x_t {
   bool use_implicit_header;
 
   void (*rx_callback)(void *, uint8_t *, uint16_t);
+
   void *rx_callback_ctx;
 
   void (*tx_callback)(void *);
+
   void *tx_callback_ctx;
 
   void (*cad_callback)(void *, int);
+
   void *cad_callback_ctx;
 
   uint8_t packet[CONFIG_SX127X_MAX_PACKET_SIZE];
@@ -785,6 +789,17 @@ int sx127x_tx_get_pa_config(sx127x *device, sx127x_pa_pin_t *pin, int *power);
 int sx127x_tx_set_ocp(bool enable, uint8_t milliamps, sx127x *device);
 
 /**
+ * @brief Get OCP configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param enable Return true if enabled, false - otherwise
+ * @param milliamps Maximum current in milliamps
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_tx_get_ocp(sx127x *device, bool *enable, uint8_t *milliamps);
+
+/**
  * @brief Set explicit header during TX.
  *
  * @param header Transmitter will populate packet's header with this configuration
@@ -794,6 +809,17 @@ int sx127x_tx_set_ocp(bool enable, uint8_t milliamps, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *device);
+
+/**
+ * @brief Get explicit header configuration for TX mode
+ * @param device Pointer to variable to hold the device handle
+ * @param enabled True if explicit header will be sent during TX, false - otherwise
+ * @param header Transmitter will populate packet's header with this configuration
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_tx_get_explicit_header(sx127x *device, bool *enabled, sx127x_tx_header_t *header);
 
 /**
  * @brief Set callback function for txdone interrupt.
@@ -976,6 +1002,7 @@ int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_get_crc(sx127x *device, sx127x_crc_type_t *crc_type);
+
 /**
  * @brief Set the packet format.
  *
@@ -996,6 +1023,7 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
  * @return
  */
 int sx127x_fsk_ook_get_packet_format(sx127x *device, sx127x_packet_format_t *format, uint16_t *max_payload_length);
+
 /**
  * @brief Configure address filtering. It adds another level of filtering. Each packet's first byte must be an address. If address do not match, then rx_callback won't be called. Can be useful for hardware-based filtering, which is fast and consume less power.
  *
@@ -1087,6 +1115,7 @@ int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type, sx127x *device
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_get_preamble_type(sx127x *device, sx127x_preamble_type_t *type);
+
 /**
  * @brief The OOK demodulator performs a comparison of the RSSI output and a threshold value. This functions selects PEAK mode and configure its parameters.
  *
@@ -1176,6 +1205,7 @@ int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_get_afc_bandwidth(sx127x *device, float *bandwidth);
+
 /**
  * @brief Configure bandwidth of channel filter. The role of the channel filter is to reject noise and interference outside of the wanted channel. Channel filtering is implemented with a 16-tap finite impulse response (FIR) filter. To respect sampling criterion in the decimation chain of the receiver, the communication bit rate cannot be set at a higher than twice the single side receiver bandwidth (BitRate < 2 x RxBw)
  *
@@ -1219,6 +1249,7 @@ int sx127x_fsk_ook_rx_set_rssi_config(sx127x_rssi_smoothing_t smoothing, int8_t 
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_get_rssi_config(sx127x *device, sx127x_rssi_smoothing_t *smoothing, int8_t *offset);
+
 /**
  * @brief Turns on the mechanism restarting the receiver automatically if it gets saturated or a packet collision is detected. Collisions are detected by a sudden rise in received signal strength, detected by the RSSI. This functionality can be useful in network configurations where many asynchronous slaves attempt periodic communication with a single a master node.
  *
@@ -1262,6 +1293,7 @@ int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger, sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_get_trigger(sx127x *device, sx127x_rx_trigger_t *trigger);
+
 /**
  * @brief Enables Preamble detector when set to 1. The AGC settings supersede this bit during the startup / AGC phase. Used in the receiver only.
  *
@@ -1286,6 +1318,7 @@ int sx127x_fsk_ook_rx_set_preamble_detector(bool enable, uint8_t detector_size, 
  *         - SX127X_OK                on success
  */
 int sx127x_fsk_ook_rx_get_preamble_detector(sx127x *device, bool *enable, uint8_t *detector_size, uint8_t *detector_tolerance);
+
 /**
  * @brief Perform manual image and RSSI calibration. Can be performed only in the standby mode.
  * @param device Pointer to variable to hold the device handle

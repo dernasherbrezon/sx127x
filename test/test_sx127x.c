@@ -671,6 +671,20 @@ void test_lora() {
   TEST_ASSERT_EQUAL(SX127x_PA_PIN_BOOST, pin);
   TEST_ASSERT_EQUAL(17, power);
 
+  uint8_t milliamps;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_ocp(true, 100, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_ocp(device, &enabled, &milliamps));
+  TEST_ASSERT_EQUAL(true, enabled);
+  TEST_ASSERT_EQUAL(100, milliamps);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_ocp(true, 150, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_ocp(device, &enabled, &milliamps));
+  TEST_ASSERT_EQUAL(true, enabled);
+  TEST_ASSERT_EQUAL(150, milliamps);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_ocp(true, 250, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_ocp(device, &enabled, &milliamps));
+  TEST_ASSERT_EQUAL(true, enabled);
+  TEST_ASSERT_EQUAL(240, milliamps);
+
   TEST_ASSERT_EQUAL_INT(0b01110000, registers[0x1d]);
   TEST_ASSERT_EQUAL_INT(0xc3, registers[0x31]);
   TEST_ASSERT_EQUAL_INT(0x0a, registers[0x37]);
@@ -681,7 +695,6 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(0b00001000, registers[0x26]);
   TEST_ASSERT_EQUAL_INT(0b10000011, registers[0x0c]);
   TEST_ASSERT_EQUAL_INT(0b10000100, registers[0x4d]);
-  TEST_ASSERT_EQUAL_INT(0x28, registers[0x0b]);
 
   registers[0x19] = (uint8_t) (-21);
   float snr;
@@ -704,6 +717,11 @@ void test_lora() {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device));
+  sx127x_tx_header_t expected_header;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_get_explicit_header(device, &enabled, &expected_header));
+  TEST_ASSERT_EQUAL(true, enabled);
+  TEST_ASSERT_EQUAL(true, expected_header.enable_crc);
+  TEST_ASSERT_EQUAL(SX127x_CR_4_5, expected_header.coding_rate);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_ppm_offset(device, &frequency_error));
