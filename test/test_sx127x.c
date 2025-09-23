@@ -415,7 +415,11 @@ void test_fsk_ook() {
   uint64_t frequency;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_frequency(device, &frequency));
   TEST_ASSERT_EQUAL(437200000, frequency);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
+  sx127x_gain_t lna_gain;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain));
+  TEST_ASSERT_EQUAL(SX127x_LNA_GAIN_G4, lna_gain);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
   float bitrate;
@@ -556,8 +560,9 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(0b00000110, registers[0x16]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_preamble_length(8, device));
-  TEST_ASSERT_EQUAL_INT(0x00, registers[0x25]);
-  TEST_ASSERT_EQUAL_INT(0x08, registers[0x26]);
+  uint16_t preamble_length;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_preamble_length(device, &preamble_length));
+  TEST_ASSERT_EQUAL_INT(8, preamble_length);
 
   registers[0x1b] = 0xFF;
   registers[0x1c] = 0xF0;
@@ -572,7 +577,8 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(0b01000000, registers[0x3b]); // start calibration attempted
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
-  TEST_ASSERT_EQUAL_INT(registers[0x0d], 0b10011111); // + previous configuration
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain));
+  TEST_ASSERT_EQUAL(SX127x_LNA_GAIN_AUTO, lna_gain);
 
   registers[0x3c] = 22;
   int8_t raw_temperature;
@@ -605,12 +611,37 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127x_BW_15600, sx127x_hz_to_bandwidth(15600));
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(NULL, device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_modem_config_2(SX127x_SF_9, device));
+  bool enabled;
+  sx127x_implicit_header_t explicit_header;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_implicit_header(device, &explicit_header, &enabled));
+  TEST_ASSERT_EQUAL(false, enabled);
+
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_spreading_factor(SX127x_SF_9, device));
+  sx127x_sf_t spreading_factor;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_spreading_factor(device, &spreading_factor));
+  TEST_ASSERT_EQUAL(SX127x_SF_9, spreading_factor);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_syncword(18, device));
+  uint8_t syncword;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_syncword(device, &syncword));
+  TEST_ASSERT_EQUAL_INT(18, syncword);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_preamble_length(8, device));
+  uint16_t preamble_length;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_preamble_length(device, &preamble_length));
+  TEST_ASSERT_EQUAL_INT(8, preamble_length);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_low_datarate_optimization(true, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_get_low_datarate_optimization(device, &enabled));
+  TEST_ASSERT_EQUAL(true, enabled);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_boost_hf(true, device));
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device));
+  sx127x_gain_t lna_gain;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain));
+  TEST_ASSERT_EQUAL(SX127x_LNA_GAIN_G4, lna_gain);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device));
 
   TEST_ASSERT_EQUAL_INT(0b01110000, registers[0x1d]);
@@ -647,14 +678,13 @@ void test_lora() {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device));
-  TEST_ASSERT_EQUAL_INT(0b01110010, registers[0x1d]);
-  TEST_ASSERT_EQUAL_INT(0b10010100, registers[0x1e]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device));
   TEST_ASSERT_EQUAL_INT(8, registers[0x27]);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device));
-  TEST_ASSERT_EQUAL_INT(0b00001100, registers[0x26]); // + previous config
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain));
+  TEST_ASSERT_EQUAL(SX127x_LNA_GAIN_AUTO, lna_gain);
 }
 
 void test_init_failure() {

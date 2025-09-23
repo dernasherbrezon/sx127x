@@ -489,26 +489,46 @@ sx127x_bw_t sx127x_hz_to_bandwidth(uint32_t bandwidth_hz);
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_set_modem_config_2(sx127x_sf_t spreading_factor, sx127x *device);
+int sx127x_lora_set_spreading_factor(sx127x_sf_t spreading_factor, sx127x *device);
+
+/**
+ * @brief Get spreading factor (SF) configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param spreading_factor SF rate
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_spreading_factor(sx127x *device, sx127x_sf_t *spreading_factor);
 
 /**
  * @brief Enable or disable low datarate optimization.
  *
  * It should have the same value on transmitter and receiver. If unsure, don't change.
  *
- * @param value Enable or disable.
+ * @param enable Enable or disable.
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_set_low_datarate_optimization(bool value, sx127x *device);
+int sx127x_lora_set_low_datarate_optimization(bool enable, sx127x *device);
+
+/**
+ * @brief Get low datarate optimization status
+ * @param device Pointer to variable to hold the device handle
+ * @param enabled Enabled or Disabled
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_low_datarate_optimization(sx127x *device, bool *enabled);
 
 /**
  * @brief Set syncword.
  *
  * @note Value 0x34 is reserved for LoRaWAN networks.
- * @param value Syncword.
+ * @param value Syncword. Value 0x34 is reserved for LoRaWAN networks
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
@@ -517,15 +537,35 @@ int sx127x_lora_set_low_datarate_optimization(bool value, sx127x *device);
 int sx127x_lora_set_syncword(uint8_t value, sx127x *device);
 
 /**
+ * @brief Get syncword configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param value Result syncword
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_syncword(sx127x *device, uint8_t *value);
+
+/**
  * @brief Set preamble length. See 4.1.1 for more details.
  *
- * @param value Preamble length in symbols for LoRa and bytes for FSK/OOK. Used during TX only
+ * @param value Preamble length in symbols for LoRa and bytes for FSK/OOK. If configured on the receiver side, then considered maximum preamble length.
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
 int sx127x_set_preamble_length(uint16_t value, sx127x *device);
+
+/**
+ * @brief Get preamble length
+ * @param device Pointer to variable to hold the device handle
+ * @param value Result preamble length
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_get_preamble_length(sx127x *device, uint16_t *value);
 
 /**
  * @brief Set implicit header.
@@ -542,6 +582,17 @@ int sx127x_set_preamble_length(uint16_t value, sx127x *device);
 int sx127x_lora_set_implicit_header(sx127x_implicit_header_t *header, sx127x *device);
 
 /**
+ * @brief Return implicit header configuration
+ * @param device Pointer to variable to hold the device handle
+ * @param header If enabled header structure will be populated with the configured values
+ * @param enabled Return true if implicit header is configured, false - otherwise
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_implicit_header(sx127x *device, sx127x_implicit_header_t *header, bool *enabled);
+
+/**
  * @brief Configure frequency hopping for TX and RX. Frequency hopping spread spectrum (FHSS) is typically employed when the duration of a single packet could exceed
 regulatory requirements relating to the maximum permissible channel dwell time.
  *
@@ -554,6 +605,16 @@ regulatory requirements relating to the maximum permissible channel dwell time.
  *         - SX127X_OK                on success
  */
 int sx127x_lora_set_frequency_hopping(uint8_t period, uint64_t *frequencies, uint8_t frequencies_length, sx127x *device);
+
+/**
+ * @brief Get frequency hopping configuration. Frequencies array is configured in sx172x structure
+ * @param device Pointer to variable to hold the device handle
+ * @param period Symbol periods between frequency hops. 0 if not configured
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_lora_get_frequency_hopping(sx127x *device, uint8_t *period);
 
 /**
  * @brief Output internal registers
@@ -587,6 +648,16 @@ void sx127x_handle_interrupt(sx127x *device);
  *         - SX127X_OK                on success
  */
 int sx127x_rx_set_lna_gain(sx127x_gain_t gain, sx127x *device);
+
+/**
+ * @brief Get RX gain setting
+ * @param device Pointer to variable to hold the device handle
+ * @param gain Result gain. G1 is maximum, G6 is minimum.
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_rx_get_lna_gain(sx127x *device, sx127x_gain_t *gain);
 
 /**
  * @brief Boost LNA current in high frequency mode (over 525Mhz).
