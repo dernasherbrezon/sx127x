@@ -388,14 +388,25 @@ int sx127x_create(void *spi_device, sx127x *result);
 /**
  * @brief Set operating mode.
  *
- * @param mode Sleep, standby, rx or tx. See @ref sx127x_mode_t for details.
- * @param modulation LoRa, FSK, OOK. See @ref sx127x_modulation_t for details.
+ * @param mode Sleep, standby, rx or tx
+ * @param modulation LoRa, FSK, OOK
  * @param device Pointer to variable to hold the device handle
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
 int sx127x_set_opmod(sx127x_mode_t mode, sx127x_modulation_t modulation, sx127x *device);
+
+/**
+ * @brief Get current operating mode
+ * @param device Pointer to variable to hold the device handle
+ * @param mode Sleep, standby, rx or tx
+ * @param modulation LoRa, FSK, OOK
+ * @return
+ *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
+ *         - SX127X_OK                on success
+ */
+int sx127x_get_opmod(sx127x *device, sx127x_mode_t *mode, sx127x_modulation_t *modulation);
 
 /**
  * @brief Set frequency for RX or TX.
@@ -443,15 +454,29 @@ int sx127x_lora_reset_fifo(sx127x *device);
 int sx127x_lora_set_bandwidth(sx127x_bw_t bandwidth, sx127x *device);
 
 /**
- * @brief Get signal bandwidth in hz.
+ * @brief Get signal bandwidth
  *
  * @param device Pointer to variable to hold the device handle
- * @param bandwidth Signal bandwidth in hz. For example: 125000.
+ * @param bandwidth Signal bandwidth
  * @return
  *         - SX127X_ERR_INVALID_ARG   if parameter is invalid
  *         - SX127X_OK                on success
  */
-int sx127x_lora_get_bandwidth(sx127x *device, uint32_t *bandwidth);
+int sx127x_lora_get_bandwidth(sx127x *device, sx127x_bw_t *bandwidth);
+
+/**
+ * @brief Convert bandwidth enum to hz
+ * @param bandwidth Bandwidth enum
+ * @return Bandwidth in hz
+ */
+uint32_t sx127x_bandwidth_to_hz(sx127x_bw_t bandwidth);
+
+/**
+ * @brief Convert hz to bandwidth enum
+ * @param bandwidth_hz Bandwidth in hz
+ * @return Bandwidth enum
+ */
+sx127x_bw_t sx127x_hz_to_bandwidth(uint32_t bandwidth_hz);
 
 /**
  * @brief Set speading factor (SF rate). See section 4.1.1.2. for more details.

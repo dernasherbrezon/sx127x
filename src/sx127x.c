@@ -213,51 +213,76 @@ int sx127x_lora_set_low_datarate_optimization(bool enable, sx127x *device) {
   return SX127X_OK;
 }
 
-int sx127x_lora_get_bandwidth(sx127x *device, uint32_t *bandwidth) {
+int sx127x_lora_get_bandwidth(sx127x *device, sx127x_bw_t *bandwidth) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-  uint8_t config = 0;
-  ERROR_CHECK(sx127x_read_register(REGMODEMCONFIG1, &device->spi_device, &config));
-  config = (config >> 4);
-  switch (config) {
-    case 0b0000:
-      *bandwidth = 7800;
-      break;
-    case 0b0001:
-      *bandwidth = 10400;
-      break;
-    case 0b0010:
-      *bandwidth = 15600;
-      break;
-    case 0b0011:
-      *bandwidth = 20800;
-      break;
-    case 0b0100:
-      *bandwidth = 31250;
-      break;
-    case 0b0101:
-      *bandwidth = 41700;
-      break;
-    case 0b0110:
-      *bandwidth = 62500;
-      break;
-    case 0b0111:
-      *bandwidth = 125000;
-      break;
-    case 0b1000:
-      *bandwidth = 250000;
-      break;
-    case 0b1001:
-      *bandwidth = 500000;
-      break;
-    default:
-      return SX127X_ERR_INVALID_ARG;
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGMODEMCONFIG1, &device->spi_device, &raw));
+  if (device->chip_version == SX1272_VERSION) {
+    *bandwidth = 7 + ((raw & 0b11000000) >> 6);
+  } else {
+    *bandwidth = (raw & 0b11110000) >> 4;
   }
   return SX127X_OK;
 }
 
+uint32_t sx127x_bandwidth_to_hz(sx127x_bw_t bandwidth) {
+  switch (bandwidth) {
+    case 0:
+      return 7800;
+    case 1:
+      return 10400;
+    case 2:
+      return 15600;
+    case 3:
+      return 20800;
+    case 4:
+      return 31250;
+    case 5:
+      return 41700;
+    case 6:
+      return 62500;
+    case 7:
+      return 125000;
+    case 8:
+      return 250000;
+    case 9:
+      return 500000;
+    default:
+      return 0;
+  }
+}
+
+sx127x_bw_t sx127x_hz_to_bandwidth(uint32_t bandwidth_hz) {
+  switch (bandwidth_hz) {
+    case 7800:
+      return SX127x_BW_7800;
+    case 10400:
+      return SX127x_BW_10400;
+    case 15600:
+      return SX127x_BW_15600;
+    case 20800:
+      return SX127x_BW_20800;
+    case 31250:
+      return SX127x_BW_31250;
+    case 41700:
+      return SX127x_BW_41700;
+    case 62500:
+      return SX127x_BW_62500;
+    case 125000:
+      return SX127x_BW_125000;
+    case 250000:
+      return SX127x_BW_250000;
+    case 500000:
+      return SX127x_BW_500000;
+    default:
+      return SX127x_BW_125000;
+  }
+}
+
 int sx127x_reload_low_datarate_optimization(sx127x *device) {
-  uint32_t bandwidth;
-  ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth));
+  sx127x_bw_t bandwidth_enum;
+  ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth_enum));
+  uint32_t bandwidth = sx127x_bandwidth_to_hz(bandwidth_enum);
   uint8_t spreading_factor = 0;
   ERROR_CHECK(sx127x_read_register(REGMODEMCONFIG2, &device->spi_device, &spreading_factor));
   spreading_factor = (spreading_factor >> 4);
@@ -603,6 +628,14 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   return result;
 }
 
+int sx127x_get_opmod(sx127x *device, sx127x_mode_t *mode, sx127x_modulation_t *modulation) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register((REGOPMODE), &device->spi_device, &raw));
+  *mode = raw & 0b111;
+  *modulation = raw & 0b11100000;
+  return SX127X_OK;
+}
+
 int sx127x_set_frequency(uint64_t frequency, sx127x *device) {
   uint64_t min_frequency = device->chip_version == SX1276_VERSION ? SX1276_MIN_FREQUENCY : SX1272_MIN_FREQUENCY;
   if (frequency < min_frequency || frequency > SX127x_MAX_FREQUENCY) {
@@ -800,8 +833,9 @@ int sx127x_rx_get_frequency_error(sx127x *device, int32_t *result) {
   if (device->active_modem == SX127x_MODULATION_LORA) {
     uint32_t frequency_error;
     ERROR_CHECK(sx127x_shadow_spi_read_registers(REGFEIMSB, &device->spi_device, 3, &frequency_error));
-    uint32_t bandwidth;
-    ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth));
+    sx127x_bw_t bandwidth_enum;
+    ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth_enum));
+    uint32_t bandwidth = sx127x_bandwidth_to_hz(bandwidth_enum);
     if (frequency_error & 0x80000) {
       // keep within original 2.5 bytes
       frequency_error = ((~frequency_error) + 1) & 0xFFFFF;
