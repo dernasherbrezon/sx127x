@@ -1091,10 +1091,14 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
   }
   device->use_implicit_header = false;
   device->expected_packet_length = 0;
-  uint8_t coding_rate = device->chip_version == SX1276_VERSION ? sx1276_cr[header->coding_rate] : sx1272_cr[header->coding_rate];
-  ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, coding_rate | 0b00000001, 0b11110000, &device->spi_device));
-  uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
-  return sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device);
+  if (device->chip_version == SX1276_VERSION) {
+    ERROR_CHECK(sx127x_append_register(REGMODEMCONFIG1, sx1276_cr[header->coding_rate] | 0b00000001, 0b11110000, &device->spi_device));
+    uint8_t value = (header->enable_crc ? 0b00000100 : 0b00000000);
+    return sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device);
+  } else {
+    uint8_t value = (header->enable_crc ? 0b00000010 : 0b00000000);
+    return sx127x_append_register(REGMODEMCONFIG1, sx1272_cr[header->coding_rate] + 0b00000100 + value, 0b11000001, &device->spi_device);
+  }
 }
 
 int sx127x_lora_tx_get_explicit_header(sx127x *device, bool *enabled, sx127x_tx_header_t *header) {

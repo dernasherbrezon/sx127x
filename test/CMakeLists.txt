@@ -16,11 +16,13 @@ enable_testing()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/unity-2.5.2/src/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/test_app/main)
 
 add_executable(test_sx127x 
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sx127x.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sx127x_mock_spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/unity-2.5.2/src/unity.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_app/main/test_registers.c
 )
 target_link_libraries(test_sx127x sx127xlib)
 add_test(NAME test_sx127x COMMAND test_sx127x)
