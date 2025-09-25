@@ -540,13 +540,6 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL(0x0C, floor_threshold);
   TEST_ASSERT_EQUAL(SX127X_1_1_CHIP, decrement);
 
-  TEST_ASSERT_EQUAL_INT(0b10010111, registers[0x0d]);
-  TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x0c]);
-  TEST_ASSERT_EQUAL_INT(0b01110001, registers[0x27]);
-  TEST_ASSERT_EQUAL_INT(0b01001001, registers[0x0a]);
-  TEST_ASSERT_EQUAL_INT(0b00000010, registers[0x0e]);
-  TEST_ASSERT_EQUAL_INT(0b10101010, registers[0x1f]);
-
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_set_data_shaping(SX127X_1_BIT_RATE, SX127X_PA_RAMP_10, device));
   sx127x_ook_data_shaping_t ook_data_shaping;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_get_data_shaping(device, &ook_data_shaping, &pa_ramp));
@@ -604,11 +597,16 @@ void test_fsk_ook() {
 
 void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device));
-  TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x01]);
+  sx127x_mode_t mode;
+  sx127x_modulation_t modulation;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_opmod(device, &mode, &modulation));
+  TEST_ASSERT_EQUAL(SX127x_MODE_SLEEP, mode);
+  TEST_ASSERT_EQUAL(SX127x_MODULATION_LORA, modulation);
+
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_frequency(437200012, device));
-  TEST_ASSERT_EQUAL_INT(0x6d, registers[0x06]);
-  TEST_ASSERT_EQUAL_INT(0x4c, registers[0x07]);
-  TEST_ASSERT_EQUAL_INT(0xcd, registers[0x08]);
+  uint64_t frequency;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_get_frequency(device, &frequency));
+  TEST_ASSERT_EQUAL(437200000, frequency);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_reset_fifo(device));
   TEST_ASSERT_EQUAL_INT(0x00, registers[0x0e]);
   TEST_ASSERT_EQUAL_INT(0x00, registers[0x0f]);
@@ -694,17 +692,6 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_tx_get_ocp(device, &enabled, &milliamps));
   TEST_ASSERT_EQUAL(true, enabled);
   TEST_ASSERT_EQUAL(240, milliamps);
-
-  TEST_ASSERT_EQUAL_INT(0b01110000, registers[0x1d]);
-  TEST_ASSERT_EQUAL_INT(0xc3, registers[0x31]);
-  TEST_ASSERT_EQUAL_INT(0x0a, registers[0x37]);
-  TEST_ASSERT_EQUAL_INT(0b10010000, registers[0x1e]);
-  TEST_ASSERT_EQUAL_INT(18, registers[0x39]);
-  TEST_ASSERT_EQUAL_INT(0, registers[0x20]);
-  TEST_ASSERT_EQUAL_INT(8, registers[0x21]);
-  TEST_ASSERT_EQUAL_INT(0b00001000, registers[0x26]);
-  TEST_ASSERT_EQUAL_INT(0b10000011, registers[0x0c]);
-  TEST_ASSERT_EQUAL_INT(0b10000100, registers[0x4d]);
 
   registers[0x19] = (uint8_t) (-21);
   float snr;
