@@ -1470,6 +1470,7 @@ static float sx127x_fsk_ook_calculate_bw(uint8_t value) {
       mantissa = 16;
       break;
     case 0b11:
+    default:
       // invalid - should fail
       mantissa = 0;
       break;
@@ -1610,7 +1611,7 @@ int sx127x_fsk_ook_set_packet_format(sx127x_packet_format_t format, uint16_t max
 int sx127x_fsk_ook_get_packet_format(sx127x *device, sx127x_packet_format_t *format, uint16_t *max_payload_length) {
   CHECK_FSK_OOK_MODULATION(device);
   uint32_t raw;
-  ERROR_CHECK(sx127x_spi_read_registers(REGPACKETCONFIG1, &device->spi_device, 3, &raw));
+  ERROR_CHECK(sx127x_shadow_spi_read_registers(REGPACKETCONFIG1, &device->spi_device, 3, &raw));
   *format = (raw >> 16) & 0b10000000;
   *max_payload_length = raw & 0x7FF; //11 bit
   return SX127X_OK;

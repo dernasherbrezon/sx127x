@@ -7,6 +7,7 @@
 #include <unity_test_runner.h>
 
 #include "sx127x_fixture.h"
+#include "test_registers.h"
 
 #define MAX_BEACONS_EXPECTED 5
 #define BEACON_INTERVAL 200
@@ -116,6 +117,12 @@ void print_registers() {
   }
   printf("\n");
 }
+
+TEST_CASE("sx127x_test_fsk_ook_registers", "[fsk]") {
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
+  test_registers_fsk_ook(fixture->device);
+}
+
 TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
   uint8_t registers[MAX_NUMBER_OF_REGISTERS];
@@ -287,6 +294,11 @@ TEST_CASE("sx127x_test_fsk_tx_filtered", "[fsk]") {
     TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_fsk_ook_tx_set_for_transmission_with_address(fsk_small_message, sizeof(fsk_small_message), addresses[i], fixture));
     xSemaphoreTake(fixture->tx_done, TIMEOUT);
   }
+}
+
+TEST_CASE("sx127x_test_lora_registers", "[lora]") {
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
+  test_registers_lora(fixture->device);
 }
 
 TEST_CASE("sx127x_test_lora_rx_deepsleep_verify", "[lora]") {

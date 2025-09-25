@@ -106,7 +106,7 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
     ERROR_CHECK(sx127x_lora_reset_fifo((*fixture)->device));
     ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, (*fixture)->device));
     ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, (*fixture)->device));
-    ERROR_CHECK(sx127x_lora_set_modem_config_2(SX127x_SF_9, (*fixture)->device));
+    ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127x_SF_9, (*fixture)->device));
     ERROR_CHECK(sx127x_lora_set_syncword(18, (*fixture)->device));
     ERROR_CHECK(sx127x_set_preamble_length(8, (*fixture)->device));
   } else if (modulation == SX127x_MODULATION_FSK) {
