@@ -1356,6 +1356,13 @@ int sx127x_fsk_get_fdev(sx127x *device, float *frequency_deviation) {
   return SX127X_OK;
 }
 
+int sx127x_ook_get_ook_thresh_type(sx127x *device, sx127x_ook_thresh_type_t *type) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGOOKPEAK, &device->spi_device, &raw));
+  *type = raw & 0b00011000;
+  return SX127X_OK;
+}
+
 int sx127x_ook_rx_set_peak_mode(sx127x_ook_peak_thresh_step_t step, uint8_t floor_threshold, sx127x_ook_peak_thresh_dec_t decrement, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_OOK);
   ERROR_CHECK(sx127x_shadow_spi_write_register(REGOOKFIX, &floor_threshold, 1, &device->spi_device));
@@ -1390,6 +1397,14 @@ int sx127x_ook_rx_set_avg_mode(sx127x_ook_avg_offset_t avg_offset, sx127x_ook_av
   CHECK_MODULATION(device, SX127x_MODULATION_OOK);
   ERROR_CHECK(sx127x_append_register(REGOOKAVG, (avg_offset | avg_thresh), 0b11110000, &device->spi_device));
   return sx127x_append_register(REGOOKPEAK, 0b00010000, 0b11100111, &device->spi_device);
+}
+
+int sx127x_ook_rx_get_avg_mode(sx127x *device, sx127x_ook_avg_offset_t *avg_offset, sx127x_ook_avg_thresh_t *avg_thresh) {
+  uint8_t raw;
+  ERROR_CHECK(sx127x_read_register(REGOOKAVG, &device->spi_device, &raw));
+  *avg_offset = raw & 0b1100;
+  *avg_thresh = raw & 0b0011;
+  return SX127X_OK;
 }
 
 int sx127x_fsk_ook_rx_set_collision_restart(bool enable, uint8_t threshold, sx127x *device) {

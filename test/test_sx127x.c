@@ -529,6 +529,9 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_ARG, sx127x_fsk_ook_set_bitrate(800, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, device));
+  sx127x_ook_thresh_type_t thresh_type;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_get_ook_thresh_type(device, &thresh_type));
+  TEST_ASSERT_EQUAL(SX127X_OOK_PEAK, thresh_type);
   sx127x_ook_peak_thresh_step_t step;
   uint8_t floor_threshold;
   sx127x_ook_peak_thresh_dec_t decrement;
@@ -551,13 +554,20 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL(SX127X_PA_RAMP_10, pa_ramp);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_fixed_mode(0x11, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_get_ook_thresh_type(device, &thresh_type));
+  TEST_ASSERT_EQUAL(SX127X_OOK_FIXED, thresh_type);
   uint8_t fixed_threshold;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_get_fixed_mode(device, &fixed_threshold));
   TEST_ASSERT_EQUAL_INT(0x11, fixed_threshold);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_set_avg_mode(SX127X_2_DB, SX127X_4_PI, device));
-  TEST_ASSERT_EQUAL_INT(0b00010000, registers[0x14]);
-  TEST_ASSERT_EQUAL_INT(0b00000110, registers[0x16]);
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_get_ook_thresh_type(device, &thresh_type));
+  TEST_ASSERT_EQUAL(SX127X_OOK_AVG, thresh_type);
+  sx127x_ook_avg_offset_t avg_offset;
+  sx127x_ook_avg_thresh_t avg_thresh;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_ook_rx_get_avg_mode(device, &avg_offset, &avg_thresh));
+  TEST_ASSERT_EQUAL(SX127X_2_DB, avg_offset);
+  TEST_ASSERT_EQUAL(SX127X_4_PI, avg_thresh);
 
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_preamble_length(8, device));
   uint16_t preamble_length;
