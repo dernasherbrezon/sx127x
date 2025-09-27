@@ -101,7 +101,7 @@ int dump_fsk_registers(const uint8_t *regs) {
   printf("\tFdev=%f\n", freq_deviation);
   uint64_t freq = (((uint64_t) regs[0x06]) << 16) | (((uint64_t) regs[0x07]) << 8) | (regs[0x08]);
   printf("0x06: RegFr:\n");
-  printf("\tFrf=%" PRIu64 "\n", ((freq * 32000000) / (1 << 19)));
+  printf("\tFrf=%" PRIu64 "\n", (uint64_t) (freq * 32000000) >> 19);
   printf("0x09: RegPaConfig:\n");
   value = regs[0x09];
   if ((value & 0b10000000) == 0b10000000) {

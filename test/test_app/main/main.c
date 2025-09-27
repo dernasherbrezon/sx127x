@@ -113,7 +113,7 @@ void print_registers() {
     if (i != 0) {
       printf(",");
     }
-    printf("%d", registers[i]);
+    printf("0x%02x", registers[i]);
   }
   printf("\n");
 }
@@ -125,15 +125,7 @@ TEST_CASE("sx127x_test_fsk_ook_registers", "[fsk]") {
 
 TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
-  uint8_t registers[MAX_NUMBER_OF_REGISTERS];
-  sx127x_dump_registers(registers, fixture->device);
-  for (int i = 0; i < sizeof(registers); i++) {
-    if (i != 0) {
-      printf(",");
-    }
-    printf("%d", registers[i]);
-  }
-  printf("\n");
+  print_registers();
 }
 
 TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
