@@ -97,7 +97,6 @@ int sx127x_fixture_create(sx127x_fixture_config_t *config, sx127x_modulation_t m
   ERROR_CHECK(gpio_reset_pin((gpio_num_t) config->rst));
 
   ERROR_CHECK(sx127x_fixture_create_base(config, fixture));
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_SLEEP, modulation, (*fixture)->device));
   ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, modulation, (*fixture)->device));
   ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, (*fixture)->device));
   ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G6, (*fixture)->device));
