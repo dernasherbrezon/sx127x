@@ -8,6 +8,7 @@ void test_registers_fsk_ook(sx127x *device) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_opmod(device, &mode, &modulation), "unable to sx127x_get_opmod");
   TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODE_SLEEP, mode, "invalid mode");
   TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODULATION_FSK, modulation, "invalid modulation");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device), "unable to sx127x_set_opmod");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_frequency(868200012, device), "unable to sx127x_set_frequency");
   uint64_t frequency;
@@ -177,6 +178,7 @@ void test_registers_lora(sx127x *device) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_opmod(device, &mode, &modulation), "unable to sx127x_get_opmod LORA");
   TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODE_SLEEP, mode, "invalid mode");
   TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODULATION_LORA, modulation, "invalid modulation");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device), "unable to sx127x_set_opmod LORA");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_frequency(868200012, device), "unable to sx127x_set_frequency LORA");
   uint64_t frequency;
