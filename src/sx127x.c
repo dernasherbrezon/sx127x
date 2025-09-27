@@ -587,10 +587,14 @@ int sx127x_create(void *spi_device, sx127x *result) {
   if (result->chip_version != SX1276_VERSION && result->chip_version != SX1272_VERSION) {
     return SX127X_ERR_INVALID_VERSION;
   }
-  result->active_modem = SX127x_MODULATION_LORA;
+  // read current modem state
+  // there is no way for application to determine it's state on startup or after deep sleep
+  code = sx127x_get_opmod(result, &result->opmod, &result->active_modem);
+  if (code != SX127X_OK) {
+    return code;
+  }
   result->fsk_ook_format = SX127X_VARIABLE;
   result->fsk_rssi_available = false;
-  result->opmod = SX127x_MODE_STANDBY;
   result->fsk_crc_type = SX127X_CRC_CCITT;
   result->use_implicit_header = false;
   result->expected_packet_length = 0;
@@ -598,6 +602,10 @@ int sx127x_create(void *spi_device, sx127x *result) {
 }
 
 int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x *device) {
+  // go to sleep if requested modulation changes LongRangeMode
+  if (((device->active_modem & 0b10000000) != (modulation & 0b10000000)) && device->opmod != SX127x_MODE_SLEEP) {
+    ERROR_CHECK(sx127x_append_register(REGOPMODE, SX127x_MODE_SLEEP, 0b11111000, &device->spi_device));
+  }
   // enforce DIO mappings for RX and TX
   if (modulation == SX127x_MODULATION_LORA) {
     if (opmod == SX127x_MODE_RX_CONT || opmod == SX127x_MODE_RX_SINGLE) {
