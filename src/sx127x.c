@@ -605,6 +605,7 @@ int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x
   // go to sleep if requested modulation changes LongRangeMode
   if (((device->active_modem & 0b10000000) != (modulation & 0b10000000)) && device->opmod != SX127x_MODE_SLEEP) {
     ERROR_CHECK(sx127x_append_register(REGOPMODE, SX127x_MODE_SLEEP, 0b11111000, &device->spi_device));
+    ERROR_CHECK(sx127x_append_register(REGOPMODE, modulation, 0b00011111, &device->spi_device));
   }
   // enforce DIO mappings for RX and TX
   if (modulation == SX127x_MODULATION_LORA) {
