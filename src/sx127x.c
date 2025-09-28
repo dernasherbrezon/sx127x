@@ -1106,7 +1106,7 @@ int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t *header, sx127x *devic
     return sx127x_append_register(REGMODEMCONFIG2, value, 0b11111011, &device->spi_device);
   } else {
     uint8_t value = (header->enable_crc ? 0b00000010 : 0b00000000);
-    return sx127x_append_register(REGMODEMCONFIG1, sx1272_cr[header->coding_rate] | 0b00000100 | value, 0b11000001, &device->spi_device);
+    return sx127x_append_register(REGMODEMCONFIG1, sx1272_cr[header->coding_rate] | 0b00000000 | value, 0b11000001, &device->spi_device);
   }
 }
 

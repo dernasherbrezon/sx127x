@@ -305,6 +305,7 @@ void test_fsk_ook_tx() {
 }
 
 void test_lora_tx() {
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
   sx127x_tx_set_callback(tx_callback, device, device);
 
   transmitted = 0;
