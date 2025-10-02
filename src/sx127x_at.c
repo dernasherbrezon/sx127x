@@ -13,15 +13,8 @@
   do {                           \
     int __err_rc = (x);          \
     if (__err_rc != SX127X_OK) { \
-      snprintf(output, output_len, "operation failed %d\r\nERROR\r\n", __err_rc);                           \
       return __err_rc;           \
     }                            \
-  } while (0)
-
-#define ERROR_CHECK_SETTER(x)           \
-  do {                           \
-    int __err_rc = (x);                 \
-    snprintf(output, output_len, __err_rc == SX127X_OK ? "OK\r\n" : "%d\r\nERROR\r\n", __err_rc);                                    \
   } while (0)
 
 // Helper function to convert string to sx127x_mode_t
@@ -138,15 +131,13 @@ static int split_params(char *input, char *params[]) {
   return count;
 }
 
-int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t output_len) {
+static int sx127x_at_handler_impl(sx127x *device, const char *input, char *output, size_t output_len) {
   if (!device || !input || !output) {
-    snprintf(output, output_len, "invalid argument\r\nERROR\r\n");
     return SX127X_ERR_INVALID_ARG;
   }
 
   // Check for AT+ prefix
   if (strncmp(input, "AT+", 3) != 0) {
-    snprintf(output, output_len, "not an at command\r\nERROR\r\n");
     return SX127X_ERR_INVALID_ARG;
   }
 
@@ -177,37 +168,34 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
       ERROR_CHECK(sx127x_get_opmod(device, &mode, &modulation));
       const char *mode_str = format_mode(mode);
       const char *mod_str = format_modulation(modulation);
-      snprintf(output, output_len, "%s,%s\r\nOK\r\n", mode_str, mod_str);
+      snprintf(output, output_len, "%s,%s\r\n", mode_str, mod_str);
+      return SX127X_OK;
     } else {
       if (param_count != 2) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       sx127x_mode_t mode = parse_mode(params[0]);
       sx127x_modulation_t modulation = parse_modulation(params[1]);
       if (mode == -1 || modulation == -1) {
-        snprintf(output, output_len, "invalid param\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_set_opmod(mode, modulation, device));
+      return sx127x_set_opmod(mode, modulation, device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "FREQ") == 0) {
     if (is_query) {
       uint64_t frequency;
       ERROR_CHECK(sx127x_get_frequency(device, &frequency));
-      snprintf(output, output_len, "%" PRIu64 "\r\nOK\r\n", frequency);
+      snprintf(output, output_len, "%" PRIu64 "\r\n", frequency);
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       uint64_t frequency = atoll(params[0]);
-      ERROR_CHECK_SETTER(sx127x_set_frequency(frequency, device));
+      return sx127x_set_frequency(frequency, device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "LBW") == 0) {
@@ -215,81 +203,75 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
       sx127x_bw_t bandwidth;
       ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth));
       uint32_t bw_hz = sx127x_bandwidth_to_hz(bandwidth);
-      snprintf(output, output_len, "%" PRIu32 "\r\nOK\r\n", bw_hz);
+      snprintf(output, output_len, "%" PRIu32 "\r\n", bw_hz);
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       sx127x_bw_t bandwidth = sx127x_hz_to_bandwidth(atoi(params[0]));
       if (bandwidth == -1) {
-        snprintf(output, output_len, "invalid bandwidth\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_lora_set_bandwidth(bandwidth, device));
+      return sx127x_lora_set_bandwidth(bandwidth, device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "SF") == 0) {
     if (is_query) {
       sx127x_sf_t sf;
       ERROR_CHECK(sx127x_lora_get_spreading_factor(device, &sf));
-      snprintf(output, output_len, "%d\r\nOK\r\n", (sf >> 4));
+      snprintf(output, output_len, "%d\r\n", (sf >> 4));
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       sx127x_sf_t sf = (atoi(params[0]) << 4);
-      ERROR_CHECK_SETTER(sx127x_lora_set_spreading_factor(sf, device));
+      return sx127x_lora_set_spreading_factor(sf, device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "LDO") == 0) {
     if (is_query) {
       bool enabled;
       ERROR_CHECK(sx127x_lora_get_low_datarate_optimization(device, &enabled));
-      snprintf(output, output_len, "%s\r\nOK\r\n", enabled ? "TRUE" : "FALSE");
+      snprintf(output, output_len, "%s\r\n", enabled ? "TRUE" : "FALSE");
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_lora_set_low_datarate_optimization(parse_bool(params[0]), device));
+      return sx127x_lora_set_low_datarate_optimization(parse_bool(params[0]), device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "LSW") == 0) {
     if (is_query) {
       uint8_t value;
       ERROR_CHECK(sx127x_lora_get_syncword(device, &value));
-      snprintf(output, output_len, "%d\r\nOK\r\n", value);
+      snprintf(output, output_len, "%d\r\n", value);
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_lora_set_syncword(atoi(params[0]), device));
+      return sx127x_lora_set_syncword(atoi(params[0]), device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "PLEN") == 0) {
     if (is_query) {
       uint16_t value;
       ERROR_CHECK(sx127x_get_preamble_length(device, &value));
-      snprintf(output, output_len, "%d\r\nOK\r\n", value);
+      snprintf(output, output_len, "%d\r\n", value);
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_set_preamble_length(atoi(params[0]), device));
+      return sx127x_set_preamble_length(atoi(params[0]), device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "IMPLHDR") == 0) {
@@ -298,19 +280,17 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
       bool enabled;
       ERROR_CHECK(sx127x_lora_get_implicit_header(device, &header, &enabled));
       if (!enabled) {
-        snprintf(output, output_len, "DISABLED\r\nOK\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       const char *cr_str = format_coding_rate(header.coding_rate);
-      snprintf(output, output_len, "%d,%d,%s\r\nOK\r\n", header.length, header.enable_crc, cr_str);
+      snprintf(output, output_len, "%d,%d,%s\r\n", header.length, header.enable_crc, cr_str);
+      return SX127X_OK;
     } else {
       if (param_count == 0) {
         // Disable implicit header
-        ERROR_CHECK_SETTER(sx127x_lora_set_implicit_header(NULL, device));
-        return SX127X_OK;
+        return sx127x_lora_set_implicit_header(NULL, device);
       }
       if (param_count != 3) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
       sx127x_implicit_header_t header;
@@ -318,30 +298,27 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
       header.enable_crc = parse_bool(params[1]);
       header.coding_rate = parse_coding_rate(params[2]);
       if (header.coding_rate == -1) {
-        snprintf(output, output_len, "invalid coding rate\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_lora_set_implicit_header(&header, device));
+      return sx127x_lora_set_implicit_header(&header, device);
     }
-    return SX127X_OK;
   }
 
   if (strcmp(cmd_name, "DUMPREG") == 0) {
-    if (is_query) {
-      uint8_t registers[MAX_NUMBER_OF_REGISTERS];
-      ERROR_CHECK(sx127x_dump_registers(registers, device));
-      for (int i = 0; i < MAX_NUMBER_OF_REGISTERS; i++) {
-        char reg_str[8];
-        snprintf(reg_str, sizeof(reg_str), "%02X", registers[i]);
-        strncat(output + strlen(output), reg_str, output_len - strlen(output) - 1);
-        if (i < MAX_NUMBER_OF_REGISTERS - 1) {
-          strncat(output + strlen(output), ",", output_len - strlen(output) - 1);
-        }
-      }
-      strncat(output + strlen(output), "\r\nOK\r\n", output_len - strlen(output) - 1);
-    } else {
-      snprintf(output + strlen(output), output_len - strlen(output), "set is not supported\r\nERROR\r\n");
+    if (!is_query) {
+      return SX127X_ERR_INVALID_ARG;
     }
+    uint8_t registers[MAX_NUMBER_OF_REGISTERS];
+    ERROR_CHECK(sx127x_dump_registers(registers, device));
+    for (int i = 0; i < MAX_NUMBER_OF_REGISTERS; i++) {
+      char reg_str[8];
+      snprintf(reg_str, sizeof(reg_str), "%02X", registers[i]);
+      strncat(output + strlen(output), reg_str, output_len - strlen(output) - 1);
+      if (i < MAX_NUMBER_OF_REGISTERS - 1) {
+        strncat(output + strlen(output), ",", output_len - strlen(output) - 1);
+      }
+    }
+    strncat(output + strlen(output), "\r\n", output_len - strlen(output) - 1);
     return SX127X_OK;
   }
 
@@ -349,15 +326,14 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
     if (is_query) {
       sx127x_gain_t value;
       ERROR_CHECK(sx127x_rx_get_lna_gain(device, &value));
-      snprintf(output, output_len, "%d\r\nOK\r\n", (value >> 5));
+      snprintf(output, output_len, "%d\r\n", (value >> 5));
+      return SX127X_OK;
     } else {
       if (param_count != 1) {
-        snprintf(output, output_len, "invalid param count\r\nERROR\r\n");
         return SX127X_ERR_INVALID_ARG;
       }
-      ERROR_CHECK_SETTER(sx127x_rx_set_lna_gain((atoi(params[0]) << 5), device));
+      return sx127x_rx_set_lna_gain((atoi(params[0]) << 5), device);
     }
-    return SX127X_OK;
   }
 
 //  if (strcmp(cmd_name, "TXPA") == 0) {
@@ -405,4 +381,18 @@ int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t ou
 //  }
 
   return SX127X_CONTINUE;
+}
+
+int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t output_len) {
+  int result = sx127x_at_handler_impl(device, input, output, output_len);
+  if (result == SX127X_ERR_INVALID_ARG) {
+    snprintf(output, output_len, "invalid argument\r\nERROR\r\n");
+  } else if (result == SX127X_CONTINUE) {
+    // do nothing
+  } else if (result == SX127X_OK) {
+    snprintf(output + strlen(output), output_len - strlen(output), "OK\r\n");
+  } else {
+    snprintf(output, output_len, "operation failed %d\r\nERROR\r\n", result);
+  }
+  return result;
 }
