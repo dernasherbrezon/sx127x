@@ -117,6 +117,26 @@ static const char *format_data_shaping(sx127x_fsk_data_shaping_t shaping) {
   }
 }
 
+static sx127x_ook_data_shaping_t parse_ook_data_shaping(const char *str) {
+  if (strcmp(str, "1BITRATE") == 0) return SX127X_1_BIT_RATE;
+  if (strcmp(str, "2BITRATE") == 0) return SX127X_2_BIT_RATE;
+  if (strcmp(str, "NONE") == 0) return SX127X_OOK_SHAPING_NONE;
+  return -1;
+}
+
+static const char *format_ook_data_shaping(sx127x_ook_data_shaping_t shaping) {
+  switch (shaping) {
+    case SX127X_1_BIT_RATE:
+      return "1BITRATE";
+    case SX127X_2_BIT_RATE:
+      return "2BITRATE";
+    case SX127X_OOK_SHAPING_NONE:
+      return "NONE";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 static sx127x_pa_ramp_t parse_pa_ramp(const char *str) {
   if (strcmp(str, "3.4ms") == 0) return SX127X_PA_RAMP_1;
   if (strcmp(str, "2ms") == 0) return SX127X_PA_RAMP_2;
@@ -821,7 +841,7 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     }
   }
 
-  if (strcmp(cmd_name, "SHAPING") == 0) {
+  if (strcmp(cmd_name, "FSKSHAPING") == 0) {
     if (is_query) {
       sx127x_fsk_data_shaping_t value;
       sx127x_pa_ramp_t pa_ramp;
@@ -841,6 +861,26 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     }
   }
 
+  if (strcmp(cmd_name, "OOKSHAPING") == 0) {
+    if (is_query) {
+      sx127x_ook_data_shaping_t value;
+      sx127x_pa_ramp_t pa_ramp;
+      ERROR_CHECK(sx127x_ook_get_data_shaping(device, &value, &pa_ramp));
+      snprintf(output, output_len, "%s,%s\r\n", format_ook_data_shaping(value), format_pa_ramp(pa_ramp));
+      return SX127X_OK;
+    } else {
+      if (param_count != 2) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_fsk_data_shaping_t value = parse_ook_data_shaping(params[0]);
+      sx127x_pa_ramp_t pa_ramp = parse_pa_ramp(params[1]);
+      if (value == -1 || pa_ramp == -1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_ook_set_data_shaping(value, pa_ramp, device);
+    }
+  }
+  
 // TODO sx127x_lora_set_frequency_hopping
 
 
