@@ -212,6 +212,64 @@ static const char *format_avg_offset(sx127x_ook_avg_offset_t offset) {
   }
 }
 
+static sx127x_rssi_smoothing_t parse_rssi_smoothing(const char *str) {
+  if (strcmp(str, "2") == 0) return SX127X_2;
+  if (strcmp(str, "4") == 0) return SX127X_4;
+  if (strcmp(str, "8") == 0) return SX127X_8;
+  if (strcmp(str, "16") == 0) return SX127X_16;
+  if (strcmp(str, "32") == 0) return SX127X_32;
+  if (strcmp(str, "64") == 0) return SX127X_64;
+  if (strcmp(str, "128") == 0) return SX127X_128;
+  if (strcmp(str, "256") == 0) return SX127X_256;
+  return -1;
+}
+
+static const char *format_rssi_smoothing(sx127x_rssi_smoothing_t rssi) {
+  switch (rssi) {
+    case SX127X_2:
+      return "2";
+    case SX127X_4:
+      return "4";
+    case SX127X_8:
+      return "8";
+    case SX127X_16:
+      return "16";
+    case SX127X_32:
+      return "32";
+    case SX127X_64:
+      return "64";
+    case SX127X_128:
+      return "128";
+    case SX127X_256:
+      return "256";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+static sx127x_rx_trigger_t parse_rx_trigger(const char *str) {
+  if (strcmp(str, "PREAMBLE") == 0) return SX127X_RX_TRIGGER_PREAMBLE;
+  if (strcmp(str, "NONE") == 0) return SX127X_RX_TRIGGER_NONE;
+  if (strcmp(str, "RSSI") == 0) return SX127X_RX_TRIGGER_RSSI;
+  if (strcmp(str, "RSSI_PREAMBLE") == 0) return SX127X_RX_TRIGGER_RSSI_PREAMBLE;
+  return -1;
+}
+
+static const char *format_rx_trigger(sx127x_rx_trigger_t trigger) {
+  switch (trigger) {
+    case SX127X_RX_TRIGGER_PREAMBLE:
+      return "PREAMBLE";
+    case SX127X_RX_TRIGGER_NONE:
+      return "NONE";
+    case SX127X_RX_TRIGGER_RSSI:
+      return "RSSI";
+    case SX127X_RX_TRIGGER_RSSI_PREAMBLE:
+      return "RSSI_PREAMBLE";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 static sx127x_ook_avg_thresh_t parse_avg_thresh(const char *str) {
   if (strcmp(str, "2pi") == 0) return SX127X_2_PI;
   if (strcmp(str, "4pi") == 0) return SX127X_4_PI;
@@ -1087,6 +1145,138 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
         return SX127X_ERR_INVALID_ARG;
       }
       return sx127x_ook_rx_set_avg_mode(value, thresh, device);
+    }
+  }
+
+  if (strcmp(cmd_name, "AFC") == 0) {
+    if (is_query) {
+      bool value;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_afc_auto(device, &value));
+      snprintf(output, output_len, "%s\r\n", value ? "TRUE" : "FALSE");
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_afc_auto(parse_bool(params[0]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "AFCBW") == 0) {
+    if (is_query) {
+      float value;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_afc_bandwidth(device, &value));
+      snprintf(output, output_len, "%f\r\n", value);
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_afc_bandwidth(atof(params[0]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "FSKBW") == 0) {
+    if (is_query) {
+      float value;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_bandwidth(device, &value));
+      snprintf(output, output_len, "%f\r\n", value);
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_bandwidth(atof(params[0]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "RSSI") == 0) {
+    if (is_query) {
+      sx127x_rssi_smoothing_t smoothing;
+      int8_t offset;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_rssi_config(device, &smoothing, &offset));
+      snprintf(output, output_len, "%s,%d\r\n", format_rssi_smoothing(smoothing), offset);
+      return SX127X_OK;
+    } else {
+      if (param_count != 2) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_rssi_smoothing_t smoothing = parse_rssi_smoothing(params[0]);
+      int8_t offset = atoi(params[1]);
+      return sx127x_fsk_ook_rx_set_rssi_config(smoothing, offset, device);
+    }
+  }
+
+  if (strcmp(cmd_name, "COLLISION") == 0) {
+    if (is_query) {
+      bool enable;
+      uint8_t threshold;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_collision_restart(device, &enable, &threshold));
+      snprintf(output, output_len, "%s,%d\r\n", enable ? "TRUE" : "FALSE", threshold);
+      return SX127X_OK;
+    } else {
+      if (param_count != 2) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_collision_restart(parse_bool(params[0]), atoi(params[1]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "TRIGGER") == 0) {
+    if (is_query) {
+      sx127x_rx_trigger_t trigger;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_trigger(device, &trigger));
+      snprintf(output, output_len, "%s\r\n", format_rx_trigger(trigger));
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_rx_trigger_t trigger = parse_rx_trigger(params[0]);
+      if (trigger == -1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_trigger(trigger, device);
+    }
+  }
+
+  if (strcmp(cmd_name, "PCONF") == 0) {
+    if (is_query) {
+      bool enable;
+      uint8_t detector_size;
+      uint8_t detector_tolerance;
+      ERROR_CHECK(sx127x_fsk_ook_rx_get_preamble_detector(device, &enable, &detector_size, &detector_tolerance));
+      snprintf(output, output_len, "%s,%d,%d\r\n", enable ? "TRUE" : "FALSE", detector_size, detector_tolerance);
+      return SX127X_OK;
+    } else {
+      if (param_count != 3) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_rx_set_preamble_detector(parse_bool(params[0]), atoi(params[1]), atoi(params[2]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "RXCAL") == 0) {
+    if (is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    if (param_count != 0) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    return sx127x_fsk_ook_rx_calibrate(device);
+  }
+
+  if (strcmp(cmd_name, "TEMP") == 0) {
+    if (is_query) {
+      int8_t temp;
+      ERROR_CHECK(sx127x_fsk_ook_get_raw_temperature(device, &temp));
+      snprintf(output, output_len, "%d\r\n", temp);
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_set_temp_monitor(parse_bool(params[0]), device);
     }
   }
 
