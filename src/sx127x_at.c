@@ -137,6 +137,152 @@ static const char *format_ook_data_shaping(sx127x_ook_data_shaping_t shaping) {
   }
 }
 
+static sx127x_preamble_type_t parse_preamble_type(const char *str) {
+  if (strcmp(str, "55") == 0) return SX127X_PREAMBLE_55;
+  if (strcmp(str, "AA") == 0) return SX127X_PREAMBLE_AA;
+  return -1;
+}
+
+static const char *format_preamble_type(sx127x_preamble_type_t preamble) {
+  switch (preamble) {
+    case SX127X_PREAMBLE_55:
+      return "55";
+    case SX127X_PREAMBLE_AA:
+      return "AA";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+sx127x_ook_peak_thresh_step_t parse_peak_step(const char *str) {
+  if (strcmp(str, "0.5db") == 0) return SX127X_0_5_DB;
+  if (strcmp(str, "1.0db") == 0) return SX127X_1_0_DB;
+  if (strcmp(str, "1.5db") == 0) return SX127X_1_5_DB;
+  if (strcmp(str, "2.0db") == 0) return SX127X_2_0_DB;
+  if (strcmp(str, "3.0db") == 0) return SX127X_3_0_DB;
+  if (strcmp(str, "4.0db") == 0) return SX127X_4_0_DB;
+  if (strcmp(str, "5.0db") == 0) return SX127X_5_0_DB;
+  if (strcmp(str, "6.0db") == 0) return SX127X_6_0_DB;
+  return -1;
+}
+
+static const char *format_peak_step(sx127x_ook_peak_thresh_step_t step) {
+  switch (step) {
+    case SX127X_0_5_DB:
+      return "0.5db";
+    case SX127X_1_0_DB:
+      return "1.0db";
+    case SX127X_1_5_DB:
+      return "1.5db";
+    case SX127X_2_0_DB:
+      return "2.0db";
+    case SX127X_3_0_DB:
+      return "3.0db";
+    case SX127X_4_0_DB:
+      return "4.0db";
+    case SX127X_5_0_DB:
+      return "5.0db";
+    case SX127X_6_0_DB:
+      return "6.0db";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+static sx127x_ook_avg_offset_t parse_avg_offset(const char *str) {
+  if (strcmp(str, "0db") == 0) return SX127X_0_DB;
+  if (strcmp(str, "2db") == 0) return SX127X_2_DB;
+  if (strcmp(str, "4db") == 0) return SX127X_4_DB;
+  if (strcmp(str, "6db") == 0) return SX127X_6_DB;
+  return -1;
+}
+
+static const char *format_avg_offset(sx127x_ook_avg_offset_t offset) {
+  switch (offset) {
+    case SX127X_0_DB:
+      return "0db";
+    case SX127X_2_DB:
+      return "2db";
+    case SX127X_4_DB:
+      return "4db";
+    case SX127X_6_DB:
+      return "6db";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+static sx127x_ook_avg_thresh_t parse_avg_thresh(const char *str) {
+  if (strcmp(str, "2pi") == 0) return SX127X_2_PI;
+  if (strcmp(str, "4pi") == 0) return SX127X_4_PI;
+  if (strcmp(str, "8pi") == 0) return SX127X_8_PI;
+  if (strcmp(str, "32pi") == 0) return SX127X_32_PI;
+  return -1;
+}
+
+static const char *format_avg_thresh(sx127x_ook_avg_thresh_t thresh) {
+  switch (thresh) {
+    case SX127X_2_PI:
+      return "2pi";
+    case SX127X_4_PI:
+      return "4pi";
+    case SX127X_8_PI:
+      return "8pi";
+    case SX127X_32_PI:
+      return "32pi";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+static sx127x_ook_peak_thresh_dec_t parse_peak_dec(const char *str) {
+  if (strcmp(str, "1.1") == 0) return SX127X_1_1_CHIP;
+  if (strcmp(str, "1.2") == 0) return SX127X_1_2_CHIP;
+  if (strcmp(str, "1.4") == 0) return SX127X_1_4_CHIP;
+  if (strcmp(str, "1.8") == 0) return SX127X_1_8_CHIP;
+  if (strcmp(str, "2.1") == 0) return SX127X_2_1_CHIP;
+  if (strcmp(str, "4.1") == 0) return SX127X_4_1_CHIP;
+  if (strcmp(str, "8.1") == 0) return SX127X_8_1_CHIP;
+  if (strcmp(str, "16.1") == 0) return SX127X_16_1_CHIP;
+  return -1;
+}
+
+static const char *format_peak_dec(sx127x_ook_peak_thresh_dec_t dec) {
+  switch (dec) {
+    case SX127X_1_1_CHIP:
+      return "1.1";
+    case SX127X_1_2_CHIP:
+      return "1.2";
+    case SX127X_1_4_CHIP:
+      return "1.4";
+    case SX127X_1_8_CHIP:
+      return "1.8";
+    case SX127X_2_1_CHIP:
+      return "2.1";
+    case SX127X_4_1_CHIP:
+      return "4.1";
+    case SX127X_8_1_CHIP:
+      return "8.1";
+    case SX127X_16_1_CHIP:
+      return "16.1";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+static const char *format_thresh_type(sx127x_ook_thresh_type_t type) {
+  switch (type) {
+    case SX127X_OOK_FIXED:
+      return "FIXED";
+    case SX127X_OOK_AVG:
+      return "AVG";
+    case SX127X_OOK_PEAK:
+      return "PEAK";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 static sx127x_pa_ramp_t parse_pa_ramp(const char *str) {
   if (strcmp(str, "3.4ms") == 0) return SX127X_PA_RAMP_1;
   if (strcmp(str, "2ms") == 0) return SX127X_PA_RAMP_2;
@@ -196,7 +342,6 @@ static const char *format_pa_ramp(sx127x_pa_ramp_t pa_ramp) {
   }
 }
 
-// Helper function to convert string to sx127x_mode_t
 static sx127x_mode_t parse_mode(const char *str) {
   if (strcmp(str, "SLEEP") == 0) return SX127x_MODE_SLEEP;
   if (strcmp(str, "STANDBY") == 0) return SX127x_MODE_STANDBY;
@@ -232,7 +377,6 @@ static const char *format_mode(sx127x_mode_t mode) {
   }
 }
 
-// Helper function to convert string to sx127x_modulation_t
 static sx127x_modulation_t parse_modulation(const char *str) {
   if (strcmp(str, "LORA") == 0) return SX127x_MODULATION_LORA;
   if (strcmp(str, "FSK") == 0) return SX127x_MODULATION_FSK;
@@ -253,22 +397,6 @@ static const char *format_modulation(sx127x_modulation_t modulation) {
   }
 }
 
-// Helper function to convert string to sx127x_bw_t
-static sx127x_bw_t parse_bandwidth(const char *str) {
-  if (strcmp(str, "7800") == 0) return SX127x_BW_7800;
-  if (strcmp(str, "10400") == 0) return SX127x_BW_10400;
-  if (strcmp(str, "15600") == 0) return SX127x_BW_15600;
-  if (strcmp(str, "20800") == 0) return SX127x_BW_20800;
-  if (strcmp(str, "31250") == 0) return SX127x_BW_31250;
-  if (strcmp(str, "41700") == 0) return SX127x_BW_41700;
-  if (strcmp(str, "62500") == 0) return SX127x_BW_62500;
-  if (strcmp(str, "125000") == 0) return SX127x_BW_125000;
-  if (strcmp(str, "250000") == 0) return SX127x_BW_250000;
-  if (strcmp(str, "500000") == 0) return SX127x_BW_500000;
-  return -1; // Invalid
-}
-
-// Helper function to convert string to sx127x_cr_t
 static sx127x_cr_t parse_coding_rate(const char *str) {
   if (strcmp(str, "4_5") == 0) return SX127x_CR_4_5;
   if (strcmp(str, "4_6") == 0) return SX127x_CR_4_6;
@@ -292,7 +420,6 @@ static const char *format_coding_rate(sx127x_cr_t cr) {
   }
 }
 
-// Helper function to convert string to sx127x_pa_pin_t
 static sx127x_pa_pin_t parse_pa_pin(const char *str) {
   if (strcmp(str, "RFO") == 0) return SX127x_PA_PIN_RFO;
   if (strcmp(str, "BOOST") == 0) return SX127x_PA_PIN_BOOST;
@@ -310,12 +437,10 @@ static const char *format_pa_pin(sx127x_pa_pin_t pin) {
   }
 }
 
-// Helper function to parse boolean
 static bool parse_bool(const char *str) {
   return (strcmp(str, "1") == 0 || strcmp(str, "TRUE") == 0);
 }
 
-// Helper function to split parameters
 static int split_params(char *input, char *params[]) {
   int count = 0;
   char *token = strtok(input, ",");
@@ -880,31 +1005,92 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
       return sx127x_ook_set_data_shaping(value, pa_ramp, device);
     }
   }
-  
+
+  if (strcmp(cmd_name, "PTYPE") == 0) {
+    if (is_query) {
+      sx127x_preamble_type_t value;
+      ERROR_CHECK(sx127x_fsk_ook_get_preamble_type(device, &value));
+      snprintf(output, output_len, "%s\r\n", format_preamble_type(value));
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_preamble_type_t value = parse_preamble_type(params[0]);
+      if (value == -1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_fsk_ook_set_preamble_type(value, device);
+    }
+  }
+
+  if (strcmp(cmd_name, "OOKTYPE") == 0) {
+    if (!is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    sx127x_ook_thresh_type_t value;
+    ERROR_CHECK(sx127x_ook_get_ook_thresh_type(device, &value));
+    snprintf(output, output_len, "%s\r\n", format_thresh_type(value));
+    return SX127X_OK;
+  }
+
+  if (strcmp(cmd_name, "PEAKMODE") == 0) {
+    if (is_query) {
+      sx127x_ook_peak_thresh_step_t value;
+      uint8_t floor_threshold;
+      sx127x_ook_peak_thresh_dec_t decrement;
+      ERROR_CHECK(sx127x_ook_rx_get_peak_mode(device, &value, &floor_threshold, &decrement));
+      snprintf(output, output_len, "%s,%d,%s\r\n", format_peak_step(value), floor_threshold, format_peak_dec(decrement));
+      return SX127X_OK;
+    } else {
+      if (param_count != 3) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_ook_peak_thresh_step_t value = parse_peak_step(params[0]);
+      uint8_t floor_threshold = atoi(params[1]);
+      sx127x_ook_peak_thresh_dec_t decrement = parse_peak_dec(params[2]);
+      if (value == -1 || decrement == -1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_ook_rx_set_peak_mode(value, floor_threshold, decrement, device);
+    }
+  }
+
+  if (strcmp(cmd_name, "FIXEDMODE") == 0) {
+    if (is_query) {
+      uint8_t value;
+      ERROR_CHECK(sx127x_ook_rx_get_fixed_mode(device, &value));
+      snprintf(output, output_len, "%d\r\n", value);
+      return SX127X_OK;
+    } else {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_ook_rx_set_fixed_mode(atoi(params[0]), device);
+    }
+  }
+
+  if (strcmp(cmd_name, "AVGMODE") == 0) {
+    if (is_query) {
+      sx127x_ook_avg_offset_t value;
+      sx127x_ook_avg_thresh_t thresh;
+      ERROR_CHECK(sx127x_ook_rx_get_avg_mode(device, &value, &thresh));
+      snprintf(output, output_len, "%s,%s\r\n", format_avg_offset(value), format_avg_thresh(thresh));
+      return SX127X_OK;
+    } else {
+      if (param_count != 2) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      sx127x_ook_avg_offset_t value = parse_avg_offset(params[0]);
+      sx127x_ook_avg_thresh_t thresh = parse_avg_thresh(params[1]);
+      if (value == -1 || thresh == -1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_ook_rx_set_avg_mode(value, thresh, device);
+    }
+  }
+
 // TODO sx127x_lora_set_frequency_hopping
-
-
-//  else if (
-//      strcmp(cmd_name,
-//             "TX") == 0) {
-//    if (param_count < 1) {
-//      snprintf(output + strlen(output), output_len - strlen(output), "ERROR,INVALID_PARAM_COUNT");
-//      return;
-//    }
-//    uint8_t data[CONFIG_SX127X_MAX_PACKET_SIZE];
-//    uint8_t data_length = 0;
-//    // Convert hex string to binary
-//    for (int i = 0; i < strlen(params[0]) && data_length < CONFIG_SX127X_MAX_PACKET_SIZE; i += 2) {
-//      char hex[3] = {params[0][i], params[0][i + 1], '\0'};
-//      data[data_length++] = (uint8_t) strtol(hex, NULL, 16);
-//    }
-//    int result = (device->active_modem == SX127x_MODULATION_LORA) ?
-//                 sx127x_lora_tx_set_for_transmission(data, data_length, device) :
-//                 sx127x_fsk_ook_tx_set_for_transmission(data, data_length, device);
-//    snprintf(output + strlen(output), output_len - strlen(output), result == SX127X_OK ? "OK\r\n" : "ERROR,%d", result);
-//  } else {
-//    snprintf(output, output_len, "ERROR,UNKNOWN_COMMAND");
-//  }
 
   return SX127X_CONTINUE;
 }
