@@ -35,13 +35,14 @@
     }                         \
   } while (0)
 
-esp_err_t uart_at_handler_create(sx127x *device, uart_at_handler_t **handler) {
+esp_err_t uart_at_handler_create(int (*extra_callback)(sx127x *device, const char *input, char *output, size_t output_len), sx127x *device, uart_at_handler_t **handler) {
   uart_at_handler_t *result = malloc(sizeof(uart_at_handler_t));
   if (result == NULL) {
     return ESP_ERR_NO_MEM;
   }
   result->uart_port_num = CONFIG_AT_UART_PORT_NUM;
   result->device = device;
+  result->extra_callback = extra_callback;
   result->buffer = malloc(sizeof(uint8_t) * (CONFIG_AT_UART_BUFFER_LENGTH + 1)); // 1 is for \0
   memset(result->buffer, 0, (CONFIG_AT_UART_BUFFER_LENGTH + 1));
   if (result->buffer == NULL) {
@@ -74,6 +75,9 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
   uart_event_t event;
   size_t current_index = 0;
   int pattern_length = 0;
+  char output[513];
+  size_t output_length = 512;
+  memset(output, 0, output_length + 1);
   while (1) {
     if (xQueueReceive(handler->uart_queue, (void *) &event, (TickType_t) portMAX_DELAY)) {
       switch (event.type) {
@@ -128,10 +132,12 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
         found = true;
       }
       if (found && current_index > 0) {
-        char output[512];
-        int code = sx127x_at_handler(handler->device, handler->buffer, output, 512);
+        int code = sx127x_at_handler(handler->device, handler->buffer, output, output_length);
+        if (code == SX127X_CONTINUE && handler->extra_callback != NULL) {
+          code = handler->extra_callback(handler->device, handler->buffer, output, output_length);
+        }
         if (code == SX127X_CONTINUE) {
-          snprintf(output, 512, "unsupported command\r\nERROR\r\n");
+          snprintf(output, output_length, "unsupported command\r\nERROR\r\n");
         }
         uart_at_handler_send(output, strlen(output), handler);
         current_index = 0;

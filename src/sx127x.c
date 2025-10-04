@@ -888,7 +888,7 @@ int sx127x_lora_get_implicit_header(sx127x *device, sx127x_implicit_header_t *he
 
 int sx127x_lora_set_frequency_hopping(uint8_t period, uint64_t *frequencies, uint8_t frequencies_length, sx127x *device) {
   CHECK_MODULATION(device, SX127x_MODULATION_LORA);
-  if (frequencies == NULL || frequencies_length == 0) {
+  if (period != 0 && (frequencies == NULL || frequencies_length == 0)) {
     return SX127X_ERR_INVALID_ARG;
   }
   device->frequencies = frequencies;

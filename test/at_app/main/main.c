@@ -13,6 +13,9 @@
 #include "uart_at.h"
 #include <string.h>
 
+#define MAX_INPUT_LEN 256
+#define MAX_PARAM_COUNT 10
+
 // TTGO lora32 v2.1 1.6.1
 #define SCK 5
 #define MISO 19
@@ -56,6 +59,66 @@ static void reset() {
   ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
 }
 
+static int split_params(char *input, char *params[]) {
+  int count = 0;
+  char *token = strtok(input, ",");
+  while (token && count < MAX_PARAM_COUNT) {
+    params[count++] = token;
+    token = strtok(NULL, ",");
+  }
+  return count;
+}
+
+static int extra_at_handler_impl(sx127x *device, const char *input, char *output, size_t output_len) {
+  // Check for AT+ prefix
+  if (strncmp(input, "AT+", 3) != 0) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+
+  // Copy input to avoid modifying the original
+  char cmd[MAX_INPUT_LEN];
+  strncpy(cmd, input + 3, sizeof(cmd) - 1);
+  cmd[sizeof(cmd) - 1] = '\0';
+
+  // Split command and parameters
+  char *cmd_name = strtok(cmd, "=");
+  char *param_str = strtok(NULL, "=");
+  bool is_query = (cmd_name && cmd_name[strlen(cmd_name) - 1] == '?');
+  if (is_query) {
+    cmd_name[strlen(cmd_name) - 1] = '\0'; // Remove '?'
+  }
+
+  char *params[MAX_PARAM_COUNT];
+  int param_count = 0;
+  if (param_str) {
+    param_count = split_params(param_str, params);
+  }
+
+  if (strcmp(cmd_name, "RESET") == 0) {
+    if (is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    reset();
+    return SX127X_OK;
+  }
+
+  return SX127X_CONTINUE;
+}
+
+static int extra_at_handler(sx127x *device, const char *input, char *output, size_t output_len) {
+  int result = extra_at_handler_impl(device, input, output, output_len);
+  if (result == SX127X_ERR_INVALID_ARG) {
+    snprintf(output, output_len, "invalid argument\r\nERROR\r\n");
+  } else if (result == SX127X_CONTINUE) {
+    // do nothing
+  } else if (result == SX127X_OK) {
+    snprintf(output + strlen(output), output_len - strlen(output), "OK\r\n");
+  } else {
+    snprintf(output, output_len, "operation failed %d\r\nERROR\r\n", result);
+  }
+  return result;
+}
+
 void app_main(void) {
   spi_bus_config_t bus_config = {
       .mosi_io_num = MOSI,
@@ -84,6 +147,6 @@ void app_main(void) {
   sx127x_rx_set_callback(rx_callback, device, device);
   sx127x_tx_set_callback(tx_callback, device, device);
   reset();
-  ESP_ERROR_CHECK(uart_at_handler_create(device, &handler));
+  ESP_ERROR_CHECK(uart_at_handler_create(extra_at_handler, device, &handler));
   xTaskCreate(uart_rx_task, "uart_rx_task", 1024 * 4, handler, configMAX_PRIORITIES - 1, NULL);
 }

@@ -11,9 +11,11 @@ typedef struct {
   char *buffer;
   sx127x *device;
   QueueHandle_t uart_queue;
+
+  int (*extra_callback)(sx127x *device, const char *input, char *output, size_t output_len);
 } uart_at_handler_t;
 
-esp_err_t uart_at_handler_create(sx127x *device, uart_at_handler_t **result);
+esp_err_t uart_at_handler_create(int (*extra_callback)(sx127x *device, const char *input, char *output, size_t output_len), sx127x *device, uart_at_handler_t **result);
 
 void uart_at_handler_process(uart_at_handler_t *handler);
 

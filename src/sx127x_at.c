@@ -17,6 +17,9 @@
     }                            \
   } while (0)
 
+uint64_t *frequencies = NULL;
+uint8_t frequencies_length = 0;
+
 static sx127x_packet_encoding_t parse_packet_encoding(const char *str) {
   if (strcmp(str, "MANCHESTER") == 0) return SX127X_MANCHESTER;
   if (strcmp(str, "NRZ") == 0) return SX127X_NRZ;
@@ -1280,7 +1283,37 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     }
   }
 
-// TODO sx127x_lora_set_frequency_hopping
+  if (strcmp(cmd_name, "FREQHOP") == 0) {
+    if (is_query) {
+      uint8_t period;
+      ERROR_CHECK(sx127x_lora_get_frequency_hopping(device, &period));
+      snprintf(output + strlen(output), output_len - strlen(output) - 1, "%d,", period);
+      for (int i = 0; i < frequencies_length; i++) {
+        snprintf(output + strlen(output), output_len - strlen(output) - 1, "%" PRIu64, frequencies[i]);
+        if (i < frequencies_length - 1) {
+          snprintf(output + strlen(output), output_len - strlen(output) - 1, ",");
+        }
+      }
+      snprintf(output + strlen(output), output_len - strlen(output) - 1, "\r\n");
+      return SX127X_OK;
+    } else {
+      if (param_count == 0) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      uint8_t period = atoi(params[0]);
+      frequencies_length = param_count - 1;
+      if (frequencies_length > 0 && frequencies != NULL) {
+        free(frequencies);
+      }
+      if (frequencies_length > 0) {
+        frequencies = malloc(sizeof(uint64_t) * frequencies_length);
+        for (int i = 0; i < frequencies_length; i++) {
+          frequencies[i] = atoll(params[i + 1]);
+        }
+      }
+      return sx127x_lora_set_frequency_hopping(period, frequencies, frequencies_length, device);
+    }
+  }
 
   return SX127X_CONTINUE;
 }
