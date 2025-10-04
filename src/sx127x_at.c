@@ -636,6 +636,9 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
       sx127x_bw_t bandwidth;
       ERROR_CHECK(sx127x_lora_get_bandwidth(device, &bandwidth));
       uint32_t bw_hz = sx127x_bandwidth_to_hz(bandwidth);
+      if (bw_hz == 0) {
+        return SX127X_ERR_INVALID_ARG;
+      }
       snprintf(output, output_len, "%" PRIu32 "\r\n", bw_hz);
       return SX127X_OK;
     } else {

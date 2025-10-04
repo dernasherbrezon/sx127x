@@ -288,7 +288,7 @@ sx127x_bw_t sx127x_hz_to_bandwidth(uint32_t bandwidth_hz) {
     case 500000:
       return SX127x_BW_500000;
     default:
-      return SX127x_BW_125000;
+      return -1;
   }
 }
 

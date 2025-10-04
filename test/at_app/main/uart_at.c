@@ -132,6 +132,7 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
         found = true;
       }
       if (found && current_index > 0) {
+        memset(output, 0, output_length + 1);
         int code = sx127x_at_handler(handler->device, handler->buffer, output, output_length);
         if (code == SX127X_CONTINUE && handler->extra_callback != NULL) {
           code = handler->extra_callback(handler->device, handler->buffer, output, output_length);
