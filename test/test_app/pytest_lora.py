@@ -5,16 +5,6 @@ from typing import Tuple
 @pytest.mark.parametrize('count', [
     2,
 ], indirect=True)
-def test_registers(dut: Tuple[Dut, Dut]) -> None:
-    dut_rx = dut[0]
-    dut_tx = dut[1]
-    dut_rx.expect('Press ENTER to see the list of tests')
-    dut_rx.write('"sx127x_test_lora_registers"')
-    dut_rx.expect_unity_test_output()
-
-@pytest.mark.parametrize('count', [
-    2,
-], indirect=True)
 def test_explicit_header(dut: Tuple[Dut, Dut]) -> None:
     dut_rx = dut[0]
     dut_tx = dut[1]

@@ -23,12 +23,14 @@ public class Sx127x {
 
 	private final String portDescriptor;
 	private final int timeout;
+	private final String id;
 
 	private SerialPort port;
 
-	public Sx127x(String portDescriptor, int timeout) {
+	public Sx127x(String portDescriptor, int timeout, String id) {
 		this.portDescriptor = portDescriptor;
 		this.timeout = timeout;
+		this.id = id;
 	}
 
 	public void start() {
@@ -178,6 +180,10 @@ public class Sx127x {
 		sendRequest("AT+OCP=" + milliamps);
 	}
 
+	public void reset() {
+		sendRequest("AT+RESET=");
+	}
+
 	public Integer sx127x_tx_get_ocp() {
 		String param = query("AT+OCP?");
 		if (param.equalsIgnoreCase("DISABLED")) {
@@ -218,9 +224,34 @@ public class Sx127x {
 		return Integer.parseInt(query("AT+PPM?"));
 	}
 
+	public void sx127x_lora_tx_set_for_transmission(String hexBytes) {
+		sendRequest("AT+LORATX=" + hexBytes);
+	}
+
+	public void tx(sx127x_modulation_t modulation) {
+		sendRequest("AT+TX=" + modulation);
+	}
+
+	public List<sx127x_frame_t> pull() {
+		List<String> data = sendRequest("AT+PULL?");
+		List<sx127x_frame_t> result = new ArrayList<>();
+		for (String cur : data) {
+			String[] parts = COMMA.split(cur);
+
+			sx127x_frame_t frame = new sx127x_frame_t();
+			frame.setMessage(parts[0]);
+			frame.setRssi(Integer.parseInt(parts[1]));
+			frame.setSnr(Float.parseFloat(parts[2]));
+			frame.setFrequency_error(Integer.parseInt(parts[3]));
+			frame.setTimestamp(Long.valueOf(parts[4]));
+			result.add(frame);
+		}
+		return result;
+	}
+
 	private List<String> sendRequest(String request) {
 		request = request + "\r\n";
-		LOG.info("request: {}", request.trim());
+		LOG.info("[{}] {}", id, request.trim());
 		try {
 			port.getOutputStream().write(request.getBytes(StandardCharsets.ISO_8859_1));
 		} catch (IOException e) {
@@ -248,9 +279,9 @@ public class Sx127x {
 					continue;
 				}
 				if (curLine.contains("[E]")) {
-					LOG.error("response: {}", curLine);
+					LOG.error("[{}] {}", id, curLine);
 				} else {
-					LOG.info("response: {}", curLine);
+					LOG.info("[{}] {}", id, curLine);
 				}
 				// skip logging
 				if (curLine.charAt(0) == '[') {
@@ -283,6 +314,7 @@ public class Sx127x {
 			String curLine = null;
 			while ((curLine = reader.readLine()) != null) {
 				curLine = curLine.trim();
+				LOG.info(curLine);
 				// discard corrupted serial communication
 				if (curLine.contains("Returned from app_main") || inputStream.available() == 0) {
 					break;

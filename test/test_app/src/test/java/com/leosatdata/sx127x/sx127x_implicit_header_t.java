@@ -68,4 +68,9 @@ public class sx127x_implicit_header_t {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "[length=" + length + ", enable_crc=" + enable_crc + ", coding_rate=" + coding_rate + "]";
+	}
+
 }

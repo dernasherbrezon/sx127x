@@ -55,4 +55,9 @@ public class PaConfig {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "[pin=" + pin + ", power=" + power + "]";
+	}
+
 }

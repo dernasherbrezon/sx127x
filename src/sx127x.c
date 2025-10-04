@@ -565,6 +565,7 @@ int sx127x_create(void *spi_device, sx127x *result) {
   result->spi_device.spi_device = spi_device;
 #ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   result->spi_device.shadow_registers_sync[REGFIFO] = SHADOW_IGNORE;
+  result->spi_device.shadow_registers_sync[REGOPMODE] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REGFIFORXCURRENTADDR] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REGRSSIVALUE_FSK] = SHADOW_IGNORE;
   result->spi_device.shadow_registers_sync[REGIRQFLAGS] = SHADOW_IGNORE;

@@ -7,7 +7,7 @@ public enum sx127x_mode_t {
 	FSTX, // Frequency synthesis TX
 	TX, // Transmit
 	FSRX, // Frequency synthesis RX
-	RX_CONT, // Receive continuous
-	RX_SINGLE, // Receive single
+	RXCONT, // Receive continuous
+	RXSINGLE, // Receive single
 	CAD; // Channel activity detection
 }

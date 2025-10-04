@@ -81,7 +81,7 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
   while (1) {
     if (xQueueReceive(handler->uart_queue, (void *) &event, (TickType_t) portMAX_DELAY)) {
       switch (event.type) {
-        //Event of UART receving data
+        //Event of UART receiving data
         /*We'd better handler data event fast, there would be much more data events than
         other types of events. If we take too much time on data event, the queue might
         be full.*/
@@ -140,7 +140,10 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
         if (code == SX127X_CONTINUE) {
           snprintf(output, output_length, "unsupported command\r\nERROR\r\n");
         }
-        uart_at_handler_send(output, strlen(output), handler);
+        size_t actual_output = strlen(output);
+        if (actual_output > 0) {
+          uart_at_handler_send(output, actual_output, handler);
+        }
         current_index = 0;
       }
     }
