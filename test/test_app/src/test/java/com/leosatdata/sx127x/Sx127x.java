@@ -51,7 +51,7 @@ public class Sx127x {
 		try {
 			skipToStart();
 		} catch (IOException e) {
-			throw new RuntimeException("can't find start", e);
+			// ignore timeout
 		}
 	}
 
@@ -170,12 +170,52 @@ public class Sx127x {
 		sendRequest("AT+PA=" + config.getPin() + "," + config.getPower());
 	}
 
+	public void sx127x_tx_set_ocp(Integer milliamps) {
+		if (milliamps == null) {
+			sendRequest("AT+OCP=");
+			return;
+		}
+		sendRequest("AT+OCP=" + milliamps);
+	}
+
+	public Integer sx127x_tx_get_ocp() {
+		String param = query("AT+OCP?");
+		if (param.equalsIgnoreCase("DISABLED")) {
+			return null;
+		}
+		return Integer.parseInt(param);
+	}
+
 	public PaConfig sx127x_tx_get_pa_config() {
 		String[] parts = COMMA.split(query("AT+PA?"));
 		PaConfig result = new PaConfig();
 		result.setPin(sx127x_pa_pin_t.valueOf(parts[0]));
 		result.setPower(Integer.parseInt(parts[1]));
 		return result;
+	}
+
+	public void sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t header) {
+		sendRequest("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate().getName());
+	}
+
+	public sx127x_tx_header_t sx127x_lora_tx_get_explicit_header() {
+		String param = query("AT+TXHDR?");
+		if (param.equalsIgnoreCase("DISABLED")) {
+			return null;
+		}
+		String[] parts = COMMA.split(param);
+		sx127x_tx_header_t result = new sx127x_tx_header_t();
+		result.setEnable_crc(Boolean.parseBoolean(parts[0].toLowerCase()));
+		result.setCoding_rate(sx127x_cr_t.valueFromName(parts[1]));
+		return result;
+	}
+
+	public void sx127x_lora_set_ppm_offset(int offset) {
+		sendRequest("AT+PPM=" + offset);
+	}
+
+	public int sx127x_lora_get_ppm_offset() {
+		return Integer.parseInt(query("AT+PPM?"));
 	}
 
 	private List<String> sendRequest(String request) {

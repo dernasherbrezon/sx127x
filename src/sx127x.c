@@ -1056,12 +1056,12 @@ int sx127x_tx_get_pa_config(sx127x *device, sx127x_pa_pin_t *pin, int *power) {
 }
 
 int sx127x_tx_set_ocp(bool enable, uint8_t max_current, sx127x *device) {
-  if (max_current < 45) {
-    return SX127X_ERR_INVALID_ARG;
-  }
   if (!enable) {
     uint8_t value = 0b00000000;
     return sx127x_shadow_spi_write_register(REGOCP, &value, 1, &device->spi_device);
+  }
+  if (max_current < 45) {
+    return SX127X_ERR_INVALID_ARG;
   }
   uint8_t value;
   // 5.4.4. Over Current Protection

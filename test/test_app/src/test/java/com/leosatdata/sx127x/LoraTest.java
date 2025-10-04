@@ -48,9 +48,45 @@ public class LoraTest {
 		int gain = 4;
 		rx.sx127x_rx_set_lna_gain(gain);
 		assertEquals(gain, rx.sx127x_rx_get_lna_gain());
+
 		PaConfig pa = new PaConfig(sx127x_pa_pin_t.BOOST, 4);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		pa = new PaConfig(sx127x_pa_pin_t.RFO, -4);
+		rx.sx127x_tx_set_pa_config(pa);
+		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		pa = new PaConfig(sx127x_pa_pin_t.RFO, 15);
+		rx.sx127x_tx_set_pa_config(pa);
+		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 2);
+		rx.sx127x_tx_set_pa_config(pa);
+		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 20);
+		rx.sx127x_tx_set_pa_config(pa);
+		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 17);
+		rx.sx127x_tx_set_pa_config(pa);
+		assertEquals(pa, rx.sx127x_tx_get_pa_config());
+		int ocp = 100;
+		rx.sx127x_tx_set_ocp(ocp);
+		assertEquals(ocp, rx.sx127x_tx_get_ocp().intValue());
+		ocp = 150;
+		rx.sx127x_tx_set_ocp(ocp);
+		assertEquals(ocp, rx.sx127x_tx_get_ocp().intValue());
+		rx.sx127x_tx_set_ocp(250);
+		assertEquals(240, rx.sx127x_tx_get_ocp().intValue());
+		rx.sx127x_tx_set_ocp(null);
+		assertNull(rx.sx127x_tx_get_ocp());
+		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
+		rx.sx127x_lora_tx_set_explicit_header(txHeader);
+		assertEquals(txHeader, rx.sx127x_lora_tx_get_explicit_header());
+
+		rx.sx127x_lora_set_ppm_offset(4000);
+		assertEquals(3655, rx.sx127x_lora_get_ppm_offset());
+
+		gain = 0;
+		rx.sx127x_rx_set_lna_gain(gain);
+		assertEquals(gain, rx.sx127x_rx_get_lna_gain());
 	}
 
 	@AfterClass
