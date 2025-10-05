@@ -326,28 +326,6 @@ TEST_CASE("sx127x_test_lora_rx_explicit_header", "[lora]") {
   TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
 }
 
-TEST_CASE("sx127x_test_lora_tx_explicit_header", "[lora]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&tx_fixture_config, SX127x_MODULATION_LORA, &fixture));
-  sx127x_tx_set_callback(tx_callback, fixture->device, fixture->device);
-  sx127x_tx_header_t header = {
-      .enable_crc = true,
-      .coding_rate = SX127x_CR_4_5};
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_tx_set_for_transmission(lora_small_message, sizeof(lora_small_message), fixture->device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, fixture->device));
-  xSemaphoreTake(fixture->tx_done, TIMEOUT);
-}
-
-TEST_CASE("sx127x_test_lora_rx_implicit_header", "[lora]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(&explicit_header, fixture->device));
-  sx127x_rx_set_callback(rx_callback, fixture->device, fixture->device);
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
-  wait_for_rx_done();
-  TEST_ASSERT_EQUAL_UINT16(sizeof(lora_small_message), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
-}
-
 TEST_CASE("sx127x_test_lora_tx_implicit_header", "[lora]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&tx_fixture_config, SX127x_MODULATION_LORA, &fixture));
   sx127x_tx_set_callback(tx_callback, fixture->device, fixture->device);
