@@ -172,7 +172,7 @@ int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *resu
 #ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
   uint32_t value;
   ERROR_CHECK(sx127x_spi_read_registers(reg, spi_device->spi_device, 1, &value));
-  *result = (uint8_t)value;
+  *result = (uint8_t) value;
   return SX127X_OK;
 #else
   if (spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
@@ -1585,7 +1585,8 @@ int sx127x_fsk_ook_get_packet_encoding(sx127x *device, sx127x_packet_encoding_t 
 
 int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc_type, sx127x *device) {
   CHECK_FSK_OOK_MODULATION(device);
-  int result = sx127x_append_register(REGPACKETCONFIG1, (uint8_t) crc_type, 0b11100110, &device->spi_device);
+  //  + Do not clear FIFO
+  int result = sx127x_append_register(REGPACKETCONFIG1, (uint8_t) crc_type | 0b00001000, 0b11100110, &device->spi_device);
   if (result == SX127X_OK) {
     device->fsk_crc_type = crc_type;
   }
@@ -1596,7 +1597,7 @@ int sx127x_fsk_ook_get_crc(sx127x *device, sx127x_crc_type_t *crc_type) {
   CHECK_FSK_OOK_MODULATION(device);
   uint8_t raw;
   ERROR_CHECK(sx127x_read_register(REGPACKETCONFIG1, &device->spi_device, &raw));
-  *crc_type = raw & 0b11001;
+  *crc_type = raw & 0b10001;
   return SX127X_OK;
 }
 

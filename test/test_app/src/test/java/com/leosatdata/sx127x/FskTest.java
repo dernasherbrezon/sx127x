@@ -1,6 +1,7 @@
 package com.leosatdata.sx127x;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.AfterClass;
@@ -28,6 +29,33 @@ public class FskTest {
 		frequency = Long.valueOf(freqStr);
 		rx.sx127x_set_frequency(frequency);
 		tx.sx127x_set_frequency(frequency);
+	}
+
+	@Test
+	public void testReset() {
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		rx.sx127x_set_frequency(frequency);
+		assertEquals(frequency, rx.sx127x_get_frequency());
+		rx.reset();
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		assertEquals(434000000, rx.sx127x_get_frequency());
+		assertEquals(0, rx.sx127x_rx_get_lna_gain());
+		assertEquals(4799, (int) rx.sx127x_fsk_ook_get_bitrate());
+		assertEquals(5004, (int) rx.sx127x_fsk_get_fdev());
+		assertEquals("55555555", rx.sx127x_fsk_ook_get_syncword());
+		assertEquals(sx127x_packet_encoding_t.NRZ, rx.sx127x_fsk_ook_get_packet_encoding());
+		assertEquals(sx127x_crc_type_t.CCITT, rx.sx127x_fsk_ook_get_crc());
+		assertEquals(new AddressConfig(sx127x_address_filtering_t.NONE, 0, 0), rx.sx127x_fsk_ook_get_address_filtering());
+		assertEquals(new PacketFormat(sx127x_packet_format_t.VARIABLE, 64), rx.sx127x_fsk_ook_get_packet_format());
+		assertEquals(new DataShaping(sx127x_fsk_data_shaping_t.NONE, sx127x_pa_ramp_t.SX127X_PA_RAMP_10), rx.sx127x_fsk_get_data_shaping());
+		assertEquals(sx127x_preamble_type_t.PAA, rx.sx127x_fsk_ook_get_preamble_type());
+		assertFalse(rx.sx127x_fsk_ook_rx_get_afc_auto());
+		assertEquals(50000, (int) rx.sx127x_fsk_ook_rx_get_afc_bandwidth());
+		assertEquals(10416, (int) rx.sx127x_fsk_ook_rx_get_bandwidth());
+		assertEquals(new RssiConfig(sx127x_rssi_smoothing_t.SX127X_8, 0), rx.sx127x_fsk_ook_rx_get_rssi_config());
+		assertEquals(new CollisionConfig(false, 10), rx.sx127x_fsk_ook_rx_get_collision_restart());
+		assertEquals(sx127x_rx_trigger_t.NONE, rx.sx127x_fsk_ook_rx_get_trigger());
+		assertEquals(new PreambleConfig(false, 3, 0), rx.sx127x_fsk_ook_rx_get_preamble_detector());
 	}
 
 	@Test
