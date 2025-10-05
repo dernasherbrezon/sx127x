@@ -287,6 +287,160 @@ public class Sx127x {
 		sendRequest("AT+DEEPSLEEP=");
 	}
 
+	public void sx127x_fsk_ook_set_bitrate(float bitrate) {
+		sendRequest("AT+BITRATE=" + bitrate);
+	}
+
+	public float sx127x_fsk_ook_get_bitrate() {
+		return Float.parseFloat(query("AT+BITRATE?"));
+	}
+
+	public void sx127x_fsk_set_fdev(float fdev) {
+		sendRequest("AT+FDEV=" + fdev);
+	}
+
+	public float sx127x_fsk_get_fdev() {
+		return Float.parseFloat(query("AT+FDEV?"));
+	}
+
+	public void sx127x_fsk_ook_set_syncword(String syncword) {
+		sendRequest("AT+FSKSW=" + syncword);
+	}
+
+	public String sx127x_fsk_ook_get_syncword() {
+		return query("AT+FSKSW?");
+	}
+
+	public void sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding) {
+		sendRequest("AT+FSKENC=" + encoding);
+	}
+
+	public sx127x_packet_encoding_t sx127x_fsk_ook_get_packet_encoding() {
+		return sx127x_packet_encoding_t.valueOf(query("AT+FSKENC?"));
+	}
+
+	public void sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc) {
+		sendRequest("AT+FSKCRC=" + crc);
+	}
+
+	public sx127x_crc_type_t sx127x_fsk_ook_get_crc() {
+		return sx127x_crc_type_t.valueOf(query("AT+FSKCRC?"));
+	}
+
+	public void sx127x_fsk_ook_set_address_filtering(AddressConfig config) {
+		sendRequest("AT+FSKADDR=" + config.getType() + "," + config.getNode_address() + "," + config.getBroadcast_address());
+	}
+
+	public AddressConfig sx127x_fsk_ook_get_address_filtering() {
+		String[] parts = COMMA.split(query("AT+FSKADDR?"));
+		AddressConfig result = new AddressConfig();
+		result.setType(sx127x_address_filtering_t.valueOf(parts[0]));
+		result.setNode_address(Integer.parseInt(parts[1]));
+		result.setBroadcast_address(Integer.valueOf(parts[2]));
+		return result;
+	}
+
+	public void sx127x_fsk_ook_set_packet_format(PacketFormat format) {
+		sendRequest("AT+FSKPKT=" + format.getFormat() + "," + format.getMax_payload_length());
+	}
+
+	public PacketFormat sx127x_fsk_ook_get_packet_format() {
+		String[] parts = COMMA.split(query("AT+FSKPKT?"));
+		PacketFormat result = new PacketFormat();
+		result.setFormat(sx127x_packet_format_t.valueOf(parts[0]));
+		result.setMax_payload_length(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public void sx127x_fsk_set_data_shaping(DataShaping shaping) {
+		sendRequest("AT+FSKSHAPING=" + shaping.getShaping().getName() + "," + shaping.getPa_ramp().getName());
+	}
+
+	public DataShaping sx127x_fsk_get_data_shaping() {
+		String[] parts = COMMA.split(query("AT+FSKSHAPING?"));
+		DataShaping result = new DataShaping();
+		result.setShaping(sx127x_fsk_data_shaping_t.valueOfName(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOfName(parts[1]));
+		return result;
+	}
+
+	public void sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type) {
+		sendRequest("AT+PTYPE=" + type.getName());
+	}
+
+	public sx127x_preamble_type_t sx127x_fsk_ook_get_preamble_type() {
+		return sx127x_preamble_type_t.valueOfName(query("AT+PTYPE?"));
+	}
+
+	public void sx127x_fsk_ook_rx_set_afc_auto(boolean enable) {
+		sendRequest("AT+AFC=" + String.valueOf(enable).toUpperCase());
+	}
+
+	public boolean sx127x_fsk_ook_rx_get_afc_auto() {
+		return Boolean.valueOf(query("AT+AFC?").toLowerCase());
+	}
+
+	public void sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth) {
+		sendRequest("AT+AFCBW=" + bandwidth);
+	}
+
+	public float sx127x_fsk_ook_rx_get_afc_bandwidth() {
+		return Float.parseFloat(query("AT+AFCBW?"));
+	}
+
+	public void sx127x_fsk_ook_rx_set_bandwidth(float bandwidth) {
+		sendRequest("AT+FSKBW=" + bandwidth);
+	}
+
+	public float sx127x_fsk_ook_rx_get_bandwidth() {
+		return Float.parseFloat(query("AT+FSKBW?"));
+	}
+
+	public void sx127x_fsk_ook_rx_set_rssi_config(RssiConfig config) {
+		sendRequest("AT+RSSI=" + config.getSmoothing().getName() + "," + config.getOffset());
+	}
+
+	public void sx127x_fsk_ook_rx_set_collision_restart(CollisionConfig config) {
+		sendRequest("AT+COLLISION=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getThreshold());
+	}
+
+	public CollisionConfig sx127x_fsk_ook_rx_get_collision_restart() {
+		String[] parts = COMMA.split(query("AT+COLLISION?"));
+		CollisionConfig result = new CollisionConfig();
+		result.setEnable(Boolean.valueOf(parts[0].toLowerCase()));
+		result.setThreshold(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public RssiConfig sx127x_fsk_ook_rx_get_rssi_config() {
+		String[] parts = COMMA.split(query("AT+RSSI?"));
+		RssiConfig result = new RssiConfig();
+		result.setSmoothing(sx127x_rssi_smoothing_t.valueOfName(parts[0]));
+		result.setOffset(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public void sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger) {
+		sendRequest("AT+TRIGGER=" + trigger);
+	}
+
+	public sx127x_rx_trigger_t sx127x_fsk_ook_rx_get_trigger() {
+		return sx127x_rx_trigger_t.valueOf(query("AT+TRIGGER?"));
+	}
+
+	public void sx127x_fsk_ook_rx_set_preamble_detector(PreambleConfig config) {
+		sendRequest("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
+	}
+
+	public PreambleConfig sx127x_fsk_ook_rx_get_preamble_detector() {
+		String[] parts = COMMA.split(query("AT+PCONF?"));
+		PreambleConfig result = new PreambleConfig();
+		result.setEnable(Boolean.valueOf(parts[0].toLowerCase()));
+		result.setDetector_size(Integer.parseInt(parts[1]));
+		result.setDetector_tolerance(Integer.parseInt(parts[2]));
+		return result;
+	}
+
 	private List<String> sendRequest(String request) {
 		request = request + "\r\n";
 		LOG.info("[{}] {}", id, request.trim());

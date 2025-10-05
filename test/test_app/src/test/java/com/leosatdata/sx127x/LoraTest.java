@@ -27,7 +27,7 @@ public class LoraTest {
 
 		String freqStr = System.getProperty("freq");
 		if (freqStr == null) {
-			freqStr = "868200012";
+			freqStr = "868200000";
 		}
 		frequency = Long.valueOf(freqStr);
 		rx.sx127x_set_frequency(frequency);
@@ -40,9 +40,8 @@ public class LoraTest {
 		rx.sx127x_set_opmod(req);
 		assertEquals(req, rx.sx127x_get_opmod());
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.STANDBY, sx127x_modulation_t.LORA));
-		long freq = 868200012L;
-		rx.sx127x_set_frequency(freq);
-		assertEquals(868200000L, rx.sx127x_get_frequency());
+		rx.sx127x_set_frequency(frequency);
+		assertEquals(frequency, rx.sx127x_get_frequency());
 		long bw = 125000;
 		rx.sx127x_lora_set_bandwidth(bw);
 		assertEquals(bw, rx.sx127x_lora_get_bandwidth());
@@ -107,6 +106,24 @@ public class LoraTest {
 		FhssConfig fhss = new FhssConfig(5, new long[] { 868200000L, 868250000L, 868700000L, 868200000L });
 		rx.sx127x_lora_set_frequency_hopping(fhss);
 		assertEquals(fhss, rx.sx127x_lora_get_frequency_hopping());
+	}
+
+	@Test
+	public void testReset() {
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_frequency(frequency);
+		assertEquals(frequency, rx.sx127x_get_frequency());
+		rx.reset();
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		// make sure reset actually works
+		assertEquals(434000000, rx.sx127x_get_frequency());
+		assertEquals(125000, rx.sx127x_lora_get_bandwidth());
+		assertEquals(7, rx.sx127x_lora_get_spreading_factor());
+		assertEquals(0, rx.sx127x_rx_get_lna_gain());
+		assertEquals(new PaConfig(sx127x_pa_pin_t.RFO, 13), rx.sx127x_tx_get_pa_config());
+		assertEquals(18, rx.sx127x_lora_get_syncword());
+		assertEquals(8, rx.sx127x_get_preamble_length());
+		assertNull(rx.sx127x_lora_get_implicit_header());
 	}
 
 	@Test

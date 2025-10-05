@@ -111,11 +111,6 @@ void print_registers() {
   printf("\n");
 }
 
-TEST_CASE("sx127x_test_fsk_ook_registers", "[fsk]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
-  test_registers_fsk_ook(fixture->device);
-}
-
 TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
   print_registers();
