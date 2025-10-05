@@ -1279,6 +1279,17 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     return sx127x_fsk_ook_rx_calibrate(device);
   }
 
+  if (strcmp(cmd_name, "IRQ") == 0) {
+    if (is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    if (param_count != 0) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    sx127x_handle_interrupt(device);
+    return SX127X_OK;
+  }
+
   if (strcmp(cmd_name, "TEMP") == 0) {
     if (is_query) {
       int8_t temp;

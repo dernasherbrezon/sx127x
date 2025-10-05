@@ -281,36 +281,6 @@ TEST_CASE("sx127x_test_fsk_tx_filtered", "[fsk]") {
   }
 }
 
-TEST_CASE("sx127x_test_lora_rx_deepsleep_verify", "[lora]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create_base(&rx_fixture_config, &fixture));
-  esp_sleep_wakeup_cause_t cpu0WakeupReason = esp_sleep_get_wakeup_cause();
-  TEST_ASSERT_EQUAL_INT(ESP_SLEEP_WAKEUP_EXT0, cpu0WakeupReason);
-  sx127x_rx_set_callback(rx_callback, fixture->device, fixture->device);
-  sx127x_handle_interrupt(fixture->device);
-  TEST_ASSERT_EQUAL_UINT16(sizeof(lora_small_message), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
-}
-
-TEST_CASE("sx127x_test_lora_rx_deepsleep", "[lora]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_set_direction((gpio_num_t)rx_fixture_config.dio0, RTC_GPIO_MODE_INPUT_ONLY));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, rtc_gpio_pulldown_en((gpio_num_t)rx_fixture_config.dio0));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, fixture->device));
-  ESP_LOGI("sx127x_test", "entering deep sleep");
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, esp_sleep_enable_ext0_wakeup((gpio_num_t)rx_fixture_config.dio0, 1));
-  esp_deep_sleep_start();
-}
-
-TEST_CASE("sx127x_test_lora_rx_after_cad", "[lora]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_LORA, &fixture));
-  sx127x_rx_set_callback(rx_callback, fixture->device, fixture->device);
-  sx127x_lora_cad_set_callback(cad_callback, fixture->device, fixture->device);
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, fixture->device));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
-  TEST_ASSERT_EQUAL_UINT16(sizeof(lora_small_message), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(lora_small_message, fixture->rx_data, sizeof(lora_small_message));
-}
-
 TEST_CASE("sx127x_test_ook_rx_variable_length", "[ook]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_OOK, &fixture));
   sx127x_rx_set_callback(rx_callback, fixture->device, fixture->device);

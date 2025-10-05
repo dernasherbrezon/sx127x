@@ -111,20 +111,12 @@ public class LoraTest {
 
 	@Test
 	public void testExplicitHeader() {
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
-		rx.sx127x_set_opmod(req);
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
 		rx.sx127x_lora_set_implicit_header(null);
 		rx.sx127x_lora_reset_fifo();
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
 
-		tx.sx127x_set_opmod(req);
-		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
-		tx.sx127x_lora_tx_set_explicit_header(txHeader);
-		// it looks like some boards don't have RFO pin connected to the antenna
-		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
-		tx.sx127x_lora_reset_fifo();
-		tx.sx127x_lora_tx_set_for_transmission("CAFE");
-		tx.tx(sx127x_modulation_t.LORA);
+		sendExplicitMessage();
 
 		List<sx127x_frame_t> frames = pullFrames(rx, 1);
 		assertEquals(1, frames.size());
@@ -179,6 +171,52 @@ public class LoraTest {
 		tx.tx(sx127x_modulation_t.LORA);
 	}
 
+	@Test
+	public void testCad() {
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_lora_set_implicit_header(null);
+		rx.sx127x_lora_reset_fifo();
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.CAD, sx127x_modulation_t.LORA));
+
+		sendExplicitMessage();
+
+		List<sx127x_frame_t> frames = pullFrames(rx, 1);
+		assertEquals(1, frames.size());
+		assertEquals("CAFE", frames.get(0).getMessage());
+	}
+
+	@Test
+	public void testDeepSleep() {
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_lora_set_implicit_header(null);
+		rx.sx127x_lora_reset_fifo();
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+		rx.deepSleep();
+
+		sendExplicitMessage();
+
+		// rx need some time to wake up
+		int attempts = 3;
+		while (attempts > 0) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e1) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			try {
+				rx.sx127x_handle_interrupt();
+				break;
+			} catch (Exception e) {
+				attempts--;
+			}
+		}
+
+		List<sx127x_frame_t> frames = pullFrames(rx, 1);
+		assertEquals(1, frames.size());
+		assertEquals("CAFE", frames.get(0).getMessage());
+	}
+
 	@Before
 	public void start() {
 		rx.reset();
@@ -193,6 +231,17 @@ public class LoraTest {
 		if (tx != null) {
 			tx.stop();
 		}
+	}
+
+	private static void sendExplicitMessage() {
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
+		tx.sx127x_lora_tx_set_explicit_header(txHeader);
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_lora_reset_fifo();
+		tx.sx127x_lora_tx_set_for_transmission("CAFE");
+		tx.tx(sx127x_modulation_t.LORA);
 	}
 
 	private static List<sx127x_frame_t> pullFrames(Sx127x device, int expectedCount) {

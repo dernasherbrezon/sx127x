@@ -13,6 +13,9 @@
 #include "uart_at.h"
 #include "at_util.h"
 #include <string.h>
+#include <driver/rtc_io.h>
+#include <esp_log.h>
+#include <esp_sleep.h>
 
 #define MAX_INPUT_LEN 256
 #define MAX_PARAM_COUNT 10
@@ -67,6 +70,16 @@ void setup_gpio_interrupts(gpio_num_t gpio, gpio_int_type_t type) {
   gpio_pullup_dis(gpio);
   gpio_set_intr_type(gpio, type);
   gpio_isr_handler_add(gpio, handle_interrupt_fromisr, NULL);
+}
+
+void cad_callback(void *ctx, int cad_detected) {
+  sx127x *device = (sx127x *)ctx;
+  if (cad_detected == 0) {
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+    return;
+  }
+  // put into RX mode first to handle interrupt as soon as possible
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
 }
 
 void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
@@ -206,6 +219,19 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     return SX127X_OK;
   }
 
+  if (strcmp(cmd_name, "DEEPSLEEP") == 0) {
+    if (is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    ERROR_CHECK(rtc_gpio_set_direction((gpio_num_t) DIO0, RTC_GPIO_MODE_INPUT_ONLY));
+    ERROR_CHECK(rtc_gpio_pulldown_en((gpio_num_t) DIO0));
+    snprintf(output, output_len, "OK\r\n");
+    uart_at_handler_send(output, strlen(output), handler);
+    ERROR_CHECK(esp_sleep_enable_ext0_wakeup((gpio_num_t) DIO0, 1));
+    esp_deep_sleep_start();
+    return SX127X_OK;
+  }
+
   return SX127X_CONTINUE;
 }
 
@@ -249,7 +275,7 @@ void app_main(void) {
   ESP_ERROR_CHECK(sx127x_create(spi_device, device));
   sx127x_rx_set_callback(rx_callback, device, device);
   sx127x_tx_set_callback(tx_callback, device, device);
-  reset();
+  sx127x_lora_cad_set_callback(cad_callback, device, device);
   gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t) DIO0, GPIO_INTR_POSEDGE);
   setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_POSEDGE);

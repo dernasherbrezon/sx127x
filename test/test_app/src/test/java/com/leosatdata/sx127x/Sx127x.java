@@ -279,6 +279,14 @@ public class Sx127x {
 		return result;
 	}
 
+	public void sx127x_handle_interrupt() {
+		sendRequest("AT+IRQ=");
+	}
+
+	public void deepSleep() {
+		sendRequest("AT+DEEPSLEEP=");
+	}
+
 	private List<String> sendRequest(String request) {
 		request = request + "\r\n";
 		LOG.info("[{}] {}", id, request.trim());
