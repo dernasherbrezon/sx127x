@@ -253,6 +253,32 @@ public class Sx127x {
 		return result;
 	}
 
+	public void sx127x_lora_set_frequency_hopping(FhssConfig config) {
+		StringBuilder req = new StringBuilder();
+		for (int i = 0; i < config.getFrequencies().length; i++) {
+			if (i != 0) {
+				req.append(",");
+			}
+			req.append(config.getFrequencies()[i]);
+		}
+		sendRequest("AT+FREQHOP=" + config.getPeriod() + "," + req.toString());
+	}
+
+	public FhssConfig sx127x_lora_get_frequency_hopping() {
+		String param = query("AT+FREQHOP?");
+		String[] parts = COMMA.split(param);
+		FhssConfig result = new FhssConfig();
+		result.setPeriod(Integer.parseInt(parts[0]));
+		if (parts.length > 1) {
+			long[] frequencies = new long[parts.length - 1];
+			for (int i = 0; i < frequencies.length; i++) {
+				frequencies[i] = Long.valueOf(parts[i + 1]);
+			}
+			result.setFrequencies(frequencies);
+		}
+		return result;
+	}
+
 	private List<String> sendRequest(String request) {
 		request = request + "\r\n";
 		LOG.info("[{}] {}", id, request.trim());

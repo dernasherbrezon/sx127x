@@ -16,6 +16,7 @@ public class LoraTest {
 
 	private static Sx127x rx;
 	private static Sx127x tx;
+	private static long frequency;
 
 	@BeforeClass
 	public static void init() {
@@ -24,12 +25,13 @@ public class LoraTest {
 		tx = new Sx127x(System.getProperty("tx"), 10000, "tx");
 		tx.start();
 
-		String freq = System.getProperty("freq");
-		if (freq == null) {
-			freq = "868200012";
+		String freqStr = System.getProperty("freq");
+		if (freqStr == null) {
+			freqStr = "868200012";
 		}
-		rx.sx127x_set_frequency(Long.valueOf(freq));
-		tx.sx127x_set_frequency(Long.valueOf(freq));
+		frequency = Long.valueOf(freqStr);
+		rx.sx127x_set_frequency(frequency);
+		tx.sx127x_set_frequency(frequency);
 	}
 
 	@Test
@@ -101,20 +103,10 @@ public class LoraTest {
 		gain = 0;
 		rx.sx127x_rx_set_lna_gain(gain);
 		assertEquals(gain, rx.sx127x_rx_get_lna_gain());
-	}
 
-	@Test
-	public void testDefaultSettings() {
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
-		rx.sx127x_set_opmod(req);
-		System.out.println(rx.sx127x_get_frequency());
-		System.out.println(rx.sx127x_lora_get_bandwidth());
-		System.out.println(rx.sx127x_lora_get_spreading_factor());
-		System.out.println(rx.sx127x_rx_get_lna_gain());
-		System.out.println(rx.sx127x_tx_get_pa_config());
-		System.out.println(rx.sx127x_lora_get_syncword());
-		System.out.println(rx.sx127x_get_preamble_length());
-		System.out.println(rx.sx127x_lora_get_implicit_header());
+		FhssConfig fhss = new FhssConfig(5, new long[] { 868200000L, 868250000L, 868700000L, 868200000L });
+		rx.sx127x_lora_set_frequency_hopping(fhss);
+		assertEquals(fhss, rx.sx127x_lora_get_frequency_hopping());
 	}
 
 	@Test
@@ -137,6 +129,54 @@ public class LoraTest {
 		List<sx127x_frame_t> frames = pullFrames(rx, 1);
 		assertEquals(1, frames.size());
 		assertEquals("CAFE", frames.get(0).getMessage());
+	}
+
+	@Test
+	public void testImplicitHeader() {
+		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		String message = "CAFE";
+		sx127x_implicit_header_t header = new sx127x_implicit_header_t(message.length() / 2, true, sx127x_cr_t.SX127x_CR_4_5);
+
+		rx.sx127x_set_opmod(req);
+		rx.sx127x_lora_set_implicit_header(header);
+		rx.sx127x_lora_reset_fifo();
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+
+		tx.sx127x_set_opmod(req);
+		tx.sx127x_lora_set_implicit_header(header);
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_lora_reset_fifo();
+		tx.sx127x_lora_tx_set_for_transmission(message);
+		tx.tx(sx127x_modulation_t.LORA);
+
+		List<sx127x_frame_t> frames = pullFrames(rx, 1);
+		assertEquals(1, frames.size());
+		assertEquals(message, frames.get(0).getMessage());
+	}
+
+	@Test
+	public void testFhss() {
+		long[] frequencies = new long[3];
+		frequencies[0] = frequency + 500000;
+		frequencies[1] = frequency + 1000000;
+		frequencies[2] = frequency;
+		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+
+		rx.sx127x_set_opmod(req);
+		rx.sx127x_lora_set_implicit_header(null);
+		rx.sx127x_lora_reset_fifo();
+		rx.sx127x_lora_set_frequency_hopping(new FhssConfig(5, frequencies));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+
+		tx.sx127x_set_opmod(req);
+		tx.sx127x_lora_set_implicit_header(null);
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_lora_reset_fifo();
+		tx.sx127x_lora_set_frequency_hopping(new FhssConfig(5, frequencies));
+		tx.sx127x_lora_tx_set_for_transmission("CAFE");
+		tx.tx(sx127x_modulation_t.LORA);
 	}
 
 	@Before
