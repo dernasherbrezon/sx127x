@@ -99,6 +99,8 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
     // No room for proper "NULL". -255 should look suspicious
     result->rssi = -255;
   }
+  // do not supported yet
+  result->timestamp = 0;
   at_util_vector_add(result, frames);
   ESP_LOGI(TAG, "received: %d rssi: %d freq error: %ld", data_length, rssi, frequency_error);
 }
@@ -116,7 +118,6 @@ static void reset() {
   vTaskDelay(pdMS_TO_TICKS(10));
   ESP_LOGI(TAG, "sx127x was reset");
   ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
-  sx127x_lora_reset_fifo(device);
 }
 
 static int split_params(char *input, char *params[]) {

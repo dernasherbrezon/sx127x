@@ -55,4 +55,9 @@ public class sx127x_tx_header_t {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "[enable_crc=" + enable_crc + ", coding_rate=" + coding_rate + "]";
+	}
+
 }

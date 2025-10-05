@@ -232,6 +232,10 @@ public class Sx127x {
 		sendRequest("AT+TX=" + modulation);
 	}
 
+	public void sx127x_lora_reset_fifo() {
+		sendRequest("AT+RSTFIFO=");
+	}
+
 	public List<sx127x_frame_t> pull() {
 		List<String> data = sendRequest("AT+PULL?");
 		List<sx127x_frame_t> result = new ArrayList<>();

@@ -879,6 +879,13 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     return sx127x_lora_tx_set_for_transmission(message_hex, message_hex_length, device);
   }
 
+  if (strcmp(cmd_name, "RSTFIFO") == 0) {
+    if (is_query) {
+      return SX127X_ERR_INVALID_ARG;
+    }
+    return sx127x_lora_reset_fifo(device);
+  }
+
   if (strcmp(cmd_name, "FSKTX") == 0) {
     if (is_query || param_count < 1 || param_count > 2) {
       return SX127X_ERR_INVALID_ARG;

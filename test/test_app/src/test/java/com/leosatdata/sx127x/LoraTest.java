@@ -122,11 +122,15 @@ public class LoraTest {
 		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
 		rx.sx127x_set_opmod(req);
 		rx.sx127x_lora_set_implicit_header(null);
+		rx.sx127x_lora_reset_fifo();
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
 
 		tx.sx127x_set_opmod(req);
 		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
 		tx.sx127x_lora_tx_set_explicit_header(txHeader);
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_lora_reset_fifo();
 		tx.sx127x_lora_tx_set_for_transmission("CAFE");
 		tx.tx(sx127x_modulation_t.LORA);
 
