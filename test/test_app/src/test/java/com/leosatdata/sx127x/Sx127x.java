@@ -50,11 +50,7 @@ public class Sx127x {
 		if (!port.openPort()) {
 			throw new RuntimeException("can't open port: " + portDescriptor);
 		}
-		try {
-			skipToStart();
-		} catch (IOException e) {
-			// ignore timeout
-		}
+		resetUart();
 	}
 
 	public void stop() {
@@ -513,21 +509,15 @@ public class Sx127x {
 		return Collections.emptyList();
 	}
 
-	private void skipToStart() throws IOException {
+	public void resetUart() {
 		InputStream inputStream = port.getInputStream();
-		if (inputStream.available() == 0) {
-			return;
-		}
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))) {
-			String curLine = null;
-			while ((curLine = reader.readLine()) != null) {
-				curLine = curLine.trim();
-				LOG.info(curLine);
-				// discard corrupted serial communication
-				if (curLine.contains("Returned from app_main") || inputStream.available() == 0) {
-					break;
-				}
+		byte[] buf = new byte[1024];
+		try {
+			while (inputStream.available() > 0) {
+				inputStream.read(buf);
 			}
+		} catch (IOException e) {
+			// do nothing
 		}
 	}
 }

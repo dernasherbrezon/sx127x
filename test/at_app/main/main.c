@@ -45,6 +45,8 @@ at_util_vector_t *frames;
 const char *TAG = "sx127x_at";
 const UBaseType_t xArrayIndex = 0;
 TaskHandle_t handle_interrupt;
+SemaphoreHandle_t tx_done;
+TickType_t TIMEOUT = pdMS_TO_TICKS(10000);
 
 static void uart_rx_task(void *arg) {
   uart_at_handler_process(handler);
@@ -90,12 +92,12 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
   }
   result->data_length = data_length;
   result->data = malloc(sizeof(uint8_t) * result->data_length);
-  // not supported yet
-  result->snr = 0;
   if (result->data == NULL) {
     sx127x_util_frame_destroy(result);
     return;
   }
+  // not supported yet
+  result->snr = 0;
   memcpy(result->data, data, sizeof(uint8_t) * result->data_length);
   int32_t frequency_error;
   esp_err_t code = sx127x_rx_get_frequency_error(device, &frequency_error);
@@ -117,12 +119,10 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
   // do not supported yet
   result->timestamp = 0;
   at_util_vector_add(result, frames);
-  ESP_LOGI(TAG, "received: %d rssi: %d freq error: %ld", data_length, rssi, frequency_error);
 }
 
 void tx_callback(void *ctx) {
-  const char *output = "OK\r\n";
-  uart_at_handler_send((char *) output, strlen(output), handler);
+  xSemaphoreGive(tx_done);
 }
 
 static void reset() {
@@ -131,7 +131,6 @@ static void reset() {
   vTaskDelay(pdMS_TO_TICKS(5));
   ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) RST, 1));
   vTaskDelay(pdMS_TO_TICKS(10));
-  ESP_LOGI(TAG, "sx127x was reset");
   ESP_ERROR_CHECK(gpio_reset_pin((gpio_num_t) RST));
 }
 
@@ -201,7 +200,8 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
       setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_NEGEDGE);
     }
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, modulation, device));
-    // do not send OK here. Send it from tx_callback
+    xSemaphoreTake(tx_done, TIMEOUT);
+    snprintf(output, output_len, "OK\r\n");
     return SX127X_OK;
   }
 
@@ -259,6 +259,7 @@ static int extra_at_handler(sx127x *device, const char *input, char *output, siz
 
 void app_main(void) {
   ESP_ERROR_CHECK(at_util_vector_create(&frames));
+  tx_done = xSemaphoreCreateBinary();
   spi_bus_config_t bus_config = {
       .mosi_io_num = MOSI,
       .miso_io_num = MISO,

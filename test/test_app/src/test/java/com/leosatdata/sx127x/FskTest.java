@@ -253,7 +253,9 @@ public class FskTest {
 	@Before
 	public void start() {
 		rx.reset();
+		rx.resetUart();
 		tx.reset();
+		tx.resetUart();
 	}
 
 	@AfterClass
