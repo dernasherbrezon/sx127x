@@ -167,6 +167,10 @@ public class Sx127x {
 	public void sx127x_tx_set_pa_config(PaConfig config) {
 		sendRequest("AT+PA=" + config.getPin() + "," + config.getPower());
 	}
+	
+	public void sx127x_dump_registers() {
+		sendRequest("AT+DUMPREG?");
+	}
 
 	public void sx127x_tx_set_ocp(Integer milliamps) {
 		if (milliamps == null) {

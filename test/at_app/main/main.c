@@ -186,6 +186,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
       return SX127X_ERR_INVALID_ARG;
     }
     reset();
+    sx127x_reset(device);
     snprintf(output, output_len, "OK\r\n");
     return SX127X_OK;
   }

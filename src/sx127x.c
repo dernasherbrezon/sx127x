@@ -63,6 +63,7 @@
 #define TX_START_CONDITION_FIFO_LEVEL 0b00000000
 #define TX_START_CONDITION_FIFO_EMPTY 0b10000000
 
+#define SHADOW_EMPTY 0
 #define SHADOW_CACHED 1
 #define SHADOW_IGNORE 2
 
@@ -594,11 +595,7 @@ int sx127x_create(void *spi_device, sx127x *result) {
   if (code != SX127X_OK) {
     return code;
   }
-  result->fsk_ook_format = SX127X_VARIABLE;
-  result->fsk_rssi_available = false;
-  result->fsk_crc_type = SX127X_CRC_CCITT;
-  result->use_implicit_header = false;
-  result->expected_packet_length = 0;
+  sx127x_reset(result);
   return SX127X_OK;
 }
 
@@ -984,6 +981,22 @@ int sx127x_dump_registers(uint8_t *output, sx127x *device) {
   output[0] = 0x00;
   // bypass shadow registers
   return sx127x_spi_read_buffer(0x01, output + 1, MAX_NUMBER_OF_REGISTERS - 1, device->spi_device.spi_device);
+}
+
+void sx127x_reset(sx127x *device) {
+  device->fsk_ook_format = SX127X_VARIABLE;
+  device->fsk_rssi_available = false;
+  device->fsk_crc_type = SX127X_CRC_CCITT;
+  device->use_implicit_header = false;
+  device->expected_packet_length = 0;
+
+#ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
+  for (size_t i = 0; i < MAX_NUMBER_OF_REGISTERS; i++) {
+    if (spi_device->shadow_registers_sync[i] == SHADOW_CACHED) {
+      spi_device->shadow_registers_sync[i] = SHADOW_EMPTY;
+    }
+  }
+#endif
 }
 
 void sx127x_tx_set_callback(void (*tx_callback)(void *), void *ctx, sx127x *device) {

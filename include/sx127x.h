@@ -639,6 +639,13 @@ int sx127x_lora_get_frequency_hopping(sx127x *device, uint8_t *period);
 int sx127x_dump_registers(uint8_t *output, sx127x *device);
 
 /**
+ * @brief Reset internal state: shadow registers, internal state
+ * @note This won't reset chip state! Use RST pin for that
+ * @param device
+ */
+void sx127x_reset(sx127x *device);
+
+/**
  * @brief Handle interrupt from DIOx pins.
  *
  * @note This function SHOULD NOT be called from ISR. Use separate ISR-safe function

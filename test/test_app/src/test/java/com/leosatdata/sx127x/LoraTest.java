@@ -237,7 +237,9 @@ public class LoraTest {
 	@Before
 	public void start() {
 		rx.reset();
+		rx.resetUart();
 		tx.reset();
+		tx.resetUart();
 	}
 
 	@AfterClass
