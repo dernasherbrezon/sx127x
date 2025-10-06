@@ -432,8 +432,12 @@ public class Sx127x {
 		sendRequest("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
 	}
 
-	public void sx127x_fixture_fsk_ook_tx_set_for_transmission(String hexBytes) {
+	public void sx127x_fsk_ook_tx_set_for_transmission(String hexBytes) {
 		sendRequest("AT+FSKTX=" + hexBytes);
+	}
+
+	public void sx127x_fsk_ook_tx_set_for_transmission_with_address(String hexBytes, int address) {
+		sendRequest("AT+FSKTX=" + hexBytes + "," + address);
 	}
 
 	public PreambleConfig sx127x_fsk_ook_rx_get_preamble_detector() {
@@ -443,6 +447,14 @@ public class Sx127x {
 		result.setDetector_size(Integer.parseInt(parts[1]));
 		result.setDetector_tolerance(Integer.parseInt(parts[2]));
 		return result;
+	}
+
+	public void sx127x_fsk_ook_tx_start_beacon(String message, int interval) {
+		sendRequest("AT+FSKBCN=" + message + "," + interval);
+	}
+
+	public void sx127x_fsk_ook_tx_stop_beacon() {
+		sendRequest("AT+FSKBCN=");
 	}
 
 	private List<String> sendRequest(String request) {

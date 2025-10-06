@@ -32,6 +32,103 @@ public class FskTest {
 	}
 
 	@Test
+	public void testBeacons() {
+		int beaconInterval = 200;
+		int beaconsExpected = 5;
+		String message = createRandom(6);
+
+		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.FIXED, message.length() / 2));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
+
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.FIXED, message.length() / 2));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_fsk_ook_tx_start_beacon(message, beaconInterval);
+
+		try {
+			Thread.sleep((long) ((beaconsExpected + 0.3f) * beaconInterval));
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return;
+		}
+		tx.sx127x_fsk_ook_tx_stop_beacon();
+
+		LoraTest.assertFrames(rx, message, message, message, message, message);
+	}
+
+	@Test
+	public void testFixed() {
+		int[] messageSizes = new int[] { 6, 255, 2047 };
+		for (int i = 0; i < messageSizes.length; i++) {
+			String message = createRandom(messageSizes[i]);
+
+			rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+			rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.FIXED, message.length() / 2));
+			rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
+
+			tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+			tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.FIXED, message.length() / 2));
+			tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+			tx.sx127x_fsk_ook_tx_set_for_transmission(message);
+			tx.tx(sx127x_modulation_t.FSK);
+
+			LoraTest.assertFrames(rx, message);
+		}
+	}
+
+	@Test
+	public void testMaxBaud() {
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		// TODO afc needed?
+		rx.sx127x_fsk_ook_set_bitrate(300000);
+		rx.sx127x_fsk_set_fdev(100000);
+		rx.sx127x_fsk_ook_rx_set_bandwidth(170000);
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
+
+		String message = createRandom(6);
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_fsk_ook_set_bitrate(300000);
+		tx.sx127x_fsk_set_fdev(100000);
+		tx.sx127x_fsk_ook_rx_set_bandwidth(170000);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(message);
+		tx.tx(sx127x_modulation_t.FSK);
+
+		LoraTest.assertFrames(rx, message);
+	}
+
+	@Test
+	public void testFiltered() {
+		int nodeAddress = 0xbe;
+		int broadcastAddress = 0xfe;
+
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		rx.sx127x_fsk_ook_set_address_filtering(new AddressConfig(sx127x_address_filtering_t.NODE_AND_BROADCAST, nodeAddress, broadcastAddress));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
+
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+
+		String m1 = "01CAFE";
+		tx.sx127x_fsk_ook_tx_set_for_transmission_with_address(m1, nodeAddress);
+		tx.tx(sx127x_modulation_t.FSK);
+
+		String m2 = "02CAFE";
+		tx.sx127x_fsk_ook_tx_set_for_transmission_with_address(m2, 0x12);
+		tx.tx(sx127x_modulation_t.FSK);
+
+		String m3 = "03CAFE";
+		tx.sx127x_fsk_ook_tx_set_for_transmission(m3);
+		tx.tx(sx127x_modulation_t.FSK);
+
+		String m4 = "04CAFE";
+		tx.sx127x_fsk_ook_tx_set_for_transmission_with_address(m4, broadcastAddress);
+		tx.tx(sx127x_modulation_t.FSK);
+
+		LoraTest.assertFrames(rx, m1, m4);
+	}
+
+	@Test
 	public void testVariableLength() {
 		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
@@ -42,17 +139,17 @@ public class FskTest {
 		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
 
 		String small = createRandom(2);
-		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(small);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(small);
 		tx.tx(sx127x_modulation_t.FSK);
 		LoraTest.assertFrames(rx, small);
 
 		String maxSingleBatch = createRandom(63);
-		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(maxSingleBatch);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(maxSingleBatch);
 		tx.tx(sx127x_modulation_t.FSK);
 		LoraTest.assertFrames(rx, maxSingleBatch);
 
 		String maxVariable = createRandom(255);
-		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(maxVariable);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(maxVariable);
 		tx.tx(sx127x_modulation_t.FSK);
 		LoraTest.assertFrames(rx, maxVariable);
 
@@ -152,7 +249,7 @@ public class FskTest {
 		}
 		return result.toString().toUpperCase();
 	}
-	
+
 	@Before
 	public void start() {
 		rx.reset();

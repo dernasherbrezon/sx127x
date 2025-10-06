@@ -902,10 +902,13 @@ static int sx127x_at_handler_impl(sx127x *device, char *input, char *output, siz
     if (param_count == 0) {
       return sx127x_fsk_ook_tx_stop_beacon(device);
     }
+    if (param_count != 2) {
+      return SX127X_ERR_INVALID_ARG;
+    }
     uint8_t message_hex[255];
     size_t message_hex_length;
     ERROR_CHECK(at_util_string2hex(params[0], message_hex, &message_hex_length));
-    uint32_t interval = strtol(params[1], NULL, 10);
+    uint32_t interval = atoll(params[1]);
     return sx127x_fsk_ook_tx_start_beacon(message_hex, message_hex_length, interval, device);
   }
 
