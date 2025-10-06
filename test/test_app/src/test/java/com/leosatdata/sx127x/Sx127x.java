@@ -432,6 +432,10 @@ public class Sx127x {
 		sendRequest("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
 	}
 
+	public void sx127x_fixture_fsk_ook_tx_set_for_transmission(String hexBytes) {
+		sendRequest("AT+FSKTX=" + hexBytes);
+	}
+
 	public PreambleConfig sx127x_fsk_ook_rx_get_preamble_detector() {
 		String[] parts = COMMA.split(query("AT+PCONF?"));
 		PreambleConfig result = new PreambleConfig();

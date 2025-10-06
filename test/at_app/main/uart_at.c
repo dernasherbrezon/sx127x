@@ -43,12 +43,27 @@ esp_err_t uart_at_handler_create(int (*extra_callback)(sx127x *device, const cha
   result->uart_port_num = CONFIG_AT_UART_PORT_NUM;
   result->device = device;
   result->extra_callback = extra_callback;
-  result->buffer = malloc(sizeof(uint8_t) * (CONFIG_AT_UART_BUFFER_LENGTH + 1)); // 1 is for \0
-  memset(result->buffer, 0, (CONFIG_AT_UART_BUFFER_LENGTH + 1));
+  result->buffer_length = (MAX_PACKET_SIZE_FSK_FIXED * 2 + 128);
+  result->buffer = malloc(sizeof(uint8_t) * (result->buffer_length + 1)); // 1 is for \0
   if (result->buffer == NULL) {
     uart_at_handler_destroy(result);
     return ESP_ERR_NO_MEM;
   }
+  memset(result->buffer, 0, (result->buffer_length + 1));
+  result->temp_buffer = malloc(sizeof(uint8_t) * (result->buffer_length + 1));
+  if (result->temp_buffer == NULL) {
+    uart_at_handler_destroy(result);
+    return ESP_ERR_NO_MEM;
+  }
+  memset(result->temp_buffer, 0, (result->buffer_length + 1));
+  result->output_length = result->buffer_length;
+  result->output = malloc(sizeof(char) * (result->output_length + 1));
+  if (result->output == NULL) {
+    uart_at_handler_destroy(result);
+    return ESP_ERR_NO_MEM;
+  }
+  memset(result->output, 0, result->output_length + 1);
+
   uart_config_t uart_config = {
       .baud_rate = CONFIG_AT_UART_BAUD_RATE,
       .data_bits = UART_DATA_8_BITS,
@@ -75,9 +90,6 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
   uart_event_t event;
   size_t current_index = 0;
   int pattern_length = 0;
-  char output[513];
-  size_t output_length = 512;
-  memset(output, 0, output_length + 1);
   while (1) {
     if (xQueueReceive(handler->uart_queue, (void *) &event, (TickType_t) portMAX_DELAY)) {
       switch (event.type) {
@@ -132,17 +144,23 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
         found = true;
       }
       if (found && current_index > 0) {
-        memset(output, 0, output_length + 1);
-        int code = sx127x_at_handler(handler->device, handler->buffer, output, output_length);
+        memset(handler->output, 0, handler->output_length + 1);
+        strncpy(handler->temp_buffer, handler->buffer, handler->buffer_length);
+        // workaround to properly configure "level" interrupt
+        if (strcmp(handler->temp_buffer, "AT+OPMOD=RXCONT,FSK") == 0) {
+          handler->extra_callback(handler->device, handler->temp_buffer, handler->output, handler->output_length);
+        }
+        int code = sx127x_at_handler(handler->device, handler->temp_buffer, handler->output, handler->output_length);
         if (code == SX127X_CONTINUE && handler->extra_callback != NULL) {
-          code = handler->extra_callback(handler->device, handler->buffer, output, output_length);
+          strncpy(handler->temp_buffer, handler->buffer, handler->buffer_length);
+          code = handler->extra_callback(handler->device, handler->temp_buffer, handler->output, handler->output_length);
         }
         if (code == SX127X_CONTINUE) {
-          snprintf(output, output_length, "unsupported command\r\nERROR\r\n");
+          snprintf(handler->output, handler->output_length, "unsupported command\r\nERROR\r\n");
         }
-        size_t actual_output = strlen(output);
+        size_t actual_output = strlen(handler->output);
         if (actual_output > 0) {
-          uart_at_handler_send(output, actual_output, handler);
+          uart_at_handler_send(handler->output, actual_output, handler);
         }
         current_index = 0;
       }
@@ -156,6 +174,12 @@ void uart_at_handler_destroy(uart_at_handler_t *handler) {
   }
   if (handler->buffer != NULL) {
     free(handler->buffer);
+  }
+  if (handler->output != NULL) {
+    free(handler->output);
+  }
+  if (handler->temp_buffer != NULL) {
+    free(handler->temp_buffer);
   }
   uart_driver_delete(handler->uart_port_num);
   free(handler);

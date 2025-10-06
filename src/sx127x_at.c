@@ -6,7 +6,7 @@
 #include "sx127x_at.h"
 
 // Maximum lengths for input and output buffers
-#define MAX_INPUT_LEN 256
+#define MAX_INPUT_LEN (MAX_PACKET_SIZE_FSK_FIXED * 2 + 128)
 #define MAX_PARAM_COUNT 10
 
 #define ERROR_CHECK(x)           \
@@ -564,7 +564,7 @@ static int at_util_hex2string(const uint8_t *input, size_t input_len, char *outp
   return SX127X_OK;
 }
 
-static int sx127x_at_handler_impl(sx127x *device, const char *input, char *output, size_t output_len) {
+static int sx127x_at_handler_impl(sx127x *device, char *input, char *output, size_t output_len) {
   if (!device || !input || !output) {
     return SX127X_ERR_INVALID_ARG;
   }
@@ -574,13 +574,8 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     return SX127X_ERR_INVALID_ARG;
   }
 
-  // Copy input to avoid modifying the original
-  char cmd[MAX_INPUT_LEN];
-  strncpy(cmd, input + 3, sizeof(cmd) - 1);
-  cmd[sizeof(cmd) - 1] = '\0';
-
   // Split command and parameters
-  char *cmd_name = strtok(cmd, "=");
+  char *cmd_name = strtok(input + 3, "=");
   char *param_str = strtok(NULL, "=");
   bool is_query = (cmd_name && cmd_name[strlen(cmd_name) - 1] == '?');
   if (is_query) {
@@ -890,7 +885,7 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
     if (is_query || param_count < 1 || param_count > 2) {
       return SX127X_ERR_INVALID_ARG;
     }
-    uint8_t message_hex[2048];
+    uint8_t message_hex[MAX_PACKET_SIZE_FSK_FIXED];
     size_t message_hex_length;
     ERROR_CHECK(at_util_string2hex(params[0], message_hex, &message_hex_length));
     if (param_count == 1) {
@@ -1339,7 +1334,7 @@ static int sx127x_at_handler_impl(sx127x *device, const char *input, char *outpu
   return SX127X_CONTINUE;
 }
 
-int sx127x_at_handler(sx127x *device, const char *input, char *output, size_t output_len) {
+int sx127x_at_handler(sx127x *device, char *input, char *output, size_t output_len) {
   int result = sx127x_at_handler_impl(device, input, output, output_len);
   if (result == SX127X_ERR_INVALID_ARG) {
     snprintf(output, output_len, "invalid argument\r\nERROR\r\n");

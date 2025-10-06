@@ -261,7 +261,15 @@ public class LoraTest {
 		tx.tx(sx127x_modulation_t.LORA);
 	}
 
-	private static List<sx127x_frame_t> pullFrames(Sx127x device, int expectedCount) {
+	public static void assertFrames(Sx127x device, String... framesStr) {
+		List<sx127x_frame_t> frames = LoraTest.pullFrames(device, framesStr.length);
+		assertEquals(framesStr.length, frames.size());
+		for (int i = 0; i < framesStr.length; i++) {
+			assertEquals(framesStr[i], frames.get(i).getMessage());
+		}
+	}
+
+	public static List<sx127x_frame_t> pullFrames(Sx127x device, int expectedCount) {
 		List<sx127x_frame_t> result = new ArrayList<>();
 		long totalWait = 5000;
 		long currentWait = 0;

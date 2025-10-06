@@ -9,6 +9,10 @@
 typedef struct {
   int uart_port_num;
   char *buffer;
+  size_t buffer_length;
+  char *temp_buffer;
+  char *output;
+  size_t output_length;
   sx127x *device;
   QueueHandle_t uart_queue;
 

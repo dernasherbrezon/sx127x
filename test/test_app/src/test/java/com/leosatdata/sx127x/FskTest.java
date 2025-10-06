@@ -32,6 +32,33 @@ public class FskTest {
 	}
 
 	@Test
+	public void testVariableLength() {
+		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.FSK));
+
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
+
+		String small = createRandom(2);
+		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(small);
+		tx.tx(sx127x_modulation_t.FSK);
+		LoraTest.assertFrames(rx, small);
+
+		String maxSingleBatch = createRandom(63);
+		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(maxSingleBatch);
+		tx.tx(sx127x_modulation_t.FSK);
+		LoraTest.assertFrames(rx, maxSingleBatch);
+
+		String maxVariable = createRandom(255);
+		tx.sx127x_fixture_fsk_ook_tx_set_for_transmission(maxVariable);
+		tx.tx(sx127x_modulation_t.FSK);
+		LoraTest.assertFrames(rx, maxVariable);
+
+	}
+
+	@Test
 	public void testReset() {
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.FSK));
 		rx.sx127x_set_frequency(frequency);
@@ -118,6 +145,14 @@ public class FskTest {
 		assertEquals(preamble, rx.sx127x_fsk_ook_rx_get_preamble_detector());
 	}
 
+	private static String createRandom(int length) {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			result.append(String.format("%02x", i % 255));
+		}
+		return result.toString().toUpperCase();
+	}
+	
 	@Before
 	public void start() {
 		rx.reset();

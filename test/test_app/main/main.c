@@ -116,35 +116,6 @@ TEST_CASE("sx127x_test_fsk_rx_print_registers", "[fsk]") {
   print_registers();
 }
 
-TEST_CASE("sx127x_test_fsk_rx_variable_length", "[fsk]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
-  sx127x_rx_set_callback(rx_callback, fixture->device, fixture->device);
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, fixture->device));
-  wait_for_rx_done();
-  TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_small_message), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_small_message, fixture->rx_data, sizeof(fsk_small_message));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
-  TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_single_batch), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_single_batch, fixture->rx_data, sizeof(fsk_max_single_batch));
-  xSemaphoreTake(fixture->rx_done, TIMEOUT);
-  TEST_ASSERT_EQUAL_UINT16(sizeof(fsk_max_variable), fixture->rx_data_length);
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(fsk_max_variable, fixture->rx_data, sizeof(fsk_max_variable));
-}
-
-TEST_CASE("sx127x_test_fsk_tx_variable_length", "[fsk]") {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&tx_fixture_config, SX127x_MODULATION_FSK, &fixture));
-  setup_gpio_interrupts((gpio_num_t)tx_fixture_config.dio1, fixture, GPIO_INTR_NEGEDGE);
-  sx127x_tx_set_callback(tx_callback, fixture->device, fixture->device);
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_fsk_ook_tx_set_for_transmission(fsk_small_message, sizeof(fsk_small_message), fixture));
-  xSemaphoreTake(fixture->tx_done, TIMEOUT);
-  vTaskDelay(pdMS_TO_TICKS(50));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_fsk_ook_tx_set_for_transmission(fsk_max_single_batch, sizeof(fsk_max_single_batch), fixture));
-  xSemaphoreTake(fixture->tx_done, TIMEOUT);
-  vTaskDelay(pdMS_TO_TICKS(50));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_fsk_ook_tx_set_for_transmission(fsk_max_variable, sizeof(fsk_max_variable), fixture));
-  xSemaphoreTake(fixture->tx_done, TIMEOUT);
-}
-
 TEST_CASE("sx127x_test_fsk_rx_beacons", "[fsk]") {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fixture_create(&rx_fixture_config, SX127x_MODULATION_FSK, &fixture));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_FIXED, sizeof(fsk_small_message), fixture->device));

@@ -73,7 +73,7 @@ void setup_gpio_interrupts(gpio_num_t gpio, gpio_int_type_t type) {
 }
 
 void cad_callback(void *ctx, int cad_detected) {
-  sx127x *device = (sx127x *)ctx;
+  sx127x *device = (sx127x *) ctx;
   if (cad_detected == 0) {
     ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
     return;
@@ -90,6 +90,8 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
   }
   result->data_length = data_length;
   result->data = malloc(sizeof(uint8_t) * result->data_length);
+  // not supported yet
+  result->snr = 0;
   if (result->data == NULL) {
     sx127x_util_frame_destroy(result);
     return;
@@ -156,6 +158,11 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     return SX127X_ERR_INVALID_ARG;
   }
 
+  if (strcmp(handler->temp_buffer, "AT+OPMOD=RXCONT,FSK") == 0) {
+    setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_POSEDGE);
+    return SX127X_OK;
+  }
+
   // Copy input to avoid modifying the original
   char cmd[MAX_INPUT_LEN];
   strncpy(cmd, input + 3, sizeof(cmd) - 1);
@@ -189,7 +196,10 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
       return SX127X_ERR_INVALID_ARG;
     }
     sx127x_modulation_t modulation = parse_modulation(params[0]);
-    //TODO change dio mapping direction for fsk
+    // change direction for Level interrupt
+    if (modulation == SX127x_MODULATION_FSK) {
+      setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_NEGEDGE);
+    }
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, modulation, device));
     // do not send OK here. Send it from tx_callback
     return SX127X_OK;
@@ -199,16 +209,16 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     if (!is_query) {
       return SX127X_ERR_INVALID_ARG;
     }
-    char message[2048];
-    char formatted[2512];
-    size_t formatted_length = 2512;
+    char message[(MAX_PACKET_SIZE_FSK_FIXED + 1) * 2];
+    char formatted[(MAX_PACKET_SIZE_FSK_FIXED + 512) * 2];
+    size_t formatted_length = (MAX_PACKET_SIZE_FSK_FIXED + 512) * 2;
     //FIXME lock access
     for (size_t i = 0; i < at_util_vector_size(frames); i++) {
       sx127x_frame_t *cur_frame = NULL;
       at_util_vector_get(i, (void *) &cur_frame, frames);
       int code = at_util_hex2string(cur_frame->data, cur_frame->data_length, message);
       if (code == 0) {
-        snprintf(formatted, formatted_length, "%s,%d,%g,%" PRId32 ",%" PRIu64 "\r\n", message, cur_frame->rssi, cur_frame->snr, cur_frame->frequency_error, cur_frame->timestamp);
+        snprintf(formatted, formatted_length, "%s,%d,%.2f,%" PRId32 ",%" PRIu64 "\r\n", message, cur_frame->rssi, cur_frame->snr, cur_frame->frequency_error, cur_frame->timestamp);
         uart_at_handler_send(formatted, strlen(formatted), handler);
       }
       sx127x_util_frame_destroy(cur_frame);
@@ -281,6 +291,6 @@ void app_main(void) {
   setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_POSEDGE);
   setup_gpio_interrupts((gpio_num_t) DIO2, GPIO_INTR_POSEDGE);
   ESP_ERROR_CHECK(uart_at_handler_create(extra_at_handler, device, &handler));
-  xTaskCreate(uart_rx_task, "uart_rx_task", 1024 * 8, handler, configMAX_PRIORITIES - 1, NULL);
+  xTaskCreate(uart_rx_task, "uart_rx_task", (MAX_PACKET_SIZE_FSK_FIXED * 2 + 128) * 4, handler, configMAX_PRIORITIES - 1, NULL);
   xTaskCreatePinnedToCore(handle_interrupt_task, "handle interrupt", 8196, NULL, 2, &handle_interrupt, xPortGetCoreID());
 }
