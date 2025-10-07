@@ -59,11 +59,11 @@ void rx_callback(void *device, uint8_t *data, uint16_t data_length) {
 void cad_callback(void *device, int cad_detected) {
   if (cad_detected == 0) {
     fprintf(stdout, "cad not detected\n");
-    LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+    LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_CAD, SX127X_MODULATION_LORA, device));
     return;
   }
   // put into RX mode first to handle interrupt as soon as possible
-  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
   fprintf(stdout, "cad detected\n");
 }
 

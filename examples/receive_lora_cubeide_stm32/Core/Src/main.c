@@ -380,11 +380,11 @@ void cad_callback(void *ctx, int cad_detected) {
   sx127x *device = (sx127x *)ctx;
   if (cad_detected == 0) {
     stm_log("cad not detected\r\n");
-    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+    ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_CAD, SX127X_MODULATION_LORA, device));
     return;
   }
   // put into RX mode first to handle interrupt as soon as possible
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
   stm_log("cad detected\r\n");
 }
 
