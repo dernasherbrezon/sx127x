@@ -9,7 +9,7 @@ Library to work with semtech sx127x chips.
 There are several similar libraries exist, but this one is much better:
 
 * LoRa, FSK and OOK modulations
-* Support for resume from deep sleep. Most of libraries re-init the chip upon the startup and erase everything that was received previously. This library provides granular initialization functions. See ```examples/receive_lora_deepsleep/main/main.c``` for more info.
+* Support for resume from deep sleep. Most of the libraries re-init the chip upon the startup and erase everything that was received previously. This library provides granular initialization functions. See ```examples/receive_lora_deepsleep/main/main.c``` for more info.
 * Written in C. It is so much easier to integrate with another C project. But also possible to use from C++ project.
 * Doesn't have external dependencies. This library is based on C99 standard.
 * Can work with 2 or more modules connected to the same SPI bus.
@@ -148,15 +148,24 @@ make test
 
 ## Integration tests
 
-Integration tests can verify communication between real devices in different modes. Tests require two LoRa boards connected to the same host. It is possible to test on any other boards by overriding pin mappings in ```test/test_app/main.c```. By default tests assume transmitter and receiver is TTGO lora32.
+Integration tests can verify communication between real devices in different modes. Tests require two LoRa boards connected to the same host via serial interface.
 
-Before running tests from ESP-IDF make sure [pytest is installed](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html).
+### Step 1. Install at_app
 
-Run the following command to test:
+This app will provide AT command interface to control chips from the test_app. By default, tests assume transmitter and receiver is TTGO lora32.
 
-```
-cd test/test_app
+```bash
+cd test/at_app
 idf.py build
-export ESPBAUD=460800
-pytest --target esp32 --port="/dev/ttyACM0|/dev/ttyACM1" pytest_*
+idf.py -p /dev/tty.usbserial-56581004481 flash
+idf.py -p /dev/tty.usbserial-56B60126151 flash
+```
+
+### Step 2. Run tests
+
+Tests written in Java and require Maven.
+
+```bash
+cd test/test_app
+mvn -Drx=/dev/tty.usbserial-56B60126151 -Dtx=/dev/tty.usbserial-56581004481 -Dfreq=868200000 test
 ```
