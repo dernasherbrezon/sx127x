@@ -28,7 +28,7 @@ extern "C" {
 
 #define SX1276_MIN_FREQUENCY 137000000
 #define SX1272_MIN_FREQUENCY 860000000
-#define SX127x_MAX_FREQUENCY 1020000000
+#define SX127X_MAX_FREQUENCY 1020000000
 
 #define SX1276_VERSION 0x12
 #define SX1272_VERSION 0x22
@@ -51,20 +51,20 @@ extern "C" {
  * This structure used to change mode
  */
 typedef enum {
-  SX127x_MODE_SLEEP = 0b00000000,      // SLEEP
-  SX127x_MODE_STANDBY = 0b00000001,    // STDBY
-  SX127x_MODE_FSTX = 0b00000010,       // Frequency synthesis TX
-  SX127x_MODE_TX = 0b00000011,         // Transmit
-  SX127x_MODE_FSRX = 0b00000100,       // Frequency synthesis RX
-  SX127x_MODE_RX_CONT = 0b00000101,    // Receive continuous
-  SX127x_MODE_RX_SINGLE = 0b00000110,  // Receive single
-  SX127x_MODE_CAD = 0b00000111         // Channel activity detection
+  SX127X_MODE_SLEEP = 0b00000000,      // SLEEP
+  SX127X_MODE_STANDBY = 0b00000001,    // STDBY
+  SX127X_MODE_FSTX = 0b00000010,       // Frequency synthesis TX
+  SX127X_MODE_TX = 0b00000011,         // Transmit
+  SX127X_MODE_FSRX = 0b00000100,       // Frequency synthesis RX
+  SX127X_MODE_RX_CONT = 0b00000101,    // Receive continuous
+  SX127X_MODE_RX_SINGLE = 0b00000110,  // Receive single
+  SX127X_MODE_CAD = 0b00000111         // Channel activity detection
 } sx127x_mode_t;
 
 typedef enum {
-  SX127x_MODULATION_LORA = 0b10000000,
-  SX127x_MODULATION_FSK = 0b00000000,  // default
-  SX127x_MODULATION_OOK = 0b00100000
+  SX127X_MODULATION_LORA = 0b10000000,
+  SX127X_MODULATION_FSK = 0b00000000,  // default
+  SX127X_MODULATION_OOK = 0b00100000
 } sx127x_modulation_t;
 
 /**
@@ -171,13 +171,13 @@ typedef enum {
 } sx127x_address_filtering_t;
 
 typedef enum {
-  SX127x_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
-  SX127x_LNA_GAIN_G2 = 0b01000000,
-  SX127x_LNA_GAIN_G3 = 0b01100000,
-  SX127x_LNA_GAIN_G4 = 0b10000000,
-  SX127x_LNA_GAIN_G5 = 0b10100000,
-  SX127x_LNA_GAIN_G6 = 0b11000000,   // Minimum gain
-  SX127x_LNA_GAIN_AUTO = 0b00000000  // Automatic. See 5.5.3. for details
+  SX127X_LNA_GAIN_G1 = 0b00100000,  // Maximum gain
+  SX127X_LNA_GAIN_G2 = 0b01000000,
+  SX127X_LNA_GAIN_G3 = 0b01100000,
+  SX127X_LNA_GAIN_G4 = 0b10000000,
+  SX127X_LNA_GAIN_G5 = 0b10100000,
+  SX127X_LNA_GAIN_G6 = 0b11000000,   // Minimum gain
+  SX127X_LNA_GAIN_AUTO = 0b00000000  // Automatic. See 5.5.3. for details
 } sx127x_gain_t;
 
 typedef enum {
@@ -220,23 +220,23 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127x_BW_7800,
-  SX127x_BW_10400,
-  SX127x_BW_15600,
-  SX127x_BW_20800,
-  SX127x_BW_31250,
-  SX127x_BW_41700,
-  SX127x_BW_62500,
-  SX127x_BW_125000,
-  SX127x_BW_250000,
-  SX127x_BW_500000
+  SX127X_BW_7800,
+  SX127X_BW_10400,
+  SX127X_BW_15600,
+  SX127X_BW_20800,
+  SX127X_BW_31250,
+  SX127X_BW_41700,
+  SX127X_BW_62500,
+  SX127X_BW_125000,
+  SX127X_BW_250000,
+  SX127X_BW_500000
 } sx127x_bw_t;
 
 typedef enum {
-  SX127x_CR_4_5,
-  SX127x_CR_4_6,
-  SX127x_CR_4_7,
-  SX127x_CR_4_8
+  SX127X_CR_4_5,
+  SX127X_CR_4_6,
+  SX127X_CR_4_7,
+  SX127X_CR_4_8
 } sx127x_cr_t;
 
 /**
@@ -244,13 +244,13 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127x_SF_6 = 0b01100000,   // 64 chips / symbol
-  SX127x_SF_7 = 0b01110000,   // 128 chips / symbol
-  SX127x_SF_8 = 0b10000000,   // 256 chips / symbol
-  SX127x_SF_9 = 0b10010000,   // 512 chips / symbol
-  SX127x_SF_10 = 0b10100000,  // 1024 chips / symbol
-  SX127x_SF_11 = 0b10110000,  // 2048 chips / symbol
-  SX127x_SF_12 = 0b11000000   // 4096 chips / symbol
+  SX127X_SF_6 = 0b01100000,   // 64 chips / symbol
+  SX127X_SF_7 = 0b01110000,   // 128 chips / symbol
+  SX127X_SF_8 = 0b10000000,   // 256 chips / symbol
+  SX127X_SF_9 = 0b10010000,   // 512 chips / symbol
+  SX127X_SF_10 = 0b10100000,  // 1024 chips / symbol
+  SX127X_SF_11 = 0b10110000,  // 2048 chips / symbol
+  SX127X_SF_12 = 0b11000000   // 4096 chips / symbol
 } sx127x_sf_t;
 
 /**
@@ -273,28 +273,28 @@ typedef struct {
  *
  */
 typedef enum {
-  SX127x_DIO0_RX_DONE = 0b00000000,              // Packet reception complete
-  SX127x_DIO0_TX_DONE = 0b01000000,              // FIFO Payload transmission complete
-  SX127x_DIO0_CAD_DONE = 0b10000000,             // CAD complete
-  SX127x_DIO1_RXTIMEOUT = 0b00000000,            // RX timeout interrupt. Used in RX single mode
-  SX127x_DIO1_FHSS_CHANGE_CHANNEL = 0b00010000,  // FHSS change channel
-  SX127x_DIO1_CAD_DETECTED = 0b00100000,         // Valid Lora signal detected during CAD operation
-  SX127x_DIO2_FHSS_CHANGE_CHANNEL = 0b00000000,  // FHSS change channel on digital pin 2
-  SX127x_DIO3_CAD_DONE = 0b00000000,             // CAD complete on digital pin 3
-  SX127x_DIO3_VALID_HEADER = 0b00000001,         // Valid header received in Rx
-  SX127x_DIO3_PAYLOAD_CRC_ERROR = 0b00000010,    // Payload CRC error
+  SX127X_DIO0_RX_DONE = 0b00000000,              // Packet reception complete
+  SX127X_DIO0_TX_DONE = 0b01000000,              // FIFO Payload transmission complete
+  SX127X_DIO0_CAD_DONE = 0b10000000,             // CAD complete
+  SX127X_DIO1_RXTIMEOUT = 0b00000000,            // RX timeout interrupt. Used in RX single mode
+  SX127X_DIO1_FHSS_CHANGE_CHANNEL = 0b00010000,  // FHSS change channel
+  SX127X_DIO1_CAD_DETECTED = 0b00100000,         // Valid Lora signal detected during CAD operation
+  SX127X_DIO2_FHSS_CHANGE_CHANNEL = 0b00000000,  // FHSS change channel on digital pin 2
+  SX127X_DIO3_CAD_DONE = 0b00000000,             // CAD complete on digital pin 3
+  SX127X_DIO3_VALID_HEADER = 0b00000001,         // Valid header received in Rx
+  SX127X_DIO3_PAYLOAD_CRC_ERROR = 0b00000010,    // Payload CRC error
 } sx127x_dio_mapping1_t;
 
 typedef enum {
-  SX127x_FSK_DIO0_PAYLOAD_READY = 0b00000000,
-  SX127x_FSK_DIO0_PACKET_SENT = 0b00000000,
-  SX127x_FSK_DIO0_CRC_OK = 0b01000000,
-  SX127x_FSK_DIO1_FIFO_LEVEL = 0b00000000,
-  SX127x_FSK_DIO1_FIFO_EMPTY = 0b00010000,
-  SX127x_FSK_DIO1_FIFO_FULL = 0b00100000,
-  SX127x_FSK_DIO2_FIFO_FULL = 0b00000000,
-  SX127x_FSK_DIO2_SYNCADDRESS = 0b00001100,
-  SX127x_FSK_DIO3_FIFO_EMPTY = 0b00000000
+  SX127X_FSK_DIO0_PAYLOAD_READY = 0b00000000,
+  SX127X_FSK_DIO0_PACKET_SENT = 0b00000000,
+  SX127X_FSK_DIO0_CRC_OK = 0b01000000,
+  SX127X_FSK_DIO1_FIFO_LEVEL = 0b00000000,
+  SX127X_FSK_DIO1_FIFO_EMPTY = 0b00010000,
+  SX127X_FSK_DIO1_FIFO_FULL = 0b00100000,
+  SX127X_FSK_DIO2_FIFO_FULL = 0b00000000,
+  SX127X_FSK_DIO2_SYNCADDRESS = 0b00001100,
+  SX127X_FSK_DIO3_FIFO_EMPTY = 0b00000000
 } sx127x_fsk_ook_dio_mapping1_t;
 
 /**
@@ -302,21 +302,21 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127x_DIO4_CAD_DETECTED = 0b00000000,  // Valid Lora signal detected during CAD operation
-  SX127x_DIO4_PLL_LOCK = 0b01000000,      // PLL lock
-  SX127x_DIO5_MODE_READY = 0b00000000,    // Mode ready
-  SX127x_DIO5_CLK_OUT = 0b01000000        // clock out
+  SX127X_DIO4_CAD_DETECTED = 0b00000000,  // Valid Lora signal detected during CAD operation
+  SX127X_DIO4_PLL_LOCK = 0b01000000,      // PLL lock
+  SX127X_DIO5_MODE_READY = 0b00000000,    // Mode ready
+  SX127X_DIO5_CLK_OUT = 0b01000000        // clock out
 } sx127x_dio_mapping2_t;
 
 typedef enum {
-  SX127x_FSK_DIO4_TEMP_CHANGE = 0b00000000,
-  SX127x_FSK_DIO4_PLL_LOCK = 0b01000000,
-  SX127x_FSK_DIO4_TIMEOUT = 0b10000000,
-  SX127x_FSK_DIO4_PREAMBLE_DETECT = 0b11000000,
-  SX127x_FSK_DIO5_CLK_OUT = 0b00000000,
-  SX127x_FSK_DIO5_PLL_LOCK = 0b00010000,
-  SX127x_FSK_DIO5_DATA = 0b00100000,
-  SX127x_FSK_DIO5_MODE_READY = 0b00110000
+  SX127X_FSK_DIO4_TEMP_CHANGE = 0b00000000,
+  SX127X_FSK_DIO4_PLL_LOCK = 0b01000000,
+  SX127X_FSK_DIO4_TIMEOUT = 0b10000000,
+  SX127X_FSK_DIO4_PREAMBLE_DETECT = 0b11000000,
+  SX127X_FSK_DIO5_CLK_OUT = 0b00000000,
+  SX127X_FSK_DIO5_PLL_LOCK = 0b00010000,
+  SX127X_FSK_DIO5_DATA = 0b00100000,
+  SX127X_FSK_DIO5_MODE_READY = 0b00110000
 } sx127x_fsk_ook_dio_mapping2_t;
 
 /**
@@ -324,8 +324,8 @@ typedef enum {
  *
  */
 typedef enum {
-  SX127x_PA_PIN_RFO = 0b00000000,   // RFO pin. Output power is limited to +14 dBm.
-  SX127x_PA_PIN_BOOST = 0b10000000  // PA_BOOST pin. Output power is limited to +20 dBm
+  SX127X_PA_PIN_RFO = 0b00000000,   // RFO pin. Output power is limited to +14 dBm.
+  SX127X_PA_PIN_BOOST = 0b10000000  // PA_BOOST pin. Output power is limited to +20 dBm
 } sx127x_pa_pin_t;
 
 /**

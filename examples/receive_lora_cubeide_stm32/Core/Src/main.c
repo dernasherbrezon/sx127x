@@ -126,19 +126,19 @@ int main(void)
   stm_log("system initialized\r\n");
   ERROR_CHECK(sx127x_create(&hspi2, &device));
   stm_log("sx127x connected\r\n");
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+  ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_LORA, &device));
   ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ERROR_CHECK(sx127x_lora_reset_fifo(&device));
   ERROR_CHECK(sx127x_rx_set_lna_boost_hf(true, &device));
-  ERROR_CHECK(sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, &device));
-  ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
+  ERROR_CHECK(sx127x_rx_set_lna_gain(SX127X_LNA_GAIN_G4, &device));
+  ERROR_CHECK(sx127x_lora_set_bandwidth(SX127X_BW_125000, &device));
   ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, &device));
-  ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127x_SF_9, &device));
+  ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127X_SF_9, &device));
   ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
   ERROR_CHECK(sx127x_set_preamble_length(8, &device));
   sx127x_rx_set_callback(rx_callback, &device, &device);
   sx127x_lora_cad_set_callback(cad_callback, &device, &device);
-  ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, &device));
+  ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, &device));
   stm_log("waiting for messages\r\n");
 
   /* USER CODE END 2 */

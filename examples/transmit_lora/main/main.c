@@ -34,12 +34,12 @@ void tx_callback(void *ctx) {
   } else if (current_power_level < supported_power_levels_count) {
     uint8_t data[] = {0xCA, 0xFE};
     ESP_ERROR_CHECK(sx127x_lora_tx_set_for_transmission(data, sizeof(data), device));
-    ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, supported_power_levels[current_power_level], device));
+    ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, supported_power_levels[current_power_level], device));
     current_power_level++;
   } else {
     return;
   }
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_LORA, device));
   ESP_LOGI(TAG, "transmitting");
   messages_sent++;
 }
@@ -52,12 +52,12 @@ void app_main() {
   sx127x_init_spi(&spi_device);
 
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_LORA, &device));
   ESP_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ESP_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
-  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
+  ESP_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127X_BW_125000, &device));
   ESP_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, &device));
-  ESP_ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127x_SF_9, &device));
+  ESP_ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127X_SF_9, &device));
   ESP_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
   ESP_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
   sx127x_tx_set_callback(tx_callback, &device, &device);
@@ -65,7 +65,7 @@ void app_main() {
   gpio_install_isr_service(0);
   setup_gpio_interrupts((gpio_num_t)DIO0, &device, GPIO_INTR_POSEDGE);
 
-  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
+  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
   sx127x_tx_header_t header = {
       .enable_crc = true,
       .coding_rate = SX127x_CR_4_5};

@@ -404,34 +404,34 @@ static const char *format_pa_ramp(sx127x_pa_ramp_t pa_ramp) {
 }
 
 static sx127x_mode_t parse_mode(const char *str) {
-  if (strcmp(str, "SX127X_MODE_SLEEP") == 0) return SX127x_MODE_SLEEP;
-  if (strcmp(str, "SX127X_MODE_STANDBY") == 0) return SX127x_MODE_STANDBY;
-  if (strcmp(str, "SX127X_MODE_FSTX") == 0) return SX127x_MODE_FSTX;
-  if (strcmp(str, "SX127X_MODE_TX") == 0) return SX127x_MODE_TX;
-  if (strcmp(str, "SX127X_MODE_FSRX") == 0) return SX127x_MODE_FSRX;
-  if (strcmp(str, "SX127X_MODE_RX_CONT") == 0) return SX127x_MODE_RX_CONT;
-  if (strcmp(str, "SX127X_MODE_RX_SINGLE") == 0) return SX127x_MODE_RX_SINGLE;
-  if (strcmp(str, "SX127X_MODE_CAD") == 0) return SX127x_MODE_CAD;
+  if (strcmp(str, "SX127X_MODE_SLEEP") == 0) return SX127X_MODE_SLEEP;
+  if (strcmp(str, "SX127X_MODE_STANDBY") == 0) return SX127X_MODE_STANDBY;
+  if (strcmp(str, "SX127X_MODE_FSTX") == 0) return SX127X_MODE_FSTX;
+  if (strcmp(str, "SX127X_MODE_TX") == 0) return SX127X_MODE_TX;
+  if (strcmp(str, "SX127X_MODE_FSRX") == 0) return SX127X_MODE_FSRX;
+  if (strcmp(str, "SX127X_MODE_RX_CONT") == 0) return SX127X_MODE_RX_CONT;
+  if (strcmp(str, "SX127X_MODE_RX_SINGLE") == 0) return SX127X_MODE_RX_SINGLE;
+  if (strcmp(str, "SX127X_MODE_CAD") == 0) return SX127X_MODE_CAD;
   return -1; // Invalid
 }
 
 static const char *format_mode(sx127x_mode_t mode) {
   switch (mode) {
-    case SX127x_MODE_SLEEP:
+    case SX127X_MODE_SLEEP:
       return "SX127X_MODE_SLEEP";
-    case SX127x_MODE_STANDBY:
+    case SX127X_MODE_STANDBY:
       return "SX127X_MODE_STANDBY";
-    case SX127x_MODE_FSTX:
+    case SX127X_MODE_FSTX:
       return "SX127X_MODE_FSTX";
-    case SX127x_MODE_TX:
+    case SX127X_MODE_TX:
       return "SX127X_MODE_TX";
-    case SX127x_MODE_FSRX:
+    case SX127X_MODE_FSRX:
       return "SX127X_MODE_FSRX";
-    case SX127x_MODE_RX_CONT:
+    case SX127X_MODE_RX_CONT:
       return "SX127X_MODE_RX_CONT";
-    case SX127x_MODE_RX_SINGLE:
+    case SX127X_MODE_RX_SINGLE:
       return "SX127X_MODE_RX_SINGLE";
-    case SX127x_MODE_CAD:
+    case SX127X_MODE_CAD:
       return "SX127X_MODE_CAD";
     default:
       return "UNKNOWN";
@@ -439,19 +439,19 @@ static const char *format_mode(sx127x_mode_t mode) {
 }
 
 static sx127x_modulation_t parse_modulation(const char *str) {
-  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127x_MODULATION_LORA;
-  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127x_MODULATION_FSK;
-  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127x_MODULATION_OOK;
+  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127X_MODULATION_LORA;
+  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127X_MODULATION_FSK;
+  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127X_MODULATION_OOK;
   return -1; // Invalid
 }
 
 static const char *format_modulation(sx127x_modulation_t modulation) {
   switch (modulation) {
-    case SX127x_MODULATION_LORA:
+    case SX127X_MODULATION_LORA:
       return "SX127X_MODULATION_LORA";
-    case SX127x_MODULATION_FSK:
+    case SX127X_MODULATION_FSK:
       return "SX127X_MODULATION_FSK";
-    case SX127x_MODULATION_OOK:
+    case SX127X_MODULATION_OOK:
       return "SX127X_MODULATION_OOK";
     default:
       return "UNKNOWN";
@@ -459,22 +459,22 @@ static const char *format_modulation(sx127x_modulation_t modulation) {
 }
 
 static sx127x_cr_t parse_coding_rate(const char *str) {
-  if (strcmp(str, "SX127X_CR_4_5") == 0) return SX127x_CR_4_5;
-  if (strcmp(str, "SX127X_CR_4_6") == 0) return SX127x_CR_4_6;
-  if (strcmp(str, "SX127X_CR_4_7") == 0) return SX127x_CR_4_7;
-  if (strcmp(str, "SX127X_CR_4_8") == 0) return SX127x_CR_4_8;
+  if (strcmp(str, "SX127X_CR_4_5") == 0) return SX127X_CR_4_5;
+  if (strcmp(str, "SX127X_CR_4_6") == 0) return SX127X_CR_4_6;
+  if (strcmp(str, "SX127X_CR_4_7") == 0) return SX127X_CR_4_7;
+  if (strcmp(str, "SX127X_CR_4_8") == 0) return SX127X_CR_4_8;
   return -1; // Invalid
 }
 
 static const char *format_coding_rate(sx127x_cr_t cr) {
   switch (cr) {
-    case SX127x_CR_4_5:
+    case SX127X_CR_4_5:
       return "SX127X_CR_4_5";
-    case SX127x_CR_4_6:
+    case SX127X_CR_4_6:
       return "SX127X_CR_4_6";
-    case SX127x_CR_4_7:
+    case SX127X_CR_4_7:
       return "SX127X_CR_4_7";
-    case SX127x_CR_4_8:
+    case SX127X_CR_4_8:
       return "SX127X_CR_4_8";
     default:
       return "UNKNOWN";
@@ -482,16 +482,16 @@ static const char *format_coding_rate(sx127x_cr_t cr) {
 }
 
 static sx127x_pa_pin_t parse_pa_pin(const char *str) {
-  if (strcmp(str, "SX127X_PA_PIN_RFO") == 0) return SX127x_PA_PIN_RFO;
-  if (strcmp(str, "SX127X_PA_PIN_BOOST") == 0) return SX127x_PA_PIN_BOOST;
+  if (strcmp(str, "SX127X_PA_PIN_RFO") == 0) return SX127X_PA_PIN_RFO;
+  if (strcmp(str, "SX127X_PA_PIN_BOOST") == 0) return SX127X_PA_PIN_BOOST;
   return -1; // Invalid
 }
 
 static const char *format_pa_pin(sx127x_pa_pin_t pin) {
   switch (pin) {
-    case SX127x_PA_PIN_RFO:
+    case SX127X_PA_PIN_RFO:
       return "SX127X_PA_PIN_RFO";
-    case SX127x_PA_PIN_BOOST:
+    case SX127X_PA_PIN_BOOST:
       return "SX127X_PA_PIN_BOOST";
     default:
       return "UNKNOWN";

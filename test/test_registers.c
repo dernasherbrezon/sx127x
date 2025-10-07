@@ -2,24 +2,24 @@
 #include <unity.h>
 
 void test_registers_fsk_ook(sx127x *device) {
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device), "unable to sx127x_set_opmod");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127X_MODE_SLEEP, SX127X_MODULATION_FSK, device), "unable to sx127x_set_opmod");
   sx127x_mode_t mode;
   sx127x_modulation_t modulation;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_opmod(device, &mode, &modulation), "unable to sx127x_get_opmod");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODE_SLEEP, mode, "invalid mode");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODULATION_FSK, modulation, "invalid modulation");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_MODE_SLEEP, mode, "invalid mode");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_MODULATION_FSK, modulation, "invalid modulation");
   // LnaGain is only readable in the standby mode
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device), "unable to sx127x_set_opmod");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device), "unable to sx127x_set_opmod");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_frequency(868200012, device), "unable to sx127x_set_frequency");
   uint64_t frequency;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_frequency(device, &frequency), "unable to sx127x_get_frequency");
   TEST_ASSERT_EQUAL_MESSAGE(868200000, frequency, "invalid frequency");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device), "unable to sx127x_rx_set_lna_gain");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127X_LNA_GAIN_G4, device), "unable to sx127x_rx_set_lna_gain");
   sx127x_gain_t lna_gain;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain), "unable to sx127x_rx_get_lna_gain");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_LNA_GAIN_G4, lna_gain, "invalid lna_gain");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_LNA_GAIN_G4, lna_gain, "invalid lna_gain");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device), "unable to sx127x_fsk_ook_set_bitrate");
   float bitrate;
@@ -125,7 +125,7 @@ void test_registers_fsk_ook(sx127x *device) {
   TEST_ASSERT_EQUAL_MESSAGE(SX127X_FIXED, format, "invalid format");
   TEST_ASSERT_EQUAL_INT_MESSAGE(2047, max_payload_length, "invalid max_payload_length");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_OOK, device), "unable to sx127x_set_opmod OOK");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127X_MODE_SLEEP, SX127X_MODULATION_OOK, device), "unable to sx127x_set_opmod OOK");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_ERR_INVALID_ARG, sx127x_fsk_ook_set_bitrate(800, device), "unable to sx127x_fsk_ook_set_bitrate");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_fsk_ook_set_bitrate(4800.0, device), "unable to sx127x_fsk_ook_set_bitrate");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_ook_rx_set_peak_mode(SX127X_0_5_DB, 0x0C, SX127X_1_1_CHIP, device), "unable to sx127x_ook_rx_set_peak_mode");
@@ -167,32 +167,32 @@ void test_registers_fsk_ook(sx127x *device) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_preamble_length(device, &preamble_length), "unable to sx127x_get_preamble_length");
   TEST_ASSERT_EQUAL_INT_MESSAGE(8, preamble_length, "invalid preamble_length");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device), "unable to sx127x_rx_set_lna_gain");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127X_LNA_GAIN_AUTO, device), "unable to sx127x_rx_set_lna_gain");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain), "unable to sx127x_rx_get_lna_gain");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_LNA_GAIN_AUTO, lna_gain, "invalid lna_gain");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_LNA_GAIN_AUTO, lna_gain, "invalid lna_gain");
 }
 
 void test_registers_lora(sx127x *device) {
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_LORA, device), "unable to sx127x_set_opmod LORA");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127X_MODE_SLEEP, SX127X_MODULATION_LORA, device), "unable to sx127x_set_opmod LORA");
   sx127x_mode_t mode;
   sx127x_modulation_t modulation;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_opmod(device, &mode, &modulation), "unable to sx127x_get_opmod LORA");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODE_SLEEP, mode, "invalid mode");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_MODULATION_LORA, modulation, "invalid modulation");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_MODE_SLEEP, mode, "invalid mode");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_MODULATION_LORA, modulation, "invalid modulation");
   // LnaGain is only readable in the standby mode
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, device), "unable to sx127x_set_opmod LORA");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_LORA, device), "unable to sx127x_set_opmod LORA");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_set_frequency(868200012, device), "unable to sx127x_set_frequency LORA");
   uint64_t frequency;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_get_frequency(device, &frequency), "unable to sx127x_get_frequency LORA");
   TEST_ASSERT_EQUAL_MESSAGE(868200000, frequency, "invalid frequency");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_bandwidth(SX127x_BW_125000, device), "unable to sx127x_lora_set_bandwidth");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_bandwidth(SX127X_BW_125000, device), "unable to sx127x_lora_set_bandwidth");
   sx127x_bw_t bandwidth;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_get_bandwidth(device, &bandwidth), "unable to sx127x_lora_get_bandwidth");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_BW_125000, bandwidth, "invalid bandwidth");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_BW_125000, bandwidth, "invalid bandwidth");
   TEST_ASSERT_EQUAL_INT_MESSAGE(125000, sx127x_bandwidth_to_hz(bandwidth), "unable to sx127x_bandwidth_to_hz");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127x_BW_15600, sx127x_hz_to_bandwidth(15600), "unable to sx127x_hz_to_bandwidth");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_BW_15600, sx127x_hz_to_bandwidth(15600), "unable to sx127x_hz_to_bandwidth");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_implicit_header(NULL, device), "unable to sx127x_lora_set_implicit_header");
   bool enabled;
@@ -200,10 +200,10 @@ void test_registers_lora(sx127x *device) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_get_implicit_header(device, &explicit_header, &enabled), "unable to sx127x_lora_get_implicit_header");
   TEST_ASSERT_EQUAL_MESSAGE(false, enabled, "invalid enabled");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_spreading_factor(SX127x_SF_9, device), "unable to sx127x_lora_set_spreading_factor");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_spreading_factor(SX127X_SF_9, device), "unable to sx127x_lora_set_spreading_factor");
   sx127x_sf_t spreading_factor;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_get_spreading_factor(device, &spreading_factor), "unable to sx127x_lora_get_spreading_factor");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_SF_9, spreading_factor, "invalid spreading_factor");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_SF_9, spreading_factor, "invalid spreading_factor");
 
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_syncword(18, device), "unable to sx127x_lora_set_syncword");
   uint8_t syncword;
@@ -223,36 +223,36 @@ void test_registers_lora(sx127x *device) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_get_lna_boost_hf(device, &enabled), "unable to sx127x_rx_get_lna_boost_hf");
   TEST_ASSERT_EQUAL_MESSAGE(true, enabled, "invalid enabled");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_G4, device), "unable to sx127x_rx_set_lna_gain");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127X_LNA_GAIN_G4, device), "unable to sx127x_rx_set_lna_gain");
   sx127x_gain_t lna_gain;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain), "unable to sx127x_rx_get_lna_gain");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_LNA_GAIN_G4, lna_gain, "invalid lna_gain");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_LNA_GAIN_G4, lna_gain, "invalid lna_gain");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 4, device), "unable to sx127x_tx_set_pa_config");
   sx127x_pa_pin_t pin;
   int power;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_BOOST, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_BOOST, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(4, power, "invalid power");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_RFO, -4, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_RFO, -4, device), "unable to sx127x_tx_set_pa_config");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_RFO, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_RFO, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(-4, power, "invalid power");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_RFO, 15, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_RFO, 15, device), "unable to sx127x_tx_set_pa_config");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_RFO, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_RFO, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(15, power, "invalid power");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 2, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 2, device), "unable to sx127x_tx_set_pa_config");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_BOOST, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_BOOST, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(2, power, "invalid power");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 20, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 20, device), "unable to sx127x_tx_set_pa_config");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_BOOST, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_BOOST, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(20, power, "invalid power");
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 17, device), "unable to sx127x_tx_set_pa_config");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 17, device), "unable to sx127x_tx_set_pa_config");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_tx_get_pa_config(device, &pin, &power), "unable to sx127x_tx_get_pa_config");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_PA_PIN_BOOST, pin, "invalid pin");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_PA_PIN_BOOST, pin, "invalid pin");
   TEST_ASSERT_EQUAL_MESSAGE(17, power, "invalid power");
 
   uint8_t milliamps;
@@ -271,20 +271,20 @@ void test_registers_lora(sx127x *device) {
 
   sx127x_tx_header_t header = {
       .enable_crc = true,
-      .coding_rate = SX127x_CR_4_5};
+      .coding_rate = SX127X_CR_4_5};
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_tx_set_explicit_header(&header, device), "unable to sx127x_lora_tx_set_explicit_header");
   sx127x_tx_header_t expected_header;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_tx_get_explicit_header(device, &enabled, &expected_header), "unable to sx127x_lora_tx_get_explicit_header");
   TEST_ASSERT_EQUAL_MESSAGE(true, enabled, "invalid enabled");
   TEST_ASSERT_EQUAL_MESSAGE(true, expected_header.enable_crc, "invalid enable_crc");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_CR_4_5, expected_header.coding_rate, "invalid coding_rate");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_CR_4_5, expected_header.coding_rate, "invalid coding_rate");
 
   int32_t frequency_error;
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_set_ppm_offset(4000, device), "unable to sx127x_lora_set_ppm_offset");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_lora_get_ppm_offset(device, &frequency_error), "unable to sx127x_lora_get_ppm_offset");
   TEST_ASSERT_EQUAL_INT_MESSAGE(3655, frequency_error, "invalid frequency_error");
 
-  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127x_LNA_GAIN_AUTO, device), "unable to sx127x_rx_set_lna_gain");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_set_lna_gain(SX127X_LNA_GAIN_AUTO, device), "unable to sx127x_rx_set_lna_gain");
   TEST_ASSERT_EQUAL_INT_MESSAGE(SX127X_OK, sx127x_rx_get_lna_gain(device, &lna_gain), "unable to sx127x_rx_get_lna_gain");
-  TEST_ASSERT_EQUAL_MESSAGE(SX127x_LNA_GAIN_AUTO, lna_gain, "invalid lna_gain");
+  TEST_ASSERT_EQUAL_MESSAGE(SX127X_LNA_GAIN_AUTO, lna_gain, "invalid lna_gain");
 }

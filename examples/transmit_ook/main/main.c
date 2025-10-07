@@ -43,10 +43,10 @@ void tx_callback(void *ctx) {
     ESP_ERROR_CHECK(sx127x_fsk_ook_tx_set_for_transmission_with_address(data, sizeof(data), 0x11, device));
   } else {
     // FSK mode require manual switch from TX to Standby
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device));
     return;
   }
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_OOK, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_OOK, device));
   ESP_LOGI(TAG, "transmitting");
   messages_sent++;
 }
@@ -59,7 +59,7 @@ void app_main() {
   sx127x_init_spi(&spi_device);
 
   ESP_ERROR_CHECK(sx127x_create(spi_device, &device));
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_OOK, &device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_OOK, &device));
   ESP_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_bitrate(4800.0, &device));
   ESP_ERROR_CHECK(sx127x_set_preamble_length(4, &device));
@@ -69,7 +69,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_encoding(SX127X_NRZ, &device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, &device));
   ESP_ERROR_CHECK(sx127x_ook_set_data_shaping(SX127X_1_BIT_RATE, SX127X_PA_RAMP_10, &device));
-  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, &device));
+  ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 4, &device));
   ESP_ERROR_CHECK(sx127x_fsk_ook_set_crc(SX127X_CRC_CCITT, &device));
 
   sx127x_tx_set_callback(tx_callback, &device, &device);

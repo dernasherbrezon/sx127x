@@ -78,11 +78,11 @@ void setup_gpio_interrupts(gpio_num_t gpio, gpio_int_type_t type) {
 void cad_callback(void *ctx, int cad_detected) {
   sx127x *device = (sx127x *) ctx;
   if (cad_detected == 0) {
-    ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+    ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_CAD, SX127X_MODULATION_LORA, device));
     return;
   }
   // put into RX mode first to handle interrupt as soon as possible
-  ESP_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
 }
 
 void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
@@ -147,9 +147,9 @@ static int split_params(char *input, char *params[]) {
 }
 
 static sx127x_modulation_t parse_modulation(const char *str) {
-  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127x_MODULATION_LORA;
-  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127x_MODULATION_FSK;
-  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127x_MODULATION_OOK;
+  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127X_MODULATION_LORA;
+  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127X_MODULATION_FSK;
+  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127X_MODULATION_OOK;
   return -1; // Invalid
 }
 
@@ -199,7 +199,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     }
     sx127x_modulation_t modulation = parse_modulation(params[0]);
     // change direction for Level interrupt
-    if (modulation == SX127x_MODULATION_FSK) {
+    if (modulation == SX127X_MODULATION_FSK) {
       setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_NEGEDGE);
     }
     if (message_sent) {
@@ -207,7 +207,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
       xSemaphoreTake(tx_done, TIMEOUT);
       message_sent = false;
     }
-    ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, modulation, device));
+    ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_TX, modulation, device));
     xSemaphoreTake(tx_done, TIMEOUT);
     if (message_sent) {
       snprintf(output, output_len, "OK\r\n");

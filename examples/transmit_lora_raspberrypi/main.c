@@ -55,7 +55,7 @@ void tx_callback(void *ctx) {
   } else {
     return;
   }
-  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
+  LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_LORA, device));
   fprintf(stdout, "transmitting\n");
   messages_sent++;
 }
@@ -116,21 +116,21 @@ int main() {
 
   sx127x device;
   LINUX_ERROR_CHECK(sx127x_create(&spi_device_fd, &device));
-  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_LORA, &device));
+  LINUX_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_LORA, &device));
   LINUX_ERROR_CHECK(sx127x_set_frequency(TEST_FREQUENCY, &device));
   LINUX_ERROR_CHECK(sx127x_lora_reset_fifo(&device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127x_BW_125000, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_bandwidth(SX127X_BW_125000, &device));
   LINUX_ERROR_CHECK(sx127x_lora_set_implicit_header(NULL, &device));
-  LINUX_ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127x_SF_9, &device));
+  LINUX_ERROR_CHECK(sx127x_lora_set_spreading_factor(SX127X_SF_9, &device));
   LINUX_ERROR_CHECK(sx127x_lora_set_syncword(18, &device));
   LINUX_ERROR_CHECK(sx127x_set_preamble_length(8, &device));
   sx127x_tx_set_callback(tx_callback, &device, &device);
 
   // 4 is OK
-  LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127x_PA_PIN_BOOST, 4, &device));
+  LINUX_ERROR_CHECK(sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, 4, &device));
   sx127x_tx_header_t header = {
       .enable_crc = true,
-      .coding_rate = SX127x_CR_4_5};
+      .coding_rate = SX127X_CR_4_5};
   LINUX_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 
   return setup_and_wait_for_interrupt(&device);

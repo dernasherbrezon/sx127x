@@ -28,7 +28,7 @@ void cad_callback(void *local_device, int cad_detected) {
 }
 
 void test_fsk_ook_rx() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_rx_set_callback(rx_callback, device, device);
 
@@ -151,7 +151,7 @@ void test_fsk_ook_rx() {
 
 void test_fsk_ook_beacon() {
   uint8_t data[] = {0xCA, 0xFE};
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, sizeof(data), device));
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_STATE, sx127x_fsk_ook_tx_start_beacon(data, sizeof(data), 1000, device));
 
@@ -184,7 +184,7 @@ void test_fsk_ook_beacon() {
 }
 
 void test_fsk_ook_tx() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_set_packet_format(SX127X_VARIABLE, 255, device));
   sx127x_tx_set_callback(tx_callback, device, device);
 
@@ -196,7 +196,7 @@ void test_fsk_ook_tx() {
   // 1. Small payload that should fit into FIFO
   payload[0] = 63;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, payload[0] + 1);
@@ -207,7 +207,7 @@ void test_fsk_ook_tx() {
   spi_mock_write(SX127X_OK);  // reset mock buffers
   payload[0] = 255;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload + 1, payload[0], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 10; i++) {
@@ -223,7 +223,7 @@ void test_fsk_ook_tx() {
   spi_mock_write(SX127X_OK);  // reset mock buffers
   payload[0] = 62;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;
   sx127x_handle_interrupt(device);
   payload[0] = 63;  // the actual sent payload length is 1 more
@@ -235,7 +235,7 @@ void test_fsk_ook_tx() {
   spi_mock_write(SX127X_OK);
   payload[0] = 254;
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 2, payload[0], payload[1], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;
   for (int i = 0; i < 10; i++) {
     sx127x_handle_interrupt(device);
@@ -252,7 +252,7 @@ void test_fsk_ook_tx() {
   transmitted = 0;
   spi_mock_write(SX127X_OK);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, packet_length);
@@ -263,8 +263,8 @@ void test_fsk_ook_tx() {
   packet_length = 63;
   spi_mock_write(SX127X_OK);
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00001000;  // packet_sent
   sx127x_handle_interrupt(device);
   spi_assert_write(payload, packet_length + 1);
@@ -276,7 +276,7 @@ void test_fsk_ook_tx() {
   transmitted = 0;
   spi_mock_write(SX127X_OK);  // reset mock buffers
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission(payload, packet_length, device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 80; i++) {
@@ -292,7 +292,7 @@ void test_fsk_ook_tx() {
   transmitted = 0;
   spi_mock_write(SX127X_OK);  // reset mock buffers
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_tx_set_for_transmission_with_address(payload + 1, packet_length, payload[0], device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_FSK, device));
   registers[0x3f] = 0b00000000;  // fifolevel goes down. request for refill
   // there is protection for refill more than in the actual packet, so it is safe to call the same interrupt multiple times
   for (int i = 0; i < 80; i++) {
@@ -305,7 +305,7 @@ void test_fsk_ook_tx() {
 }
 
 void test_lora_tx() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
   sx127x_tx_set_callback(tx_callback, device, device);
 
   transmitted = 0;
@@ -319,7 +319,7 @@ void test_lora_tx() {
   TEST_ASSERT_EQUAL_INT(sizeof(payload), registers[0x22]);
   spi_assert_write(payload, sizeof(payload));
 
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_TX, SX127x_MODULATION_LORA, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_TX, SX127X_MODULATION_LORA, device));
   TEST_ASSERT_EQUAL_INT(0b01010000, registers[0x40]);
 
   // simulate interrupt
@@ -329,7 +329,7 @@ void test_lora_tx() {
 }
 
 void test_lora_rx() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_LORA, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
   TEST_ASSERT_EQUAL_INT(0b00000000, registers[0x40]);
   uint8_t payload[255];
   for (int i = 0; i < sizeof(payload); i++) {
@@ -345,7 +345,7 @@ void test_lora_rx() {
   TEST_ASSERT_EQUAL_MEMORY(payload, rx_callback_data, rx_callback_data_length);
 
   sx127x_implicit_header_t header = {
-      .coding_rate = SX127x_CR_4_5,
+      .coding_rate = SX127X_CR_4_5,
       .enable_crc = true,
       .length = 2};
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_lora_set_implicit_header(&header, device));
@@ -358,7 +358,7 @@ void test_lora_rx() {
 }
 
 void test_lora_cad() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_CAD, SX127X_MODULATION_LORA, device));
   TEST_ASSERT_EQUAL_INT(0b10000000, registers[0x40]);
   sx127x_lora_cad_set_callback(cad_callback, device, device);
   registers[0x12] = 0b00000101;  // cad detected
@@ -371,12 +371,12 @@ void test_lora_cad() {
 }
 
 void test_fsk_ook_rssi() {
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device));
 
   int16_t rssi;
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_NOT_FOUND, sx127x_rx_get_packet_rssi(device, &rssi));
 
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_RX_CONT, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(0b11000001, registers[0x41]);
 
   // simulate interrupt
@@ -417,9 +417,9 @@ void test_fsk_ook() {
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_rx_get_frequency_error(device, &frequency_error));
   TEST_ASSERT_EQUAL_INT(-976, frequency_error);
 
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_SLEEP, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_SLEEP, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_STATE, sx127x_fsk_ook_rx_calibrate(device));
-  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127x_MODE_STANDBY, SX127x_MODULATION_FSK, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_set_opmod(SX127X_MODE_STANDBY, SX127X_MODULATION_FSK, device));
   TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_fsk_ook_rx_calibrate(device));
   TEST_ASSERT_EQUAL_INT(0b01000000, registers[0x3b]); // start calibration attempted
 
