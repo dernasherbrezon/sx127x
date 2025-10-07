@@ -56,7 +56,7 @@ void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
   fprintf(stdout, "received: %d %s rssi: %d snr: %f freq_error: %" PRId32 "\n", data_length, payload, rssi, snr, frequency_error);
 }
 
-void cad_callback(sx127x *device, int cad_detected) {
+void cad_callback(void *device, int cad_detected) {
   if (cad_detected == 0) {
     fprintf(stdout, "cad not detected\n");
     LINUX_NO_CODE_ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_CAD, SX127x_MODULATION_LORA, device));
