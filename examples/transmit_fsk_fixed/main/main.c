@@ -39,7 +39,7 @@ void tx_callback(void *ctx) {
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
-  sx127x_reset();
+  sx127x_util_reset();
 
   spi_device_handle_t spi_device;
   sx127x_init_spi(&spi_device);

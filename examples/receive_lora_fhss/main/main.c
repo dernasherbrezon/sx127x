@@ -21,7 +21,7 @@ void lora_fhss_rx_callback(void *device, uint8_t *data, uint16_t data_length) {
 
 void app_main() {
   ESP_LOGI(TAG, "starting up");
-  sx127x_reset();
+  sx127x_util_reset();
 
   spi_device_handle_t spi_device;
   sx127x_init_spi(&spi_device);

@@ -117,7 +117,7 @@ esp_err_t setup_tx_task(sx127x *device, void (*tx_callback)(void *device)) {
   return ESP_OK;
 }
 
-void sx127x_reset() {
+void sx127x_util_reset() {
   ESP_ERROR_CHECK(gpio_set_direction((gpio_num_t)RST, GPIO_MODE_OUTPUT));
   ESP_ERROR_CHECK(gpio_set_level((gpio_num_t)RST, 0));
   vTaskDelay(pdMS_TO_TICKS(5));
