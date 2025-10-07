@@ -245,7 +245,7 @@ public class FskTest {
 		assertEquals(preamble, rx.sx127x_fsk_ook_rx_get_preamble_detector());
 	}
 
-	private static String createRandom(int length) {
+	public static String createRandom(int length) {
 		StringBuilder result = new StringBuilder();
 		for (int i = 0; i < length; i++) {
 			result.append(String.format("%02x", i % 255));

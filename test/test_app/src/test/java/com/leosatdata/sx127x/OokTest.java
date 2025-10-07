@@ -70,6 +70,27 @@ public class OokTest {
 		assertEquals(new PeakMode(sx127x_ook_peak_thresh_step_t.SX127X_0_5_DB, 12, sx127x_ook_peak_thresh_dec_t.SX127X_1_1_CHIP), rx.sx127x_ook_rx_get_peak_mode());
 	}
 
+	@Test
+	public void testVariableLength() {
+		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.OOK));
+
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.OOK));
+		// it looks like some boards don't have RFO pin connected to the antenna
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.VARIABLE, 255));
+
+		String small = FskTest.createRandom(2);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(small);
+		tx.tx(sx127x_modulation_t.OOK);
+		LoraTest.assertFrames(rx, small);
+
+		String maxSingleBatch = FskTest.createRandom(63);
+		tx.sx127x_fsk_ook_tx_set_for_transmission(maxSingleBatch);
+		tx.tx(sx127x_modulation_t.OOK);
+		LoraTest.assertFrames(rx, maxSingleBatch);
+	}
+
 	@Before
 	public void start() {
 		rx.reset();
