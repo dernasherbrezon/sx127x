@@ -147,7 +147,7 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
         memset(handler->output, 0, handler->output_length + 1);
         strncpy(handler->temp_buffer, handler->buffer, handler->buffer_length);
         // workaround to properly configure "level" interrupt
-        if (strcmp(handler->temp_buffer, "AT+OPMOD=RXCONT,FSK") == 0) {
+        if (strcmp(handler->temp_buffer, "AT+OPMOD=SX127X_MODE_RX_CONT,SX127X_MODULATION_FSK") == 0) {
           handler->extra_callback(handler->device, handler->temp_buffer, handler->output, handler->output_length);
         }
         int code = sx127x_at_handler(handler->device, handler->temp_buffer, handler->output, handler->output_length);

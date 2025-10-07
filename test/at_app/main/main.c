@@ -147,9 +147,9 @@ static int split_params(char *input, char *params[]) {
 }
 
 static sx127x_modulation_t parse_modulation(const char *str) {
-  if (strcmp(str, "LORA") == 0) return SX127x_MODULATION_LORA;
-  if (strcmp(str, "FSK") == 0) return SX127x_MODULATION_FSK;
-  if (strcmp(str, "OOK") == 0) return SX127x_MODULATION_OOK;
+  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127x_MODULATION_LORA;
+  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127x_MODULATION_FSK;
+  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127x_MODULATION_OOK;
   return -1; // Invalid
 }
 
@@ -159,7 +159,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     return SX127X_ERR_INVALID_ARG;
   }
 
-  if (strcmp(handler->temp_buffer, "AT+OPMOD=RXCONT,FSK") == 0) {
+  if (strcmp(handler->temp_buffer, "AT+OPMOD=SX127X_MODE_RX_CONT,SX127X_MODULATION_FSK") == 0) {
     setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_POSEDGE);
     return SX127X_OK;
   }

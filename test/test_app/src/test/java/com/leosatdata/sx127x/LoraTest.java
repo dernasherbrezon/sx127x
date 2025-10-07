@@ -30,7 +30,7 @@ public class LoraTest {
 			freqStr = "868200000";
 		}
 		frequency = Long.valueOf(freqStr);
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA);
 		rx.sx127x_set_opmod(req);
 		rx.sx127x_set_frequency(frequency);
 		tx.sx127x_set_opmod(req);
@@ -39,10 +39,10 @@ public class LoraTest {
 
 	@Test
 	public void testRegisters() {
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA);
 		rx.sx127x_set_opmod(req);
 		assertEquals(req, rx.sx127x_get_opmod());
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.STANDBY, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_STANDBY, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.sx127x_set_frequency(frequency);
 		assertEquals(frequency, rx.sx127x_get_frequency());
 		long bw = 125000;
@@ -67,22 +67,22 @@ public class LoraTest {
 		rx.sx127x_rx_set_lna_gain(gain);
 		assertEquals(gain, rx.sx127x_rx_get_lna_gain());
 
-		PaConfig pa = new PaConfig(sx127x_pa_pin_t.BOOST, 4);
+		PaConfig pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
-		pa = new PaConfig(sx127x_pa_pin_t.RFO, -4);
+		pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_RFO, -4);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
-		pa = new PaConfig(sx127x_pa_pin_t.RFO, 15);
+		pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_RFO, 15);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
-		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 2);
+		pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 2);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
-		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 20);
+		pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 20);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
-		pa = new PaConfig(sx127x_pa_pin_t.BOOST, 17);
+		pa = new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 17);
 		rx.sx127x_tx_set_pa_config(pa);
 		assertEquals(pa, rx.sx127x_tx_get_pa_config());
 		int ocp = 100;
@@ -95,7 +95,7 @@ public class LoraTest {
 		assertEquals(240, rx.sx127x_tx_get_ocp().intValue());
 		rx.sx127x_tx_set_ocp(null);
 		assertNull(rx.sx127x_tx_get_ocp());
-		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
+		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127X_CR_4_5);
 		rx.sx127x_lora_tx_set_explicit_header(txHeader);
 		assertEquals(txHeader, rx.sx127x_lora_tx_get_explicit_header());
 
@@ -113,17 +113,17 @@ public class LoraTest {
 
 	@Test
 	public void testReset() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.sx127x_set_frequency(frequency);
 		assertEquals(frequency, rx.sx127x_get_frequency());
 		rx.reset();
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		// make sure reset actually works
 		assertEquals(434000000, rx.sx127x_get_frequency());
 		assertEquals(125000, rx.sx127x_lora_get_bandwidth());
 		assertEquals(7, rx.sx127x_lora_get_spreading_factor());
 		assertEquals(0, rx.sx127x_rx_get_lna_gain());
-		assertEquals(new PaConfig(sx127x_pa_pin_t.RFO, 13), rx.sx127x_tx_get_pa_config());
+		assertEquals(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_RFO, 13), rx.sx127x_tx_get_pa_config());
 		assertEquals(18, rx.sx127x_lora_get_syncword());
 		assertEquals(8, rx.sx127x_get_preamble_length());
 		assertNull(rx.sx127x_lora_get_implicit_header());
@@ -131,10 +131,10 @@ public class LoraTest {
 
 	@Test
 	public void testExplicitHeader() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.sx127x_lora_set_implicit_header(null);
 		rx.sx127x_lora_reset_fifo();
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_LORA));
 
 		sendExplicitMessage();
 
@@ -145,22 +145,22 @@ public class LoraTest {
 
 	@Test
 	public void testImplicitHeader() {
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA);
 		String message = "CAFE";
-		sx127x_implicit_header_t header = new sx127x_implicit_header_t(message.length() / 2, true, sx127x_cr_t.SX127x_CR_4_5);
+		sx127x_implicit_header_t header = new sx127x_implicit_header_t(message.length() / 2, true, sx127x_cr_t.SX127X_CR_4_5);
 
 		rx.sx127x_set_opmod(req);
 		rx.sx127x_lora_set_implicit_header(header);
 		rx.sx127x_lora_reset_fifo();
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_LORA));
 
 		tx.sx127x_set_opmod(req);
 		tx.sx127x_lora_set_implicit_header(header);
 		// it looks like some boards don't have RFO pin connected to the antenna
-		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_lora_reset_fifo();
 		tx.sx127x_lora_tx_set_for_transmission(message);
-		tx.tx(sx127x_modulation_t.LORA);
+		tx.tx(sx127x_modulation_t.SX127X_MODULATION_LORA);
 
 		List<sx127x_frame_t> frames = pullFrames(rx, 1);
 		assertEquals(1, frames.size());
@@ -173,30 +173,30 @@ public class LoraTest {
 		frequencies[0] = frequency + 500000;
 		frequencies[1] = frequency + 1000000;
 		frequencies[2] = frequency;
-		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA);
 
 		rx.sx127x_set_opmod(req);
 		rx.sx127x_lora_set_implicit_header(null);
 		rx.sx127x_lora_reset_fifo();
 		rx.sx127x_lora_set_frequency_hopping(new FhssConfig(5, frequencies));
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_LORA));
 
 		tx.sx127x_set_opmod(req);
 		tx.sx127x_lora_set_implicit_header(null);
 		// it looks like some boards don't have RFO pin connected to the antenna
-		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_lora_reset_fifo();
 		tx.sx127x_lora_set_frequency_hopping(new FhssConfig(5, frequencies));
 		tx.sx127x_lora_tx_set_for_transmission("CAFE");
-		tx.tx(sx127x_modulation_t.LORA);
+		tx.tx(sx127x_modulation_t.SX127X_MODULATION_LORA);
 	}
 
 	@Test
 	public void testCad() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.sx127x_lora_set_implicit_header(null);
 		rx.sx127x_lora_reset_fifo();
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.CAD, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_CAD, sx127x_modulation_t.SX127X_MODULATION_LORA));
 
 		sendExplicitMessage();
 
@@ -207,10 +207,10 @@ public class LoraTest {
 
 	@Test
 	public void testDeepSleep() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.sx127x_lora_set_implicit_header(null);
 		rx.sx127x_lora_reset_fifo();
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.RXCONT, sx127x_modulation_t.LORA));
+		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_LORA));
 		rx.deepSleep();
 
 		sendExplicitMessage();
@@ -256,14 +256,14 @@ public class LoraTest {
 	}
 
 	private static void sendExplicitMessage() {
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA));
-		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127x_CR_4_5);
+		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_LORA));
+		sx127x_tx_header_t txHeader = new sx127x_tx_header_t(true, sx127x_cr_t.SX127X_CR_4_5);
 		tx.sx127x_lora_tx_set_explicit_header(txHeader);
 		// it looks like some boards don't have RFO pin connected to the antenna
-		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.BOOST, 4));
+		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_lora_reset_fifo();
 		tx.sx127x_lora_tx_set_for_transmission("CAFE");
-		tx.tx(sx127x_modulation_t.LORA);
+		tx.tx(sx127x_modulation_t.SX127X_MODULATION_LORA);
 	}
 
 	public static void assertFrames(Sx127x device, String... framesStr) {

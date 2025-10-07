@@ -92,7 +92,7 @@ public class Sx127x {
 			sendRequest("AT+IMPLHDR=");
 			return;
 		}
-		sendRequest("AT+IMPLHDR=" + header.getLength() + "," + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate().getName());
+		sendRequest("AT+IMPLHDR=" + header.getLength() + "," + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
 	}
 
 	public sx127x_implicit_header_t sx127x_lora_get_implicit_header() {
@@ -104,7 +104,7 @@ public class Sx127x {
 		sx127x_implicit_header_t result = new sx127x_implicit_header_t();
 		result.setLength(Integer.valueOf(parts[0]));
 		result.setEnable_crc(Boolean.valueOf(parts[1].toLowerCase()));
-		result.setCoding_rate(sx127x_cr_t.valueFromName(parts[2]));
+		result.setCoding_rate(sx127x_cr_t.valueOf(parts[2]));
 		return result;
 	}
 
@@ -201,7 +201,7 @@ public class Sx127x {
 	}
 
 	public void sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t header) {
-		sendRequest("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate().getName());
+		sendRequest("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
 	}
 
 	public sx127x_tx_header_t sx127x_lora_tx_get_explicit_header() {
@@ -212,7 +212,7 @@ public class Sx127x {
 		String[] parts = COMMA.split(param);
 		sx127x_tx_header_t result = new sx127x_tx_header_t();
 		result.setEnable_crc(Boolean.parseBoolean(parts[0].toLowerCase()));
-		result.setCoding_rate(sx127x_cr_t.valueFromName(parts[1]));
+		result.setCoding_rate(sx127x_cr_t.valueOf(parts[1]));
 		return result;
 	}
 
@@ -353,23 +353,23 @@ public class Sx127x {
 	}
 
 	public void sx127x_fsk_set_data_shaping(FskDataShaping shaping) {
-		sendRequest("AT+FSKSHAPING=" + shaping.getShaping().getName() + "," + shaping.getPa_ramp().getName());
+		sendRequest("AT+FSKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
 	}
 
 	public FskDataShaping sx127x_fsk_get_data_shaping() {
 		String[] parts = COMMA.split(query("AT+FSKSHAPING?"));
 		FskDataShaping result = new FskDataShaping();
-		result.setShaping(sx127x_fsk_data_shaping_t.valueOfName(parts[0]));
-		result.setPa_ramp(sx127x_pa_ramp_t.valueOfName(parts[1]));
+		result.setShaping(sx127x_fsk_data_shaping_t.valueOf(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOf(parts[1]));
 		return result;
 	}
 
 	public void sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type) {
-		sendRequest("AT+PTYPE=" + type.getName());
+		sendRequest("AT+PTYPE=" + type);
 	}
 
 	public sx127x_preamble_type_t sx127x_fsk_ook_get_preamble_type() {
-		return sx127x_preamble_type_t.valueOfName(query("AT+PTYPE?"));
+		return sx127x_preamble_type_t.valueOf(query("AT+PTYPE?"));
 	}
 
 	public void sx127x_fsk_ook_rx_set_afc_auto(boolean enable) {
@@ -397,7 +397,7 @@ public class Sx127x {
 	}
 
 	public void sx127x_fsk_ook_rx_set_rssi_config(RssiConfig config) {
-		sendRequest("AT+RSSI=" + config.getSmoothing().getName() + "," + config.getOffset());
+		sendRequest("AT+RSSI=" + config.getSmoothing() + "," + config.getOffset());
 	}
 
 	public void sx127x_fsk_ook_rx_set_collision_restart(CollisionConfig config) {
@@ -415,7 +415,7 @@ public class Sx127x {
 	public RssiConfig sx127x_fsk_ook_rx_get_rssi_config() {
 		String[] parts = COMMA.split(query("AT+RSSI?"));
 		RssiConfig result = new RssiConfig();
-		result.setSmoothing(sx127x_rssi_smoothing_t.valueOfName(parts[0]));
+		result.setSmoothing(sx127x_rssi_smoothing_t.valueOf(parts[0]));
 		result.setOffset(Integer.parseInt(parts[1]));
 		return result;
 	}
@@ -458,15 +458,15 @@ public class Sx127x {
 	}
 
 	public void sx127x_ook_rx_set_peak_mode(PeakMode mode) {
-		sendRequest("AT+PEAKMODE=" + mode.getStep().getName() + "," + mode.getFloor_threshold() + "," + mode.getDecrement().getName());
+		sendRequest("AT+PEAKMODE=" + mode.getStep() + "," + mode.getFloor_threshold() + "," + mode.getDecrement());
 	}
 
 	public PeakMode sx127x_ook_rx_get_peak_mode() {
 		String[] parts = COMMA.split(query("AT+PEAKMODE?"));
 		PeakMode result = new PeakMode();
-		result.setStep(sx127x_ook_peak_thresh_step_t.valueOfName(parts[0]));
+		result.setStep(sx127x_ook_peak_thresh_step_t.valueOf(parts[0]));
 		result.setFloor_threshold(Integer.parseInt(parts[1]));
-		result.setDecrement(sx127x_ook_peak_thresh_dec_t.valueOfName(parts[2]));
+		result.setDecrement(sx127x_ook_peak_thresh_dec_t.valueOf(parts[2]));
 		return result;
 	}
 
@@ -475,14 +475,14 @@ public class Sx127x {
 	}
 
 	public void sx127x_ook_set_data_shaping(OokDataShaping shaping) {
-		sendRequest("AT+OOKSHAPING=" + shaping.getShaping().getName() + "," + shaping.getPa_ramp().getName());
+		sendRequest("AT+OOKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
 	}
 
 	public OokDataShaping sx127x_ook_get_data_shaping() {
 		String[] parts = COMMA.split(query("AT+OOKSHAPING?"));
 		OokDataShaping result = new OokDataShaping();
-		result.setShaping(sx127x_ook_data_shaping_t.valueOfName(parts[0]));
-		result.setPa_ramp(sx127x_pa_ramp_t.valueOfName(parts[1]));
+		result.setShaping(sx127x_ook_data_shaping_t.valueOf(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOf(parts[1]));
 		return result;
 	}
 
@@ -495,14 +495,14 @@ public class Sx127x {
 	}
 
 	public void sx127x_ook_rx_set_avg_mode(AvgMode mode) {
-		sendRequest("AT+AVGMODE=" + mode.getValue().getName() + "," + mode.getThresh().getName());
+		sendRequest("AT+AVGMODE=" + mode.getValue() + "," + mode.getThresh());
 	}
 
 	public AvgMode sx127x_ook_rx_get_avg_mode() {
 		String[] parts = COMMA.split(query("AT+AVGMODE?"));
 		AvgMode result = new AvgMode();
-		result.setValue(sx127x_ook_avg_offset_t.valueOfName(parts[0]));
-		result.setThresh(sx127x_ook_avg_thresh_t.valueOfName(parts[1]));
+		result.setValue(sx127x_ook_avg_offset_t.valueOf(parts[0]));
+		result.setThresh(sx127x_ook_avg_thresh_t.valueOf(parts[1]));
 		return result;
 	}
 

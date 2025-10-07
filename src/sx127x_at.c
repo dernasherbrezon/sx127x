@@ -21,311 +21,311 @@ uint64_t *frequencies = NULL;
 uint8_t frequencies_length = 0;
 
 static sx127x_packet_encoding_t parse_packet_encoding(const char *str) {
-  if (strcmp(str, "MANCHESTER") == 0) return SX127X_MANCHESTER;
-  if (strcmp(str, "NRZ") == 0) return SX127X_NRZ;
-  if (strcmp(str, "SCRAMBLED") == 0) return SX127X_SCRAMBLED;
+  if (strcmp(str, "SX127X_MANCHESTER") == 0) return SX127X_MANCHESTER;
+  if (strcmp(str, "SX127X_NRZ") == 0) return SX127X_NRZ;
+  if (strcmp(str, "SX127X_SCRAMBLED") == 0) return SX127X_SCRAMBLED;
   return -1;
 }
 
 static const char *format_packet_encoding(sx127x_packet_encoding_t encoding) {
   switch (encoding) {
     case SX127X_MANCHESTER:
-      return "MANCHESTER";
+      return "SX127X_MANCHESTER";
     case SX127X_NRZ:
-      return "NRZ";
+      return "SX127X_NRZ";
     case SX127X_SCRAMBLED:
-      return "SCRAMBLED";
+      return "SX127X_SCRAMBLED";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_crc_type_t parse_crc(const char *str) {
-  if (strcmp(str, "CCITT") == 0) return SX127X_CRC_CCITT;
-  if (strcmp(str, "IBM") == 0) return SX127X_CRC_IBM;
-  if (strcmp(str, "NONE") == 0) return SX127X_CRC_NONE;
+  if (strcmp(str, "SX127X_CRC_CCITT") == 0) return SX127X_CRC_CCITT;
+  if (strcmp(str, "SX127X_CRC_IBM") == 0) return SX127X_CRC_IBM;
+  if (strcmp(str, "SX127X_CRC_NONE") == 0) return SX127X_CRC_NONE;
   return -1;
 }
 
 static const char *format_crc(sx127x_crc_type_t crc) {
   switch (crc) {
     case SX127X_CRC_CCITT:
-      return "CCITT";
+      return "SX127X_CRC_CCITT";
     case SX127X_CRC_IBM:
-      return "IBM";
+      return "SX127X_CRC_IBM";
     case SX127X_CRC_NONE:
-      return "NONE";
+      return "SX127X_CRC_NONE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_packet_format_t parse_packet_format(const char *str) {
-  if (strcmp(str, "FIXED") == 0) return SX127X_FIXED;
-  if (strcmp(str, "VARIABLE") == 0) return SX127X_VARIABLE;
+  if (strcmp(str, "SX127X_FIXED") == 0) return SX127X_FIXED;
+  if (strcmp(str, "SX127X_VARIABLE") == 0) return SX127X_VARIABLE;
   return -1;
 }
 
 static const char *format_packet_format(sx127x_packet_format_t format) {
   switch (format) {
     case SX127X_FIXED:
-      return "FIXED";
+      return "SX127X_FIXED";
     case SX127X_VARIABLE:
-      return "VARIABLE";
+      return "SX127X_VARIABLE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_address_filtering_t parse_address(const char *str) {
-  if (strcmp(str, "NODE_ADDRESS") == 0) return SX127X_FILTER_NODE_ADDRESS;
-  if (strcmp(str, "NODE_AND_BROADCAST") == 0) return SX127X_FILTER_NODE_AND_BROADCAST;
-  if (strcmp(str, "NONE") == 0) return SX127X_FILTER_NONE;
+  if (strcmp(str, "SX127X_FILTER_NODE_ADDRESS") == 0) return SX127X_FILTER_NODE_ADDRESS;
+  if (strcmp(str, "SX127X_FILTER_NODE_AND_BROADCAST") == 0) return SX127X_FILTER_NODE_AND_BROADCAST;
+  if (strcmp(str, "SX127X_FILTER_NONE") == 0) return SX127X_FILTER_NONE;
   return -1;
 }
 
 static const char *format_address(sx127x_address_filtering_t addr) {
   switch (addr) {
     case SX127X_FILTER_NODE_ADDRESS:
-      return "NODE_ADDRESS";
+      return "SX127X_FILTER_NODE_ADDRESS";
     case SX127X_FILTER_NODE_AND_BROADCAST:
-      return "NODE_AND_BROADCAST";
+      return "SX127X_FILTER_NODE_AND_BROADCAST";
     case SX127X_FILTER_NONE:
-      return "NONE";
+      return "SX127X_FILTER_NONE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_fsk_data_shaping_t parse_data_shaping(const char *str) {
-  if (strcmp(str, "BT_0.3") == 0) return SX127X_BT_0_3;
-  if (strcmp(str, "BT_0.5") == 0) return SX127X_BT_0_5;
-  if (strcmp(str, "BT_1.0") == 0) return SX127X_BT_1_0;
-  if (strcmp(str, "NONE") == 0) return SX127X_FSK_SHAPING_NONE;
+  if (strcmp(str, "SX127X_BT_0_3") == 0) return SX127X_BT_0_3;
+  if (strcmp(str, "SX127X_BT_0_5") == 0) return SX127X_BT_0_5;
+  if (strcmp(str, "SX127X_BT_1_0") == 0) return SX127X_BT_1_0;
+  if (strcmp(str, "SX127X_FSK_SHAPING_NONE") == 0) return SX127X_FSK_SHAPING_NONE;
   return -1;
 }
 
 static const char *format_data_shaping(sx127x_fsk_data_shaping_t shaping) {
   switch (shaping) {
     case SX127X_BT_0_3:
-      return "BT_0.3";
+      return "SX127X_BT_0_3";
     case SX127X_BT_0_5:
-      return "BT_0.5";
+      return "SX127X_BT_0_5";
     case SX127X_BT_1_0:
-      return "BT_1.0";
+      return "SX127X_BT_1_0";
     case SX127X_FSK_SHAPING_NONE:
-      return "NONE";
+      return "SX127X_FSK_SHAPING_NONE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_ook_data_shaping_t parse_ook_data_shaping(const char *str) {
-  if (strcmp(str, "1BITRATE") == 0) return SX127X_1_BIT_RATE;
-  if (strcmp(str, "2BITRATE") == 0) return SX127X_2_BIT_RATE;
-  if (strcmp(str, "NONE") == 0) return SX127X_OOK_SHAPING_NONE;
+  if (strcmp(str, "SX127X_1_BIT_RATE") == 0) return SX127X_1_BIT_RATE;
+  if (strcmp(str, "SX127X_2_BIT_RATE") == 0) return SX127X_2_BIT_RATE;
+  if (strcmp(str, "SX127X_OOK_SHAPING_NONE") == 0) return SX127X_OOK_SHAPING_NONE;
   return -1;
 }
 
 static const char *format_ook_data_shaping(sx127x_ook_data_shaping_t shaping) {
   switch (shaping) {
     case SX127X_1_BIT_RATE:
-      return "1BITRATE";
+      return "SX127X_1_BIT_RATE";
     case SX127X_2_BIT_RATE:
-      return "2BITRATE";
+      return "SX127X_2_BIT_RATE";
     case SX127X_OOK_SHAPING_NONE:
-      return "NONE";
+      return "SX127X_OOK_SHAPING_NONE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_preamble_type_t parse_preamble_type(const char *str) {
-  if (strcmp(str, "55") == 0) return SX127X_PREAMBLE_55;
-  if (strcmp(str, "AA") == 0) return SX127X_PREAMBLE_AA;
+  if (strcmp(str, "SX127X_PREAMBLE_55") == 0) return SX127X_PREAMBLE_55;
+  if (strcmp(str, "SX127X_PREAMBLE_AA") == 0) return SX127X_PREAMBLE_AA;
   return -1;
 }
 
 static const char *format_preamble_type(sx127x_preamble_type_t preamble) {
   switch (preamble) {
     case SX127X_PREAMBLE_55:
-      return "55";
+      return "SX127X_PREAMBLE_55";
     case SX127X_PREAMBLE_AA:
-      return "AA";
+      return "SX127X_PREAMBLE_AA";
     default:
       return "UNKNOWN";
   }
 }
 
 sx127x_ook_peak_thresh_step_t parse_peak_step(const char *str) {
-  if (strcmp(str, "0.5db") == 0) return SX127X_0_5_DB;
-  if (strcmp(str, "1.0db") == 0) return SX127X_1_0_DB;
-  if (strcmp(str, "1.5db") == 0) return SX127X_1_5_DB;
-  if (strcmp(str, "2.0db") == 0) return SX127X_2_0_DB;
-  if (strcmp(str, "3.0db") == 0) return SX127X_3_0_DB;
-  if (strcmp(str, "4.0db") == 0) return SX127X_4_0_DB;
-  if (strcmp(str, "5.0db") == 0) return SX127X_5_0_DB;
-  if (strcmp(str, "6.0db") == 0) return SX127X_6_0_DB;
+  if (strcmp(str, "SX127X_0_5_DB") == 0) return SX127X_0_5_DB;
+  if (strcmp(str, "SX127X_1_0_DB") == 0) return SX127X_1_0_DB;
+  if (strcmp(str, "SX127X_1_5_DB") == 0) return SX127X_1_5_DB;
+  if (strcmp(str, "SX127X_2_0_DB") == 0) return SX127X_2_0_DB;
+  if (strcmp(str, "SX127X_3_0_DB") == 0) return SX127X_3_0_DB;
+  if (strcmp(str, "SX127X_4_0_DB") == 0) return SX127X_4_0_DB;
+  if (strcmp(str, "SX127X_5_0_DB") == 0) return SX127X_5_0_DB;
+  if (strcmp(str, "SX127X_6_0_DB") == 0) return SX127X_6_0_DB;
   return -1;
 }
 
 static const char *format_peak_step(sx127x_ook_peak_thresh_step_t step) {
   switch (step) {
     case SX127X_0_5_DB:
-      return "0.5db";
+      return "SX127X_0_5_DB";
     case SX127X_1_0_DB:
-      return "1.0db";
+      return "SX127X_1_0_DB";
     case SX127X_1_5_DB:
-      return "1.5db";
+      return "SX127X_1_5_DB";
     case SX127X_2_0_DB:
-      return "2.0db";
+      return "SX127X_2_0_DB";
     case SX127X_3_0_DB:
-      return "3.0db";
+      return "SX127X_3_0_DB";
     case SX127X_4_0_DB:
-      return "4.0db";
+      return "SX127X_4_0_DB";
     case SX127X_5_0_DB:
-      return "5.0db";
+      return "SX127X_5_0_DB";
     case SX127X_6_0_DB:
-      return "6.0db";
+      return "SX127X_6_0_DB";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_ook_avg_offset_t parse_avg_offset(const char *str) {
-  if (strcmp(str, "0db") == 0) return SX127X_0_DB;
-  if (strcmp(str, "2db") == 0) return SX127X_2_DB;
-  if (strcmp(str, "4db") == 0) return SX127X_4_DB;
-  if (strcmp(str, "6db") == 0) return SX127X_6_DB;
+  if (strcmp(str, "SX127X_0_DB") == 0) return SX127X_0_DB;
+  if (strcmp(str, "SX127X_2_DB") == 0) return SX127X_2_DB;
+  if (strcmp(str, "SX127X_4_DB") == 0) return SX127X_4_DB;
+  if (strcmp(str, "SX127X_6_DB") == 0) return SX127X_6_DB;
   return -1;
 }
 
 static const char *format_avg_offset(sx127x_ook_avg_offset_t offset) {
   switch (offset) {
     case SX127X_0_DB:
-      return "0db";
+      return "SX127X_0_DB";
     case SX127X_2_DB:
-      return "2db";
+      return "SX127X_2_DB";
     case SX127X_4_DB:
-      return "4db";
+      return "SX127X_4_DB";
     case SX127X_6_DB:
-      return "6db";
+      return "SX127X_6_DB";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_rssi_smoothing_t parse_rssi_smoothing(const char *str) {
-  if (strcmp(str, "2") == 0) return SX127X_2;
-  if (strcmp(str, "4") == 0) return SX127X_4;
-  if (strcmp(str, "8") == 0) return SX127X_8;
-  if (strcmp(str, "16") == 0) return SX127X_16;
-  if (strcmp(str, "32") == 0) return SX127X_32;
-  if (strcmp(str, "64") == 0) return SX127X_64;
-  if (strcmp(str, "128") == 0) return SX127X_128;
-  if (strcmp(str, "256") == 0) return SX127X_256;
+  if (strcmp(str, "SX127X_2") == 0) return SX127X_2;
+  if (strcmp(str, "SX127X_4") == 0) return SX127X_4;
+  if (strcmp(str, "SX127X_8") == 0) return SX127X_8;
+  if (strcmp(str, "SX127X_16") == 0) return SX127X_16;
+  if (strcmp(str, "SX127X_32") == 0) return SX127X_32;
+  if (strcmp(str, "SX127X_64") == 0) return SX127X_64;
+  if (strcmp(str, "SX127X_128") == 0) return SX127X_128;
+  if (strcmp(str, "SX127X_256") == 0) return SX127X_256;
   return -1;
 }
 
 static const char *format_rssi_smoothing(sx127x_rssi_smoothing_t rssi) {
   switch (rssi) {
     case SX127X_2:
-      return "2";
+      return "SX127X_2";
     case SX127X_4:
-      return "4";
+      return "SX127X_4";
     case SX127X_8:
-      return "8";
+      return "SX127X_8";
     case SX127X_16:
-      return "16";
+      return "SX127X_16";
     case SX127X_32:
-      return "32";
+      return "SX127X_32";
     case SX127X_64:
-      return "64";
+      return "SX127X_64";
     case SX127X_128:
-      return "128";
+      return "SX127X_128";
     case SX127X_256:
-      return "256";
+      return "SX127X_256";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_rx_trigger_t parse_rx_trigger(const char *str) {
-  if (strcmp(str, "PREAMBLE") == 0) return SX127X_RX_TRIGGER_PREAMBLE;
-  if (strcmp(str, "NONE") == 0) return SX127X_RX_TRIGGER_NONE;
-  if (strcmp(str, "RSSI") == 0) return SX127X_RX_TRIGGER_RSSI;
-  if (strcmp(str, "RSSI_PREAMBLE") == 0) return SX127X_RX_TRIGGER_RSSI_PREAMBLE;
+  if (strcmp(str, "SX127X_RX_TRIGGER_PREAMBLE") == 0) return SX127X_RX_TRIGGER_PREAMBLE;
+  if (strcmp(str, "SX127X_RX_TRIGGER_NONE") == 0) return SX127X_RX_TRIGGER_NONE;
+  if (strcmp(str, "SX127X_RX_TRIGGER_RSSI") == 0) return SX127X_RX_TRIGGER_RSSI;
+  if (strcmp(str, "SX127X_RX_TRIGGER_RSSI_PREAMBLE") == 0) return SX127X_RX_TRIGGER_RSSI_PREAMBLE;
   return -1;
 }
 
 static const char *format_rx_trigger(sx127x_rx_trigger_t trigger) {
   switch (trigger) {
     case SX127X_RX_TRIGGER_PREAMBLE:
-      return "PREAMBLE";
+      return "SX127X_RX_TRIGGER_PREAMBLE";
     case SX127X_RX_TRIGGER_NONE:
-      return "NONE";
+      return "SX127X_RX_TRIGGER_NONE";
     case SX127X_RX_TRIGGER_RSSI:
-      return "RSSI";
+      return "SX127X_RX_TRIGGER_RSSI";
     case SX127X_RX_TRIGGER_RSSI_PREAMBLE:
-      return "RSSI_PREAMBLE";
+      return "SX127X_RX_TRIGGER_RSSI_PREAMBLE";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_ook_avg_thresh_t parse_avg_thresh(const char *str) {
-  if (strcmp(str, "2pi") == 0) return SX127X_2_PI;
-  if (strcmp(str, "4pi") == 0) return SX127X_4_PI;
-  if (strcmp(str, "8pi") == 0) return SX127X_8_PI;
-  if (strcmp(str, "32pi") == 0) return SX127X_32_PI;
+  if (strcmp(str, "SX127X_2_PI") == 0) return SX127X_2_PI;
+  if (strcmp(str, "SX127X_4_PI") == 0) return SX127X_4_PI;
+  if (strcmp(str, "SX127X_8_PI") == 0) return SX127X_8_PI;
+  if (strcmp(str, "SX127X_32_PI") == 0) return SX127X_32_PI;
   return -1;
 }
 
 static const char *format_avg_thresh(sx127x_ook_avg_thresh_t thresh) {
   switch (thresh) {
     case SX127X_2_PI:
-      return "2pi";
+      return "SX127X_2_PI";
     case SX127X_4_PI:
-      return "4pi";
+      return "SX127X_4_PI";
     case SX127X_8_PI:
-      return "8pi";
+      return "SX127X_8_PI";
     case SX127X_32_PI:
-      return "32pi";
+      return "SX127X_32_PI";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_ook_peak_thresh_dec_t parse_peak_dec(const char *str) {
-  if (strcmp(str, "1.1") == 0) return SX127X_1_1_CHIP;
-  if (strcmp(str, "1.2") == 0) return SX127X_1_2_CHIP;
-  if (strcmp(str, "1.4") == 0) return SX127X_1_4_CHIP;
-  if (strcmp(str, "1.8") == 0) return SX127X_1_8_CHIP;
-  if (strcmp(str, "2.1") == 0) return SX127X_2_1_CHIP;
-  if (strcmp(str, "4.1") == 0) return SX127X_4_1_CHIP;
-  if (strcmp(str, "8.1") == 0) return SX127X_8_1_CHIP;
-  if (strcmp(str, "16.1") == 0) return SX127X_16_1_CHIP;
+  if (strcmp(str, "SX127X_1_1_CHIP") == 0) return SX127X_1_1_CHIP;
+  if (strcmp(str, "SX127X_1_2_CHIP") == 0) return SX127X_1_2_CHIP;
+  if (strcmp(str, "SX127X_1_4_CHIP") == 0) return SX127X_1_4_CHIP;
+  if (strcmp(str, "SX127X_1_8_CHIP") == 0) return SX127X_1_8_CHIP;
+  if (strcmp(str, "SX127X_2_1_CHIP") == 0) return SX127X_2_1_CHIP;
+  if (strcmp(str, "SX127X_4_1_CHIP") == 0) return SX127X_4_1_CHIP;
+  if (strcmp(str, "SX127X_8_1_CHIP") == 0) return SX127X_8_1_CHIP;
+  if (strcmp(str, "SX127X_16_1_CHIP") == 0) return SX127X_16_1_CHIP;
   return -1;
 }
 
 static const char *format_peak_dec(sx127x_ook_peak_thresh_dec_t dec) {
   switch (dec) {
     case SX127X_1_1_CHIP:
-      return "1.1";
+      return "SX127X_1_1_CHIP";
     case SX127X_1_2_CHIP:
-      return "1.2";
+      return "SX127X_1_2_CHIP";
     case SX127X_1_4_CHIP:
-      return "1.4";
+      return "SX127X_1_4_CHIP";
     case SX127X_1_8_CHIP:
-      return "1.8";
+      return "SX127X_1_8_CHIP";
     case SX127X_2_1_CHIP:
-      return "2.1";
+      return "SX127X_2_1_CHIP";
     case SX127X_4_1_CHIP:
-      return "4.1";
+      return "SX127X_4_1_CHIP";
     case SX127X_8_1_CHIP:
-      return "8.1";
+      return "SX127X_8_1_CHIP";
     case SX127X_16_1_CHIP:
-      return "16.1";
+      return "SX127X_16_1_CHIP";
     default:
       return "UNKNOWN";
   }
@@ -334,165 +334,165 @@ static const char *format_peak_dec(sx127x_ook_peak_thresh_dec_t dec) {
 static const char *format_thresh_type(sx127x_ook_thresh_type_t type) {
   switch (type) {
     case SX127X_OOK_FIXED:
-      return "FIXED";
+      return "SX127X_OOK_FIXED";
     case SX127X_OOK_AVG:
-      return "AVG";
+      return "SX127X_OOK_AVG";
     case SX127X_OOK_PEAK:
-      return "PEAK";
+      return "SX127X_OOK_PEAK";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_pa_ramp_t parse_pa_ramp(const char *str) {
-  if (strcmp(str, "3.4ms") == 0) return SX127X_PA_RAMP_1;
-  if (strcmp(str, "2ms") == 0) return SX127X_PA_RAMP_2;
-  if (strcmp(str, "1ms") == 0) return SX127X_PA_RAMP_3;
-  if (strcmp(str, "500us") == 0) return SX127X_PA_RAMP_4;
-  if (strcmp(str, "250us") == 0) return SX127X_PA_RAMP_5;
-  if (strcmp(str, "125us") == 0) return SX127X_PA_RAMP_6;
-  if (strcmp(str, "100us") == 0) return SX127X_PA_RAMP_7;
-  if (strcmp(str, "62us") == 0) return SX127X_PA_RAMP_8;
-  if (strcmp(str, "50us") == 0) return SX127X_PA_RAMP_9;
-  if (strcmp(str, "40us") == 0) return SX127X_PA_RAMP_10;
-  if (strcmp(str, "31us") == 0) return SX127X_PA_RAMP_11;
-  if (strcmp(str, "25us") == 0) return SX127X_PA_RAMP_12;
-  if (strcmp(str, "20us") == 0) return SX127X_PA_RAMP_13;
-  if (strcmp(str, "15us") == 0) return SX127X_PA_RAMP_14;
-  if (strcmp(str, "12us") == 0) return SX127X_PA_RAMP_15;
-  if (strcmp(str, "10us") == 0) return SX127X_PA_RAMP_16;
+  if (strcmp(str, "SX127X_PA_RAMP_1") == 0) return SX127X_PA_RAMP_1;
+  if (strcmp(str, "SX127X_PA_RAMP_2") == 0) return SX127X_PA_RAMP_2;
+  if (strcmp(str, "SX127X_PA_RAMP_3") == 0) return SX127X_PA_RAMP_3;
+  if (strcmp(str, "SX127X_PA_RAMP_4") == 0) return SX127X_PA_RAMP_4;
+  if (strcmp(str, "SX127X_PA_RAMP_5") == 0) return SX127X_PA_RAMP_5;
+  if (strcmp(str, "SX127X_PA_RAMP_6") == 0) return SX127X_PA_RAMP_6;
+  if (strcmp(str, "SX127X_PA_RAMP_7") == 0) return SX127X_PA_RAMP_7;
+  if (strcmp(str, "SX127X_PA_RAMP_8") == 0) return SX127X_PA_RAMP_8;
+  if (strcmp(str, "SX127X_PA_RAMP_9") == 0) return SX127X_PA_RAMP_9;
+  if (strcmp(str, "SX127X_PA_RAMP_10") == 0) return SX127X_PA_RAMP_10;
+  if (strcmp(str, "SX127X_PA_RAMP_11") == 0) return SX127X_PA_RAMP_11;
+  if (strcmp(str, "SX127X_PA_RAMP_12") == 0) return SX127X_PA_RAMP_12;
+  if (strcmp(str, "SX127X_PA_RAMP_13") == 0) return SX127X_PA_RAMP_13;
+  if (strcmp(str, "SX127X_PA_RAMP_14") == 0) return SX127X_PA_RAMP_14;
+  if (strcmp(str, "SX127X_PA_RAMP_15") == 0) return SX127X_PA_RAMP_15;
+  if (strcmp(str, "SX127X_PA_RAMP_16") == 0) return SX127X_PA_RAMP_16;
   return -1;
 }
 
 static const char *format_pa_ramp(sx127x_pa_ramp_t pa_ramp) {
   switch (pa_ramp) {
     case SX127X_PA_RAMP_1:
-      return "3.4ms";
+      return "SX127X_PA_RAMP_1";
     case SX127X_PA_RAMP_2:
-      return "2ms";
+      return "SX127X_PA_RAMP_2";
     case SX127X_PA_RAMP_3:
-      return "1ms";
+      return "SX127X_PA_RAMP_3";
     case SX127X_PA_RAMP_4:
-      return "500us";
+      return "SX127X_PA_RAMP_4";
     case SX127X_PA_RAMP_5:
-      return "250us";
+      return "SX127X_PA_RAMP_5";
     case SX127X_PA_RAMP_6:
-      return "125us";
+      return "SX127X_PA_RAMP_6";
     case SX127X_PA_RAMP_7:
-      return "100us";
+      return "SX127X_PA_RAMP_7";
     case SX127X_PA_RAMP_8:
-      return "62us";
+      return "SX127X_PA_RAMP_8";
     case SX127X_PA_RAMP_9:
-      return "50us";
+      return "SX127X_PA_RAMP_9";
     case SX127X_PA_RAMP_10:
-      return "40us";
+      return "SX127X_PA_RAMP_10";
     case SX127X_PA_RAMP_11:
-      return "31us";
+      return "SX127X_PA_RAMP_11";
     case SX127X_PA_RAMP_12:
-      return "25us";
+      return "SX127X_PA_RAMP_12";
     case SX127X_PA_RAMP_13:
-      return "20us";
+      return "SX127X_PA_RAMP_13";
     case SX127X_PA_RAMP_14:
-      return "15us";
+      return "SX127X_PA_RAMP_14";
     case SX127X_PA_RAMP_15:
-      return "12us";
+      return "SX127X_PA_RAMP_15";
     case SX127X_PA_RAMP_16:
-      return "10us";
+      return "SX127X_PA_RAMP_16";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_mode_t parse_mode(const char *str) {
-  if (strcmp(str, "SLEEP") == 0) return SX127x_MODE_SLEEP;
-  if (strcmp(str, "STANDBY") == 0) return SX127x_MODE_STANDBY;
-  if (strcmp(str, "FSTX") == 0) return SX127x_MODE_FSTX;
-  if (strcmp(str, "TX") == 0) return SX127x_MODE_TX;
-  if (strcmp(str, "FSRX") == 0) return SX127x_MODE_FSRX;
-  if (strcmp(str, "RXCONT") == 0) return SX127x_MODE_RX_CONT;
-  if (strcmp(str, "RXSINGLE") == 0) return SX127x_MODE_RX_SINGLE;
-  if (strcmp(str, "CAD") == 0) return SX127x_MODE_CAD;
+  if (strcmp(str, "SX127X_MODE_SLEEP") == 0) return SX127x_MODE_SLEEP;
+  if (strcmp(str, "SX127X_MODE_STANDBY") == 0) return SX127x_MODE_STANDBY;
+  if (strcmp(str, "SX127X_MODE_FSTX") == 0) return SX127x_MODE_FSTX;
+  if (strcmp(str, "SX127X_MODE_TX") == 0) return SX127x_MODE_TX;
+  if (strcmp(str, "SX127X_MODE_FSRX") == 0) return SX127x_MODE_FSRX;
+  if (strcmp(str, "SX127X_MODE_RX_CONT") == 0) return SX127x_MODE_RX_CONT;
+  if (strcmp(str, "SX127X_MODE_RX_SINGLE") == 0) return SX127x_MODE_RX_SINGLE;
+  if (strcmp(str, "SX127X_MODE_CAD") == 0) return SX127x_MODE_CAD;
   return -1; // Invalid
 }
 
 static const char *format_mode(sx127x_mode_t mode) {
   switch (mode) {
     case SX127x_MODE_SLEEP:
-      return "SLEEP";
+      return "SX127X_MODE_SLEEP";
     case SX127x_MODE_STANDBY:
-      return "STANDBY";
+      return "SX127X_MODE_STANDBY";
     case SX127x_MODE_FSTX:
-      return "FSTX";
+      return "SX127X_MODE_FSTX";
     case SX127x_MODE_TX:
-      return "TX";
+      return "SX127X_MODE_TX";
     case SX127x_MODE_FSRX:
-      return "FSRX";
+      return "SX127X_MODE_FSRX";
     case SX127x_MODE_RX_CONT:
-      return "RXCONT";
+      return "SX127X_MODE_RX_CONT";
     case SX127x_MODE_RX_SINGLE:
-      return "RXSINGLE";
+      return "SX127X_MODE_RX_SINGLE";
     case SX127x_MODE_CAD:
-      return "CAD";
+      return "SX127X_MODE_CAD";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_modulation_t parse_modulation(const char *str) {
-  if (strcmp(str, "LORA") == 0) return SX127x_MODULATION_LORA;
-  if (strcmp(str, "FSK") == 0) return SX127x_MODULATION_FSK;
-  if (strcmp(str, "OOK") == 0) return SX127x_MODULATION_OOK;
+  if (strcmp(str, "SX127X_MODULATION_LORA") == 0) return SX127x_MODULATION_LORA;
+  if (strcmp(str, "SX127X_MODULATION_FSK") == 0) return SX127x_MODULATION_FSK;
+  if (strcmp(str, "SX127X_MODULATION_OOK") == 0) return SX127x_MODULATION_OOK;
   return -1; // Invalid
 }
 
 static const char *format_modulation(sx127x_modulation_t modulation) {
   switch (modulation) {
     case SX127x_MODULATION_LORA:
-      return "LORA";
+      return "SX127X_MODULATION_LORA";
     case SX127x_MODULATION_FSK:
-      return "FSK";
+      return "SX127X_MODULATION_FSK";
     case SX127x_MODULATION_OOK:
-      return "OOK";
+      return "SX127X_MODULATION_OOK";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_cr_t parse_coding_rate(const char *str) {
-  if (strcmp(str, "4_5") == 0) return SX127x_CR_4_5;
-  if (strcmp(str, "4_6") == 0) return SX127x_CR_4_6;
-  if (strcmp(str, "4_7") == 0) return SX127x_CR_4_7;
-  if (strcmp(str, "4_8") == 0) return SX127x_CR_4_8;
+  if (strcmp(str, "SX127X_CR_4_5") == 0) return SX127x_CR_4_5;
+  if (strcmp(str, "SX127X_CR_4_6") == 0) return SX127x_CR_4_6;
+  if (strcmp(str, "SX127X_CR_4_7") == 0) return SX127x_CR_4_7;
+  if (strcmp(str, "SX127X_CR_4_8") == 0) return SX127x_CR_4_8;
   return -1; // Invalid
 }
 
 static const char *format_coding_rate(sx127x_cr_t cr) {
   switch (cr) {
     case SX127x_CR_4_5:
-      return "4_5";
+      return "SX127X_CR_4_5";
     case SX127x_CR_4_6:
-      return "4_6";
+      return "SX127X_CR_4_6";
     case SX127x_CR_4_7:
-      return "4_7";
+      return "SX127X_CR_4_7";
     case SX127x_CR_4_8:
-      return "4_8";
+      return "SX127X_CR_4_8";
     default:
       return "UNKNOWN";
   }
 }
 
 static sx127x_pa_pin_t parse_pa_pin(const char *str) {
-  if (strcmp(str, "RFO") == 0) return SX127x_PA_PIN_RFO;
-  if (strcmp(str, "BOOST") == 0) return SX127x_PA_PIN_BOOST;
+  if (strcmp(str, "SX127X_PA_PIN_RFO") == 0) return SX127x_PA_PIN_RFO;
+  if (strcmp(str, "SX127X_PA_PIN_BOOST") == 0) return SX127x_PA_PIN_BOOST;
   return -1; // Invalid
 }
 
 static const char *format_pa_pin(sx127x_pa_pin_t pin) {
   switch (pin) {
     case SX127x_PA_PIN_RFO:
-      return "RFO";
+      return "SX127X_PA_PIN_RFO";
     case SX127x_PA_PIN_BOOST:
-      return "BOOST";
+      return "SX127X_PA_PIN_BOOST";
     default:
       return "UNKNOWN";
   }
