@@ -41,7 +41,7 @@
     }                                                                              \
   } while (0)
 
-void rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+void rx_callback(void *device, uint8_t *data, uint16_t data_length) {
   uint8_t payload[2047];
   const char SYMBOLS[] = "0123456789ABCDEF";
   for (size_t i = 0; i < data_length; i++) {

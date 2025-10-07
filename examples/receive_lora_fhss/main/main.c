@@ -14,7 +14,7 @@ static const char *TAG = "sx127x";
 sx127x device;
 uint64_t frequencies[] = {TEST_FREQUENCY + 500000, TEST_FREQUENCY + 1000000, TEST_FREQUENCY};
 
-void lora_fhss_rx_callback(sx127x *device, uint8_t *data, uint16_t data_length) {
+void lora_fhss_rx_callback(void *device, uint8_t *data, uint16_t data_length) {
   ESP_ERROR_CHECK(sx127x_set_frequency(437200012, device));
   lora_rx_callback(device, data, data_length);
 }
