@@ -46,6 +46,7 @@ const char *TAG = "sx127x_at";
 const UBaseType_t xArrayIndex = 0;
 TaskHandle_t handle_interrupt;
 SemaphoreHandle_t tx_done;
+bool message_sent = false;
 TickType_t TIMEOUT = pdMS_TO_TICKS(10000);
 
 static void uart_rx_task(void *arg) {
@@ -122,6 +123,7 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
 }
 
 void tx_callback(void *ctx) {
+  message_sent = true;
   xSemaphoreGive(tx_done);
 }
 
@@ -200,9 +202,19 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     if (modulation == SX127x_MODULATION_FSK) {
       setup_gpio_interrupts((gpio_num_t) DIO1, GPIO_INTR_NEGEDGE);
     }
+    if (message_sent) {
+      // make sure taken otherwise next take will immediately return
+      xSemaphoreTake(tx_done, TIMEOUT);
+      message_sent = false;
+    }
     ERROR_CHECK(sx127x_set_opmod(SX127x_MODE_TX, modulation, device));
     xSemaphoreTake(tx_done, TIMEOUT);
-    snprintf(output, output_len, "OK\r\n");
+    if (message_sent) {
+      snprintf(output, output_len, "OK\r\n");
+    } else {
+      snprintf(output, output_len, "timeout while sending message\r\nERROR\r\n");
+    }
+    message_sent = false;
     return SX127X_OK;
   }
 

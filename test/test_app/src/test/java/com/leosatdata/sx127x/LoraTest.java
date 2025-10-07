@@ -30,7 +30,10 @@ public class LoraTest {
 			freqStr = "868200000";
 		}
 		frequency = Long.valueOf(freqStr);
+		OpMode req = new OpMode(sx127x_mode_t.SLEEP, sx127x_modulation_t.LORA);
+		rx.sx127x_set_opmod(req);
 		rx.sx127x_set_frequency(frequency);
+		tx.sx127x_set_opmod(req);
 		tx.sx127x_set_frequency(frequency);
 	}
 
