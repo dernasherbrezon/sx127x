@@ -68,7 +68,7 @@ void app_main() {
   ESP_ERROR_CHECK(sx127x_tx_set_pa_config(SX127X_PA_PIN_BOOST, supported_power_levels[current_power_level], &device));
   sx127x_tx_header_t header = {
       .enable_crc = true,
-      .coding_rate = SX127x_CR_4_5};
+      .coding_rate = SX127X_CR_4_5};
   ESP_ERROR_CHECK(sx127x_lora_tx_set_explicit_header(&header, &device));
 
   ESP_ERROR_CHECK(setup_tx_task(&device, tx_callback));
