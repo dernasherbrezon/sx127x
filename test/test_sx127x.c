@@ -2,7 +2,7 @@
 #include <sx127x.h>
 #include <string.h>
 #include "unity.h"
-#include <test_registers.h>
+#include "test_registers.h"
 #include "sx127x_mock_spi.h"
 
 sx127x *device = NULL;

@@ -992,8 +992,8 @@ void sx127x_reset(sx127x *device) {
 
 #ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   for (size_t i = 0; i < MAX_NUMBER_OF_REGISTERS; i++) {
-    if (spi_device->shadow_registers_sync[i] == SHADOW_CACHED) {
-      spi_device->shadow_registers_sync[i] = SHADOW_EMPTY;
+    if (device->spi_device.shadow_registers_sync[i] == SHADOW_CACHED) {
+      device->spi_device.shadow_registers_sync[i] = SHADOW_EMPTY;
     }
   }
 #endif
