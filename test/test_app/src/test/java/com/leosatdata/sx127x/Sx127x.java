@@ -167,7 +167,7 @@ public class Sx127x {
 	public void sx127x_tx_set_pa_config(PaConfig config) {
 		sendRequest("AT+PA=" + config.getPin() + "," + config.getPower());
 	}
-	
+
 	public void sx127x_dump_registers() {
 		sendRequest("AT+DUMPREG?");
 	}
@@ -352,13 +352,13 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_set_data_shaping(DataShaping shaping) {
+	public void sx127x_fsk_set_data_shaping(FskDataShaping shaping) {
 		sendRequest("AT+FSKSHAPING=" + shaping.getShaping().getName() + "," + shaping.getPa_ramp().getName());
 	}
 
-	public DataShaping sx127x_fsk_get_data_shaping() {
+	public FskDataShaping sx127x_fsk_get_data_shaping() {
 		String[] parts = COMMA.split(query("AT+FSKSHAPING?"));
-		DataShaping result = new DataShaping();
+		FskDataShaping result = new FskDataShaping();
 		result.setShaping(sx127x_fsk_data_shaping_t.valueOfName(parts[0]));
 		result.setPa_ramp(sx127x_pa_ramp_t.valueOfName(parts[1]));
 		return result;
@@ -455,6 +455,55 @@ public class Sx127x {
 
 	public void sx127x_fsk_ook_tx_stop_beacon() {
 		sendRequest("AT+FSKBCN=");
+	}
+
+	public void sx127x_ook_rx_set_peak_mode(PeakMode mode) {
+		sendRequest("AT+PEAKMODE=" + mode.getStep().getName() + "," + mode.getFloor_threshold() + "," + mode.getDecrement().getName());
+	}
+
+	public PeakMode sx127x_ook_rx_get_peak_mode() {
+		String[] parts = COMMA.split(query("AT+PEAKMODE?"));
+		PeakMode result = new PeakMode();
+		result.setStep(sx127x_ook_peak_thresh_step_t.valueOfName(parts[0]));
+		result.setFloor_threshold(Integer.parseInt(parts[1]));
+		result.setDecrement(sx127x_ook_peak_thresh_dec_t.valueOfName(parts[2]));
+		return result;
+	}
+
+	public sx127x_ook_thresh_type_t sx127x_ook_get_ook_thresh_type() {
+		return sx127x_ook_thresh_type_t.valueOf(query("AT+OOKTYPE?"));
+	}
+
+	public void sx127x_ook_set_data_shaping(OokDataShaping shaping) {
+		sendRequest("AT+OOKSHAPING=" + shaping.getShaping().getName() + "," + shaping.getPa_ramp().getName());
+	}
+
+	public OokDataShaping sx127x_ook_get_data_shaping() {
+		String[] parts = COMMA.split(query("AT+OOKSHAPING?"));
+		OokDataShaping result = new OokDataShaping();
+		result.setShaping(sx127x_ook_data_shaping_t.valueOfName(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOfName(parts[1]));
+		return result;
+	}
+
+	public void sx127x_ook_rx_set_fixed_mode(int threshold) {
+		sendRequest("AT+FIXEDMODE=" + threshold);
+	}
+
+	public int sx127x_ook_rx_get_fixed_mode() {
+		return Integer.valueOf(query("AT+FIXEDMODE?"));
+	}
+
+	public void sx127x_ook_rx_set_avg_mode(AvgMode mode) {
+		sendRequest("AT+AVGMODE=" + mode.getValue().getName() + "," + mode.getThresh().getName());
+	}
+
+	public AvgMode sx127x_ook_rx_get_avg_mode() {
+		String[] parts = COMMA.split(query("AT+AVGMODE?"));
+		AvgMode result = new AvgMode();
+		result.setValue(sx127x_ook_avg_offset_t.valueOfName(parts[0]));
+		result.setThresh(sx127x_ook_avg_thresh_t.valueOfName(parts[1]));
+		return result;
 	}
 
 	private List<String> sendRequest(String request) {

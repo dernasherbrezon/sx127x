@@ -174,7 +174,7 @@ public class FskTest {
 		assertEquals(sx127x_crc_type_t.CCITT, rx.sx127x_fsk_ook_get_crc());
 		assertEquals(new AddressConfig(sx127x_address_filtering_t.NONE, 0, 0), rx.sx127x_fsk_ook_get_address_filtering());
 		assertEquals(new PacketFormat(sx127x_packet_format_t.VARIABLE, 64), rx.sx127x_fsk_ook_get_packet_format());
-		assertEquals(new DataShaping(sx127x_fsk_data_shaping_t.NONE, sx127x_pa_ramp_t.SX127X_PA_RAMP_10), rx.sx127x_fsk_get_data_shaping());
+		assertEquals(new FskDataShaping(sx127x_fsk_data_shaping_t.NONE, sx127x_pa_ramp_t.SX127X_PA_RAMP_10), rx.sx127x_fsk_get_data_shaping());
 		assertEquals(sx127x_preamble_type_t.PAA, rx.sx127x_fsk_ook_get_preamble_type());
 		assertFalse(rx.sx127x_fsk_ook_rx_get_afc_auto());
 		assertEquals(50000, (int) rx.sx127x_fsk_ook_rx_get_afc_bandwidth());
@@ -219,7 +219,7 @@ public class FskTest {
 		format = new PacketFormat(sx127x_packet_format_t.FIXED, 2047);
 		rx.sx127x_fsk_ook_set_packet_format(format);
 		assertEquals(format, rx.sx127x_fsk_ook_get_packet_format());
-		DataShaping shaping = new DataShaping(sx127x_fsk_data_shaping_t.BT05, sx127x_pa_ramp_t.SX127X_PA_RAMP_10);
+		FskDataShaping shaping = new FskDataShaping(sx127x_fsk_data_shaping_t.BT05, sx127x_pa_ramp_t.SX127X_PA_RAMP_10);
 		rx.sx127x_fsk_set_data_shaping(shaping);
 		assertEquals(shaping, rx.sx127x_fsk_get_data_shaping());
 		rx.sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t.P55);

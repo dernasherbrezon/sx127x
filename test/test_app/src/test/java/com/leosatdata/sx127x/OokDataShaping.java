@@ -1,24 +1,24 @@
 package com.leosatdata.sx127x;
 
-public class DataShaping {
+public class OokDataShaping {
 
-	private sx127x_fsk_data_shaping_t shaping;
+	private sx127x_ook_data_shaping_t shaping;
 	private sx127x_pa_ramp_t pa_ramp;
 
-	public DataShaping() {
+	public OokDataShaping() {
 		// do nothing
 	}
 
-	public DataShaping(sx127x_fsk_data_shaping_t shaping, sx127x_pa_ramp_t pa_ramp) {
+	public OokDataShaping(sx127x_ook_data_shaping_t shaping, sx127x_pa_ramp_t pa_ramp) {
 		this.shaping = shaping;
 		this.pa_ramp = pa_ramp;
 	}
 
-	public sx127x_fsk_data_shaping_t getShaping() {
+	public sx127x_ook_data_shaping_t getShaping() {
 		return shaping;
 	}
 
-	public void setShaping(sx127x_fsk_data_shaping_t shaping) {
+	public void setShaping(sx127x_ook_data_shaping_t shaping) {
 		this.shaping = shaping;
 	}
 
@@ -47,7 +47,7 @@ public class DataShaping {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		DataShaping other = (DataShaping) obj;
+		OokDataShaping other = (OokDataShaping) obj;
 		if (pa_ramp != other.pa_ramp)
 			return false;
 		if (shaping != other.shaping)
