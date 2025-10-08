@@ -138,9 +138,7 @@ public class LoraTest {
 
 		sendExplicitMessage();
 
-		List<sx127x_frame_t> frames = pullFrames(rx, 1);
-		assertEquals(1, frames.size());
-		assertEquals("CAFE", frames.get(0).getMessage());
+		LoraTest.assertFrames(rx, "CAFE");
 	}
 
 	@Test
@@ -162,9 +160,7 @@ public class LoraTest {
 		tx.sx127x_lora_tx_set_for_transmission(message);
 		tx.tx(sx127x_modulation_t.SX127X_MODULATION_LORA);
 
-		List<sx127x_frame_t> frames = pullFrames(rx, 1);
-		assertEquals(1, frames.size());
-		assertEquals(message, frames.get(0).getMessage());
+		LoraTest.assertFrames(rx, message);
 	}
 
 	@Test
@@ -189,6 +185,8 @@ public class LoraTest {
 		tx.sx127x_lora_set_frequency_hopping(new FhssConfig(5, frequencies));
 		tx.sx127x_lora_tx_set_for_transmission("CAFE");
 		tx.tx(sx127x_modulation_t.SX127X_MODULATION_LORA);
+
+		LoraTest.assertFrames(rx, "CAFE");
 	}
 
 	@Test
@@ -200,9 +198,7 @@ public class LoraTest {
 
 		sendExplicitMessage();
 
-		List<sx127x_frame_t> frames = pullFrames(rx, 1);
-		assertEquals(1, frames.size());
-		assertEquals("CAFE", frames.get(0).getMessage());
+		LoraTest.assertFrames(rx, "CAFE");
 	}
 
 	@Test
@@ -232,9 +228,7 @@ public class LoraTest {
 			}
 		}
 
-		List<sx127x_frame_t> frames = pullFrames(rx, 1);
-		assertEquals(1, frames.size());
-		assertEquals("CAFE", frames.get(0).getMessage());
+		LoraTest.assertFrames(rx, "CAFE");
 	}
 
 	@Before
@@ -290,6 +284,14 @@ public class LoraTest {
 			result.addAll(device.pull());
 		}
 		return result;
+	}
+	
+	public static String createRandom(int length) {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			result.append(String.format("%02x", i % 255));
+		}
+		return result.toString().toUpperCase();
 	}
 
 }

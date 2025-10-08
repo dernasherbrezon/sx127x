@@ -80,12 +80,12 @@ public class OokTest {
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_VARIABLE, 255));
 
-		String small = FskTest.createRandom(2);
+		String small = LoraTest.createRandom(2);
 		tx.sx127x_fsk_ook_tx_set_for_transmission(small);
 		tx.tx(sx127x_modulation_t.SX127X_MODULATION_OOK);
 		LoraTest.assertFrames(rx, small);
 
-		String maxSingleBatch = FskTest.createRandom(63);
+		String maxSingleBatch = LoraTest.createRandom(63);
 		tx.sx127x_fsk_ook_tx_set_for_transmission(maxSingleBatch);
 		tx.tx(sx127x_modulation_t.SX127X_MODULATION_OOK);
 		LoraTest.assertFrames(rx, maxSingleBatch);
