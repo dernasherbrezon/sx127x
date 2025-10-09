@@ -1,8 +1,8 @@
 {
     "name": "sx127x",
-    "version": "4.0.1",
-    "description": "Library to work with Semtech chips SX1276/SX1277/SX1278/SX1279",
-    "keywords": "sx127x, lora, sx1278, sx1276, sx1277, sx1279",
+    "version": "5.0.0",
+    "description": "Library to work with Semtech chips sx127x",
+    "keywords": "sx127x, lora, sx1278, sx1276, sx1277, sx1279, sx1272, sx1273",
     "repository": {
         "type": "git",
         "url": "https://github.com/dernasherbrezon/sx127x.git"
@@ -25,6 +25,8 @@
             "**/dist",
             "**/debug",
             "**/Debug",
+            "**/Release",
+            "**/receive_lora_cubeide_stm32",
             "**/sdkconfig",
             "**/sdkconfig.old",
             "**/dependencies.lock",
