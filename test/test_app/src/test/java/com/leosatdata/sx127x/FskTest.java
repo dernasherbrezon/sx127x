@@ -24,14 +24,9 @@ public class FskTest {
 
 		String freqStr = System.getProperty("freq");
 		if (freqStr == null) {
-			freqStr = "868200000";
+			freqStr = "434200000";
 		}
 		frequency = Long.valueOf(freqStr);
-		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK);
-		rx.sx127x_set_opmod(req);
-		rx.sx127x_set_frequency(frequency);
-		tx.sx127x_set_opmod(req);
-		tx.sx127x_set_frequency(frequency);
 	}
 
 	@Test
@@ -43,7 +38,6 @@ public class FskTest {
 		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_FIXED, message.length() / 2));
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_FSK));
 
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_FIXED, message.length() / 2));
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_fsk_ook_tx_start_beacon(message, beaconInterval);
@@ -81,14 +75,12 @@ public class FskTest {
 
 	@Test
 	public void testMaxBaud() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		rx.sx127x_fsk_ook_set_bitrate(300000);
 		rx.sx127x_fsk_set_fdev(100000);
 		rx.sx127x_fsk_ook_rx_set_bandwidth(170000);
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_FSK));
 
 		String message = LoraTest.createRandom(6);
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_fsk_ook_set_bitrate(300000);
 		tx.sx127x_fsk_set_fdev(100000);
@@ -104,11 +96,9 @@ public class FskTest {
 		int nodeAddress = 0xbe;
 		int broadcastAddress = 0xfe;
 
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		rx.sx127x_fsk_ook_set_address_filtering(new AddressConfig(sx127x_address_filtering_t.SX127X_FILTER_NODE_AND_BROADCAST, nodeAddress, broadcastAddress));
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_FSK));
 
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 
 		String m1 = "01CAFE";
@@ -135,7 +125,6 @@ public class FskTest {
 		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_VARIABLE, 255));
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_FSK));
 
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		// it looks like some boards don't have RFO pin connected to the antenna
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_VARIABLE, 255));
@@ -159,7 +148,6 @@ public class FskTest {
 
 	@Test
 	public void testReset() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK));
 		rx.sx127x_set_frequency(frequency);
 		assertEquals(frequency, rx.sx127x_get_frequency());
 		rx.reset();
@@ -250,6 +238,11 @@ public class FskTest {
 		rx.resetUart();
 		tx.reset();
 		tx.resetUart();
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_FSK);
+		rx.sx127x_set_opmod(req);
+		rx.sx127x_set_frequency(frequency);
+		tx.sx127x_set_opmod(req);
+		tx.sx127x_set_frequency(frequency);
 	}
 
 	@AfterClass

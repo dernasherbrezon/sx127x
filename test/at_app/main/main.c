@@ -189,6 +189,13 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     }
     reset();
     sx127x_reset(device);
+    // clear any received frames
+    for (size_t i = 0; i < at_util_vector_size(frames); i++) {
+      sx127x_frame_t *cur_frame = NULL;
+      at_util_vector_get(i, (void *) &cur_frame, frames);
+      sx127x_util_frame_destroy(cur_frame);
+    }
+    at_util_vector_clear(frames);
     snprintf(output, output_len, "OK\r\n");
     return SX127X_OK;
   }
@@ -225,7 +232,6 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     char message[(MAX_PACKET_SIZE_FSK_FIXED + 1) * 2];
     char formatted[(MAX_PACKET_SIZE_FSK_FIXED + 512) * 2];
     size_t formatted_length = (MAX_PACKET_SIZE_FSK_FIXED + 512) * 2;
-    //FIXME lock access
     for (size_t i = 0; i < at_util_vector_size(frames); i++) {
       sx127x_frame_t *cur_frame = NULL;
       at_util_vector_get(i, (void *) &cur_frame, frames);

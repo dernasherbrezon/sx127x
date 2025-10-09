@@ -22,14 +22,9 @@ public class OokTest {
 
 		String freqStr = System.getProperty("freq");
 		if (freqStr == null) {
-			freqStr = "868200000";
+			freqStr = "434200000";
 		}
 		frequency = Long.valueOf(freqStr);
-		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_OOK);
-		rx.sx127x_set_opmod(req);
-		rx.sx127x_set_frequency(frequency);
-		tx.sx127x_set_opmod(req);
-		tx.sx127x_set_frequency(frequency);
 	}
 
 	@Test
@@ -59,7 +54,6 @@ public class OokTest {
 
 	@Test
 	public void testReset() {
-		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_OOK));
 		rx.sx127x_set_frequency(frequency);
 		assertEquals(frequency, rx.sx127x_get_frequency());
 		rx.reset();
@@ -75,7 +69,6 @@ public class OokTest {
 		rx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_VARIABLE, 255));
 		rx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_RX_CONT, sx127x_modulation_t.SX127X_MODULATION_OOK));
 
-		tx.sx127x_set_opmod(new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_OOK));
 		// it looks like some boards don't have RFO pin connected to the antenna
 		tx.sx127x_tx_set_pa_config(new PaConfig(sx127x_pa_pin_t.SX127X_PA_PIN_BOOST, 4));
 		tx.sx127x_fsk_ook_set_packet_format(new PacketFormat(sx127x_packet_format_t.SX127X_VARIABLE, 255));
@@ -97,6 +90,11 @@ public class OokTest {
 		rx.resetUart();
 		tx.reset();
 		tx.resetUart();
+		OpMode req = new OpMode(sx127x_mode_t.SX127X_MODE_SLEEP, sx127x_modulation_t.SX127X_MODULATION_OOK);
+		rx.sx127x_set_opmod(req);
+		rx.sx127x_set_frequency(frequency);
+		tx.sx127x_set_opmod(req);
+		tx.sx127x_set_frequency(frequency);
 	}
 
 	@AfterClass
