@@ -55,4 +55,9 @@ public class OpMode {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "[mode=" + mode + ", modulation=" + modulation + "]";
+	}
+
 }

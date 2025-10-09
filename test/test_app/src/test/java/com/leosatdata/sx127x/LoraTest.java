@@ -105,6 +105,11 @@ public class LoraTest {
 		FhssConfig fhss = new FhssConfig(5, new long[] { 868200000L, 868250000L, 868700000L, 868200000L });
 		rx.sx127x_lora_set_frequency_hopping(fhss);
 		assertEquals(fhss, rx.sx127x_lora_get_frequency_hopping());
+
+		int value = 0b01100111;
+		int reg = 0x33;
+		rx.sx127x_write_register(reg, value);
+		assertEquals(value, rx.sx127x_read_register(reg));
 	}
 
 	@Test

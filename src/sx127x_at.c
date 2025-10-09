@@ -754,6 +754,23 @@ static int sx127x_at_handler_impl(sx127x *device, char *input, char *output, siz
     return SX127X_OK;
   }
 
+  if (strcmp(cmd_name, "REG") == 0) {
+    if (is_query) {
+      if (param_count != 1) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      uint8_t value;
+      ERROR_CHECK(sx127x_read_register(atoi(params[0]), &device->spi_device, &value));
+      snprintf(output, output_len, "%d\r\n", value);
+      return SX127X_OK;
+    } else {
+      if (param_count != 2) {
+        return SX127X_ERR_INVALID_ARG;
+      }
+      return sx127x_write_register(atoi(params[0]), atoi(params[1]), &device->spi_device);
+    }
+  }
+
   if (strcmp(cmd_name, "GAIN") == 0) {
     if (is_query) {
       sx127x_gain_t value;

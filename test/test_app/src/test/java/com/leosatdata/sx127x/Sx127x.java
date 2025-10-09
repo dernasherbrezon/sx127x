@@ -279,6 +279,14 @@ public class Sx127x {
 		return result;
 	}
 
+	public int sx127x_read_register(int reg) {
+		return Integer.parseInt(query("AT+REG?=" + reg));
+	}
+
+	public void sx127x_write_register(int reg, int value) {
+		sendRequest("AT+REG=" + reg + "," + value);
+	}
+
 	public void sx127x_handle_interrupt() {
 		sendRequest("AT+IRQ=");
 	}
