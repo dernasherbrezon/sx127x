@@ -102,7 +102,7 @@ static uint8_t sx1272_bw[] = {0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b
 static uint8_t sx1276_cr[] = {0b00000010, 0b00000100, 0b00000110, 0b00001000};
 static uint8_t sx1272_cr[] = {0b00001000, 0b00010000, 0b00011000, 0b00100000};
 
-int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
+static int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, size_t data_length, uint32_t *result) {
 #ifdef CONFIG_SX127X_DISABLE_SPI_CACHE
   return sx127x_spi_read_registers(reg, spi_device->spi_device, data_length, result);
 #else
@@ -136,12 +136,12 @@ int sx127x_shadow_spi_read_registers(int reg, shadow_spi_device_t *spi_device, s
 #endif
 }
 
-int sx127x_shadow_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
+static int sx127x_shadow_spi_read_buffer(int reg, uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
   // it's always REG_FIFO
   return sx127x_spi_read_buffer(reg, buffer, buffer_length, spi_device->spi_device);
 }
 
-int sx127x_shadow_spi_write_register(int reg, const uint8_t *data, size_t data_length, shadow_spi_device_t *spi_device) {
+static int sx127x_shadow_spi_write_register(int reg, const uint8_t *data, size_t data_length, shadow_spi_device_t *spi_device) {
   int code = sx127x_spi_write_register(reg, data, data_length, spi_device->spi_device);
 #ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
@@ -153,7 +153,7 @@ int sx127x_shadow_spi_write_register(int reg, const uint8_t *data, size_t data_l
   return code;
 }
 
-int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
+static int sx127x_shadow_spi_write_buffer(int reg, const uint8_t *buffer, size_t buffer_length, shadow_spi_device_t *spi_device) {
   int code = sx127x_spi_write_buffer(reg, buffer, buffer_length, spi_device->spi_device);
 #ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   if (code != SX127X_OK || spi_device->shadow_registers_sync[reg] == SHADOW_IGNORE) {
@@ -195,7 +195,7 @@ int sx127x_read_register(int reg, shadow_spi_device_t *spi_device, uint8_t *resu
 #endif
 }
 
-int sx127x_append_register(int reg, uint8_t value, uint8_t mask, shadow_spi_device_t *spi_device) {
+static int sx127x_append_register(int reg, uint8_t value, uint8_t mask, shadow_spi_device_t *spi_device) {
   uint8_t previous = 0;
   ERROR_CHECK(sx127x_read_register(reg, spi_device, &previous));
   uint8_t data[] = {(previous & mask) | value};
@@ -418,14 +418,14 @@ int sx127x_fsk_ook_get_rssi(sx127x *device) {
   return SX127X_OK;
 }
 
-void sx127x_fsk_ook_reset_state(sx127x *device) {
+static void sx127x_fsk_ook_reset_state(sx127x *device) {
   device->expected_packet_length = 0;
   device->fsk_ook_packet_sent_received = 0;
   device->fsk_rssi = 0;
   device->fsk_rssi_available = false;
 }
 
-void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
+static void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   uint8_t irq;
   ERROR_CHECK_NOCODE(sx127x_read_register(REGIRQFLAGS2, &device->spi_device, &irq));
   if ((irq & SX127X_FSK_IRQ_PAYLOAD_READY) != 0) {
@@ -495,7 +495,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
   }
 }
 
-int sx127x_lora_rx_read_payload(sx127x *device) {
+static int sx127x_lora_rx_read_payload(sx127x *device) {
   CHECK_MODULATION(device, SX127X_MODULATION_LORA);
   uint8_t length;
   if (device->expected_packet_length == 0) {
@@ -511,7 +511,7 @@ int sx127x_lora_rx_read_payload(sx127x *device) {
   return sx127x_shadow_spi_read_buffer(REGFIFO, device->packet, device->expected_packet_length, &device->spi_device);
 }
 
-void sx127x_lora_handle_interrupt(sx127x *device) {
+static void sx127x_lora_handle_interrupt(sx127x *device) {
   uint8_t value;
   ERROR_CHECK_NOCODE(sx127x_read_register(REGIRQFLAGS, &device->spi_device, &value));
   ERROR_CHECK_NOCODE(sx127x_shadow_spi_write_register(REGIRQFLAGS, &value, 1, &device->spi_device));
@@ -1175,7 +1175,7 @@ int sx127x_lora_get_ppm_offset(sx127x *device, int32_t *frequency_error) {
   return SX127X_OK;
 }
 
-int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, sx127x *device) {
+static int sx127x_fsk_ook_tx_set_for_transmission_with_remaining(uint16_t data_length, sx127x *device) {
   uint8_t to_send;
   if (data_length > FIFO_SIZE_FSK) {
     to_send = FIFO_SIZE_FSK;
@@ -1464,7 +1464,7 @@ int sx127x_fsk_ook_rx_get_afc_auto(sx127x *device, bool *afc_auto) {
   return SX127X_OK;
 }
 
-uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
+static uint8_t sx127x_fsk_ook_calculate_bw_register(float bandwidth) {
   float min_tolerance = bandwidth;
   uint8_t result = 0;
   for (uint8_t e = 7; e >= 1; e--) {
