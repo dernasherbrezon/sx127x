@@ -170,6 +170,7 @@ public class FskTest {
 		assertEquals(new CollisionConfig(false, 10), rx.sx127x_fsk_ook_rx_get_collision_restart());
 		assertEquals(sx127x_rx_trigger_t.SX127X_RX_TRIGGER_NONE, rx.sx127x_fsk_ook_rx_get_trigger());
 		assertEquals(new PreambleConfig(false, 3, 0), rx.sx127x_fsk_ook_rx_get_preamble_detector());
+		assertEquals(3, rx.sx127x_get_preamble_length());
 	}
 
 	@Test

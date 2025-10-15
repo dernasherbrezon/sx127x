@@ -21,15 +21,25 @@
 #define MAX_PARAM_COUNT 10
 
 // TTGO lora32 v2.1 1.6.1
-#define SCK 5
+//#define SCK 5
+//#define MISO 19
+//#define MOSI 27
+//#define SS 18
+//#define DIO0 26
+//#define RST 23
+//// older versions of TTGO require manual wiring of pins below
+//#define DIO1 33
+//#define DIO2 32
+
+// custom wroom mapping
+#define SCK 18
 #define MISO 19
-#define MOSI 27
-#define SS 18
-#define DIO0 26
-#define RST 23
-// older versions of TTGO require manual wiring of pins below
+#define MOSI 23
+#define SS 5
+#define DIO0 32
+#define RST 22
 #define DIO1 33
-#define DIO2 32
+#define DIO2 21
 
 #define ERROR_CHECK(x)           \
   do {                           \
