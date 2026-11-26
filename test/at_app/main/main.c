@@ -254,9 +254,9 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     }
     ERROR_CHECK(rtc_gpio_set_direction((gpio_num_t) DIO0, RTC_GPIO_MODE_INPUT_ONLY));
     ERROR_CHECK(rtc_gpio_pulldown_en((gpio_num_t) DIO0));
+    ERROR_CHECK(esp_sleep_enable_ext0_wakeup((gpio_num_t) DIO0, 1));
     snprintf(output, output_len, "OK\r\n");
     uart_at_handler_send(output, strlen(output), handler);
-    ERROR_CHECK(esp_sleep_enable_ext0_wakeup((gpio_num_t) DIO0, 1));
     esp_deep_sleep_start();
     return SX127X_OK;
   }
