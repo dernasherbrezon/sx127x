@@ -1,3 +1,7 @@
+/*
+ * Copyright 2026 Andrey Rodionov
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package com.leosatdata.sx127x;
 
 import java.io.BufferedReader;
@@ -62,8 +66,8 @@ public class Sx127x {
 		}
 	}
 
-	public void sx127x_set_opmod(OpMode mode) {
-		sendRequest("AT+OPMOD=" + mode.getMode() + "," + mode.getModulation());
+	public int sx127x_set_opmod(OpMode mode) {
+		return sendRequestWithCode("AT+OPMOD=" + mode.getMode() + "," + mode.getModulation());
 	}
 
 	public OpMode sx127x_get_opmod() {
@@ -71,28 +75,27 @@ public class Sx127x {
 		return new OpMode(sx127x_mode_t.valueOf(parts[0]), sx127x_modulation_t.valueOf(parts[1]));
 	}
 
-	public void sx127x_set_frequency(long freq) {
-		sendRequest("AT+FREQ=" + freq);
+	public int sx127x_set_frequency(long freq) {
+		return sendRequestWithCode("AT+FREQ=" + freq);
 	}
 
 	public long sx127x_get_frequency() {
 		return Long.valueOf(query("AT+FREQ?"));
 	}
 
-	public void sx127x_lora_set_bandwidth(long bw) {
-		sendRequest("AT+LBW=" + bw);
+	public int sx127x_lora_set_bandwidth(long bw) {
+		return sendRequestWithCode("AT+LBW=" + bw);
 	}
 
 	public long sx127x_lora_get_bandwidth() {
 		return Long.valueOf(query("AT+LBW?"));
 	}
 
-	public void sx127x_lora_set_implicit_header(sx127x_implicit_header_t header) {
+	public int sx127x_lora_set_implicit_header(sx127x_implicit_header_t header) {
 		if (header == null) {
-			sendRequest("AT+IMPLHDR=");
-			return;
+			return sendRequestWithCode("AT+IMPLHDR=");
 		}
-		sendRequest("AT+IMPLHDR=" + header.getLength() + "," + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
+		return sendRequestWithCode("AT+IMPLHDR=" + header.getLength() + "," + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
 	}
 
 	public sx127x_implicit_header_t sx127x_lora_get_implicit_header() {
@@ -108,16 +111,16 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_lora_set_spreading_factor(int sf) {
-		sendRequest("AT+SF=" + sf);
+	public int sx127x_lora_set_spreading_factor(int sf) {
+		return sendRequestWithCode("AT+SF=" + sf);
 	}
 
 	public int sx127x_lora_get_spreading_factor() {
 		return Integer.valueOf(query("AT+SF?"));
 	}
 
-	public void sx127x_lora_set_syncword(int syncword) {
-		sendRequest("AT+LORASW=" + syncword);
+	public int sx127x_lora_set_syncword(int syncword) {
+		return sendRequestWithCode("AT+LORASW=" + syncword);
 	}
 
 	public int sx127x_lora_get_syncword() {
@@ -125,63 +128,67 @@ public class Sx127x {
 	}
 
 	private String query(String request) {
-		List<String> params = sendRequest(request);
+		List<String> params;
+		try {
+			params = sendRequest(request);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		if (params.size() != 1) {
 			throw new RuntimeException("cant get response for: " + request);
 		}
 		return params.get(0);
 	}
 
-	public void sx127x_set_preamble_length(int length) {
-		sendRequest("AT+PLEN=" + length);
+	public int sx127x_set_preamble_length(int length) {
+		return sendRequestWithCode("AT+PLEN=" + length);
 	}
 
 	public int sx127x_get_preamble_length() {
 		return Integer.valueOf(query("AT+PLEN?"));
 	}
 
-	public void sx127x_lora_set_low_datarate_optimization(boolean enable) {
-		sendRequest("AT+LDO=" + String.valueOf(enable).toUpperCase());
+	public int sx127x_lora_set_low_datarate_optimization(boolean enable) {
+		return sendRequestWithCode("AT+LDO=" + String.valueOf(enable).toUpperCase());
 	}
 
 	public boolean sx127x_lora_get_low_datarate_optimization() {
 		return Boolean.parseBoolean(query("AT+LDO?").toLowerCase());
 	}
 
-	public void sx127x_rx_set_lna_boost_hf(boolean enable) {
-		sendRequest("AT+LNABOOST=" + String.valueOf(enable).toUpperCase());
+	public int sx127x_rx_set_lna_boost_hf(boolean enable) {
+		return sendRequestWithCode("AT+LNABOOST=" + String.valueOf(enable).toUpperCase());
 	}
 
 	public boolean sx127x_rx_get_lna_boost_hf() {
 		return Boolean.parseBoolean(query("AT+LNABOOST?").toLowerCase());
 	}
 
-	public void sx127x_rx_set_lna_gain(int gain) {
-		sendRequest("AT+GAIN=" + gain);
+	public int sx127x_rx_set_lna_gain(int gain) {
+		return sendRequestWithCode("AT+GAIN=" + gain);
 	}
 
 	public int sx127x_rx_get_lna_gain() {
 		return Integer.valueOf(query("AT+GAIN?"));
 	}
 
-	public void sx127x_tx_set_pa_config(PaConfig config) {
-		sendRequest("AT+PA=" + config.getPin() + "," + config.getPower());
+	public int sx127x_tx_set_pa_config(PaConfig config) {
+		return sendRequestWithCode("AT+PA=" + config.getPin() + "," + config.getPower());
 	}
 
-	public void sx127x_dump_registers() {
-		sendRequest("AT+DUMPREG?");
+	public int sx127x_dump_registers() {
+		return sendRequestWithCode("AT+DUMPREG?");
 	}
 
-	public void sx127x_tx_set_ocp(Integer milliamps) {
+	public int sx127x_tx_set_ocp(Integer milliamps) {
 		if (milliamps == null) {
-			sendRequest("AT+OCP=");
-			return;
+			return sendRequestWithCode("AT+OCP=");
 		}
-		sendRequest("AT+OCP=" + milliamps);
+		return sendRequestWithCode("AT+OCP=" + milliamps);
 	}
 
-	public void reset() {
-		sendRequest("AT+RESET=");
+	public int reset() {
+		return sendRequestWithCode("AT+RESET=");
 	}
 
 	public Integer sx127x_tx_get_ocp() {
@@ -200,8 +207,8 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t header) {
-		sendRequest("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
+	public int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t header) {
+		return sendRequestWithCode("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
 	}
 
 	public sx127x_tx_header_t sx127x_lora_tx_get_explicit_header() {
@@ -216,28 +223,33 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_lora_set_ppm_offset(int offset) {
-		sendRequest("AT+PPM=" + offset);
+	public int sx127x_lora_set_ppm_offset(int offset) {
+		return sendRequestWithCode("AT+PPM=" + offset);
 	}
 
 	public int sx127x_lora_get_ppm_offset() {
 		return Integer.parseInt(query("AT+PPM?"));
 	}
 
-	public void sx127x_lora_tx_set_for_transmission(String hexBytes) {
-		sendRequest("AT+LORATX=" + hexBytes);
+	public int sx127x_lora_tx_set_for_transmission(String hexBytes) {
+		return sendRequestWithCode("AT+LORATX=" + hexBytes);
 	}
 
-	public void tx(sx127x_modulation_t modulation) {
-		sendRequest("AT+TX=" + modulation);
+	public int tx(sx127x_modulation_t modulation) {
+		return sendRequestWithCode("AT+TX=" + modulation);
 	}
 
-	public void sx127x_lora_reset_fifo() {
-		sendRequest("AT+RSTFIFO=");
+	public int sx127x_lora_reset_fifo() {
+		return sendRequestWithCode("AT+RSTFIFO=");
 	}
 
 	public List<sx127x_frame_t> pull() {
-		List<String> data = sendRequest("AT+PULL?");
+		List<String> data;
+		try {
+			data = sendRequest("AT+PULL?", false);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		List<sx127x_frame_t> result = new ArrayList<>();
 		for (String cur : data) {
 			String[] parts = COMMA.split(cur);
@@ -253,7 +265,7 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_lora_set_frequency_hopping(FhssConfig config) {
+	public int sx127x_lora_set_frequency_hopping(FhssConfig config) {
 		StringBuilder req = new StringBuilder();
 		for (int i = 0; i < config.getFrequencies().length; i++) {
 			if (i != 0) {
@@ -261,7 +273,7 @@ public class Sx127x {
 			}
 			req.append(config.getFrequencies()[i]);
 		}
-		sendRequest("AT+FREQHOP=" + config.getPeriod() + "," + req.toString());
+		return sendRequestWithCode("AT+FREQHOP=" + config.getPeriod() + "," + req.toString());
 	}
 
 	public FhssConfig sx127x_lora_get_frequency_hopping() {
@@ -283,60 +295,60 @@ public class Sx127x {
 		return Integer.parseInt(query("AT+REG?=" + reg));
 	}
 
-	public void sx127x_write_register(int reg, int value) {
-		sendRequest("AT+REG=" + reg + "," + value);
+	public int sx127x_write_register(int reg, int value) {
+		return sendRequestWithCode("AT+REG=" + reg + "," + value);
 	}
 
-	public void sx127x_handle_interrupt() {
-		sendRequest("AT+IRQ=");
+	public int sx127x_handle_interrupt() {
+		return sendRequestWithCode("AT+IRQ=");
 	}
 
-	public void deepSleep() {
-		sendRequest("AT+DEEPSLEEP=");
+	public int deepSleep() {
+		return sendRequestWithCode("AT+DEEPSLEEP=");
 	}
 
-	public void sx127x_fsk_ook_set_bitrate(float bitrate) {
-		sendRequest("AT+BITRATE=" + bitrate);
+	public int sx127x_fsk_ook_set_bitrate(float bitrate) {
+		return sendRequestWithCode("AT+BITRATE=" + bitrate);
 	}
 
 	public float sx127x_fsk_ook_get_bitrate() {
 		return Float.parseFloat(query("AT+BITRATE?"));
 	}
 
-	public void sx127x_fsk_set_fdev(float fdev) {
-		sendRequest("AT+FDEV=" + fdev);
+	public int sx127x_fsk_set_fdev(float fdev) {
+		return sendRequestWithCode("AT+FDEV=" + fdev);
 	}
 
 	public float sx127x_fsk_get_fdev() {
 		return Float.parseFloat(query("AT+FDEV?"));
 	}
 
-	public void sx127x_fsk_ook_set_syncword(String syncword) {
-		sendRequest("AT+FSKSW=" + syncword);
+	public int sx127x_fsk_ook_set_syncword(String syncword) {
+		return sendRequestWithCode("AT+FSKSW=" + syncword);
 	}
 
 	public String sx127x_fsk_ook_get_syncword() {
 		return query("AT+FSKSW?");
 	}
 
-	public void sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding) {
-		sendRequest("AT+FSKENC=" + encoding);
+	public int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding) {
+		return sendRequestWithCode("AT+FSKENC=" + encoding);
 	}
 
 	public sx127x_packet_encoding_t sx127x_fsk_ook_get_packet_encoding() {
 		return sx127x_packet_encoding_t.valueOf(query("AT+FSKENC?"));
 	}
 
-	public void sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc) {
-		sendRequest("AT+FSKCRC=" + crc);
+	public int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc) {
+		return sendRequestWithCode("AT+FSKCRC=" + crc);
 	}
 
 	public sx127x_crc_type_t sx127x_fsk_ook_get_crc() {
 		return sx127x_crc_type_t.valueOf(query("AT+FSKCRC?"));
 	}
 
-	public void sx127x_fsk_ook_set_address_filtering(AddressConfig config) {
-		sendRequest("AT+FSKADDR=" + config.getType() + "," + config.getNode_address() + "," + config.getBroadcast_address());
+	public int sx127x_fsk_ook_set_address_filtering(AddressConfig config) {
+		return sendRequestWithCode("AT+FSKADDR=" + config.getType() + "," + config.getNode_address() + "," + config.getBroadcast_address());
 	}
 
 	public AddressConfig sx127x_fsk_ook_get_address_filtering() {
@@ -348,8 +360,8 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_ook_set_packet_format(PacketFormat format) {
-		sendRequest("AT+FSKPKT=" + format.getFormat() + "," + format.getMax_payload_length());
+	public int sx127x_fsk_ook_set_packet_format(PacketFormat format) {
+		return sendRequestWithCode("AT+FSKPKT=" + format.getFormat() + "," + format.getMax_payload_length());
 	}
 
 	public PacketFormat sx127x_fsk_ook_get_packet_format() {
@@ -360,8 +372,8 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_set_data_shaping(FskDataShaping shaping) {
-		sendRequest("AT+FSKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
+	public int sx127x_fsk_set_data_shaping(FskDataShaping shaping) {
+		return sendRequestWithCode("AT+FSKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
 	}
 
 	public FskDataShaping sx127x_fsk_get_data_shaping() {
@@ -372,44 +384,44 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type) {
-		sendRequest("AT+PTYPE=" + type);
+	public int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type) {
+		return sendRequestWithCode("AT+PTYPE=" + type);
 	}
 
 	public sx127x_preamble_type_t sx127x_fsk_ook_get_preamble_type() {
 		return sx127x_preamble_type_t.valueOf(query("AT+PTYPE?"));
 	}
 
-	public void sx127x_fsk_ook_rx_set_afc_auto(boolean enable) {
-		sendRequest("AT+AFC=" + String.valueOf(enable).toUpperCase());
+	public int sx127x_fsk_ook_rx_set_afc_auto(boolean enable) {
+		return sendRequestWithCode("AT+AFC=" + String.valueOf(enable).toUpperCase());
 	}
 
 	public boolean sx127x_fsk_ook_rx_get_afc_auto() {
 		return Boolean.valueOf(query("AT+AFC?").toLowerCase());
 	}
 
-	public void sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth) {
-		sendRequest("AT+AFCBW=" + bandwidth);
+	public int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth) {
+		return sendRequestWithCode("AT+AFCBW=" + bandwidth);
 	}
 
 	public float sx127x_fsk_ook_rx_get_afc_bandwidth() {
 		return Float.parseFloat(query("AT+AFCBW?"));
 	}
 
-	public void sx127x_fsk_ook_rx_set_bandwidth(float bandwidth) {
-		sendRequest("AT+FSKBW=" + bandwidth);
+	public int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth) {
+		return sendRequestWithCode("AT+FSKBW=" + bandwidth);
 	}
 
 	public float sx127x_fsk_ook_rx_get_bandwidth() {
 		return Float.parseFloat(query("AT+FSKBW?"));
 	}
 
-	public void sx127x_fsk_ook_rx_set_rssi_config(RssiConfig config) {
-		sendRequest("AT+RSSI=" + config.getSmoothing() + "," + config.getOffset());
+	public int sx127x_fsk_ook_rx_set_rssi_config(RssiConfig config) {
+		return sendRequestWithCode("AT+RSSI=" + config.getSmoothing() + "," + config.getOffset());
 	}
 
-	public void sx127x_fsk_ook_rx_set_collision_restart(CollisionConfig config) {
-		sendRequest("AT+COLLISION=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getThreshold());
+	public int sx127x_fsk_ook_rx_set_collision_restart(CollisionConfig config) {
+		return sendRequestWithCode("AT+COLLISION=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getThreshold());
 	}
 
 	public CollisionConfig sx127x_fsk_ook_rx_get_collision_restart() {
@@ -428,24 +440,24 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger) {
-		sendRequest("AT+TRIGGER=" + trigger);
+	public int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger) {
+		return sendRequestWithCode("AT+TRIGGER=" + trigger);
 	}
 
 	public sx127x_rx_trigger_t sx127x_fsk_ook_rx_get_trigger() {
 		return sx127x_rx_trigger_t.valueOf(query("AT+TRIGGER?"));
 	}
 
-	public void sx127x_fsk_ook_rx_set_preamble_detector(PreambleConfig config) {
-		sendRequest("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
+	public int sx127x_fsk_ook_rx_set_preamble_detector(PreambleConfig config) {
+		return sendRequestWithCode("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
 	}
 
-	public void sx127x_fsk_ook_tx_set_for_transmission(String hexBytes) {
-		sendRequest("AT+FSKTX=" + hexBytes);
+	public int sx127x_fsk_ook_tx_set_for_transmission(String hexBytes) {
+		return sendRequestWithCode("AT+FSKTX=" + hexBytes);
 	}
 
-	public void sx127x_fsk_ook_tx_set_for_transmission_with_address(String hexBytes, int address) {
-		sendRequest("AT+FSKTX=" + hexBytes + "," + address);
+	public int sx127x_fsk_ook_tx_set_for_transmission_with_address(String hexBytes, int address) {
+		return sendRequestWithCode("AT+FSKTX=" + hexBytes + "," + address);
 	}
 
 	public PreambleConfig sx127x_fsk_ook_rx_get_preamble_detector() {
@@ -457,16 +469,16 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_fsk_ook_tx_start_beacon(String message, int interval) {
-		sendRequest("AT+FSKBCN=" + message + "," + interval);
+	public int sx127x_fsk_ook_tx_start_beacon(String message, int interval) {
+		return sendRequestWithCode("AT+FSKBCN=" + message + "," + interval);
 	}
 
-	public void sx127x_fsk_ook_tx_stop_beacon() {
-		sendRequest("AT+FSKBCN=");
+	public int sx127x_fsk_ook_tx_stop_beacon() {
+		return sendRequestWithCode("AT+FSKBCN=");
 	}
 
-	public void sx127x_ook_rx_set_peak_mode(PeakMode mode) {
-		sendRequest("AT+PEAKMODE=" + mode.getStep() + "," + mode.getFloor_threshold() + "," + mode.getDecrement());
+	public int sx127x_ook_rx_set_peak_mode(PeakMode mode) {
+		return sendRequestWithCode("AT+PEAKMODE=" + mode.getStep() + "," + mode.getFloor_threshold() + "," + mode.getDecrement());
 	}
 
 	public PeakMode sx127x_ook_rx_get_peak_mode() {
@@ -482,8 +494,8 @@ public class Sx127x {
 		return sx127x_ook_thresh_type_t.valueOf(query("AT+OOKTYPE?"));
 	}
 
-	public void sx127x_ook_set_data_shaping(OokDataShaping shaping) {
-		sendRequest("AT+OOKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
+	public int sx127x_ook_set_data_shaping(OokDataShaping shaping) {
+		return sendRequestWithCode("AT+OOKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
 	}
 
 	public OokDataShaping sx127x_ook_get_data_shaping() {
@@ -494,16 +506,16 @@ public class Sx127x {
 		return result;
 	}
 
-	public void sx127x_ook_rx_set_fixed_mode(int threshold) {
-		sendRequest("AT+FIXEDMODE=" + threshold);
+	public int sx127x_ook_rx_set_fixed_mode(int threshold) {
+		return sendRequestWithCode("AT+FIXEDMODE=" + threshold);
 	}
 
 	public int sx127x_ook_rx_get_fixed_mode() {
 		return Integer.valueOf(query("AT+FIXEDMODE?"));
 	}
 
-	public void sx127x_ook_rx_set_avg_mode(AvgMode mode) {
-		sendRequest("AT+AVGMODE=" + mode.getValue() + "," + mode.getThresh());
+	public int sx127x_ook_rx_set_avg_mode(AvgMode mode) {
+		return sendRequestWithCode("AT+AVGMODE=" + mode.getValue() + "," + mode.getThresh());
 	}
 
 	public AvgMode sx127x_ook_rx_get_avg_mode() {
@@ -514,25 +526,41 @@ public class Sx127x {
 		return result;
 	}
 
-	private List<String> sendRequest(String request) {
+	private int sendRequestWithCode(String request) {
+		try {
+			sendRequest(request);
+			return 0;
+		} catch (Exception e) {
+			LOG.error("unable to send request: ", e);
+			return 1;
+		}
+	}
+
+	private List<String> sendRequest(String request) throws Exception {
+		return sendRequest(request, true);
+	}
+
+	private synchronized List<String> sendRequest(String request, boolean log) throws Exception {
 		request = request + "\r\n";
-		LOG.info("[{}] {}", id, request.trim());
+		if (log) {
+			LOG.info("[{}] {}", id, request.trim());
+		}
 		try {
 			port.getOutputStream().write(request.getBytes(StandardCharsets.ISO_8859_1));
 		} catch (IOException e) {
 			if (!port.closePort()) {
 				LOG.info("can't close the port");
 			}
-			throw new RuntimeException("unable to get status: " + e.getMessage());
+			throw new Exception("unable to get status: ", e);
 		}
 		try {
-			return readResponse();
+			return readResponse(log);
 		} catch (IOException e) {
-			throw new RuntimeException("unable to read status: " + e.getMessage());
+			throw new Exception("unable to read status", e);
 		}
 	}
 
-	private List<String> readResponse() throws IOException {
+	private List<String> readResponse(boolean log) throws IOException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(port.getInputStream(), StandardCharsets.ISO_8859_1))) {
 			String curLine = null;
 			List<String> result = new ArrayList<>();
@@ -546,7 +574,9 @@ public class Sx127x {
 				if (curLine.contains("[E]")) {
 					LOG.error("[{}] {}", id, curLine);
 				} else {
-					LOG.info("[{}] {}", id, curLine);
+					if (log) {
+						LOG.info("[{}] {}", id, curLine);
+					}
 				}
 				// skip logging
 				if (curLine.charAt(0) == '[') {
