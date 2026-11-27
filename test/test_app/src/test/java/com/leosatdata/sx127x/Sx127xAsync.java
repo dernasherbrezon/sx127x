@@ -1,0 +1,676 @@
+/*
+ * Copyright 2026 Andrey Rodionov
+ * SPDX-License-Identifier: Apache-2.0
+ */
+package com.leosatdata.sx127x;
+
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortInvalidPortException;
+
+public class Sx127xAsync {
+
+	private static final Logger LOG = LoggerFactory.getLogger(Sx127xAsync.class);
+	private static final Pattern COMMA = Pattern.compile(",");
+	private static final String ASYNC_MESSAGE_PREFIX = "+RX:";
+
+	private final String portDescriptor;
+	private final int timeout;
+	private final String id;
+	private final Sx127xCallback callback;
+
+	private SerialPort port;
+	private Thread thread;
+	private Sx127xResponse syncResponse = null;
+
+	public Sx127xAsync(String portDescriptor, int timeout, String id, Sx127xCallback callback) {
+		this.portDescriptor = portDescriptor;
+		this.timeout = timeout;
+		this.id = id;
+		this.callback = callback;
+	}
+
+	public void start() {
+		try {
+			port = SerialPort.getCommPort(portDescriptor);
+		} catch (SerialPortInvalidPortException e) {
+			throw new RuntimeException("unable to send request: " + e.getMessage());
+		}
+
+		// this is important
+		port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+		// some defaults
+		port.setBaudRate(115200);
+		port.setParity(SerialPort.NO_PARITY);
+		port.setNumDataBits(8);
+		port.setNumStopBits(SerialPort.ONE_STOP_BIT);
+		if (!port.openPort()) {
+			throw new RuntimeException("can't open port: " + portDescriptor);
+		}
+		thread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				resetUart();
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(port.getInputStreamWithSuppressedTimeoutExceptions(), StandardCharsets.ISO_8859_1))) {
+					String curLine = null;
+					List<String> result = new ArrayList<>();
+					StringBuilder errorBuffer = new StringBuilder();
+					while ((curLine = reader.readLine()) != null) {
+						curLine = curLine.trim();
+						// discard corrupted serial communication
+						if (curLine.length() == 0) {
+							continue;
+						}
+						if (curLine.contains("[E]")) {
+							LOG.error("[{}] {}", id, curLine);
+						} else {
+							if (LOG.isDebugEnabled()) {
+								LOG.debug("[{}] {}", id, curLine);
+							}
+						}
+						// skip logging
+						if (curLine.charAt(0) == '[') {
+							continue;
+						}
+						if (curLine.startsWith(ASYNC_MESSAGE_PREFIX)) {
+							callback.onFrame(convertFrame(curLine));
+							continue;
+						}
+						synchronized (Sx127xAsync.this) {
+							Sx127xResponse response = null;
+							if (curLine.equalsIgnoreCase("ERROR")) {
+								response = convert(errorBuffer.toString());
+								errorBuffer = new StringBuilder();
+							}
+							if (curLine.equalsIgnoreCase("OK")) {
+								response = new Sx127xResponse();
+								response.setResponse(result);
+								response.setStatusCode(0);
+								result = new ArrayList<>();
+							}
+							if (response != null) {
+								Sx127xAsync.this.syncResponse = response;
+								Sx127xAsync.this.notifyAll();
+								continue;
+							}
+						}
+						// not clear yet if the response is valid or error message
+						// update both
+						if (errorBuffer.length() > 0) {
+							errorBuffer.append(": ");
+						}
+						errorBuffer.append(curLine);
+						result.add(curLine);
+					}
+				} catch (EOFException e) {
+					// do nothing
+				} catch (IOException e) {
+					if (!e.getMessage().equalsIgnoreCase("Underlying input stream returned zero bytes")) {
+						LOG.error("unable to read", e);
+					}
+				}
+
+			}
+		}, "sx127x-reader");
+		thread.setDaemon(true);
+		thread.start();
+	}
+
+	public void stop() {
+		if (port == null) {
+			return;
+		}
+		if (!port.closePort()) {
+			LOG.info("can't close the port");
+		}
+		if (thread != null) {
+			try {
+				thread.join(timeout);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+
+	public int setAsync(boolean async) {
+		return sendRequestWithCode("AT+ASYNC=" + String.valueOf(async).toUpperCase());
+	}
+
+	public boolean isAsync() {
+		return Boolean.parseBoolean(query("AT+ASYNC?").toLowerCase());
+	}
+
+	public int sx127x_set_opmod(OpMode mode) {
+		return sendRequestWithCode("AT+OPMOD=" + mode.getMode() + "," + mode.getModulation());
+	}
+
+	public OpMode sx127x_get_opmod() {
+		String[] parts = COMMA.split(query("AT+OPMOD?"));
+		return new OpMode(sx127x_mode_t.valueOf(parts[0]), sx127x_modulation_t.valueOf(parts[1]));
+	}
+
+	public int sx127x_set_frequency(long freq) {
+		return sendRequestWithCode("AT+FREQ=" + freq);
+	}
+
+	public long sx127x_get_frequency() {
+		return Long.valueOf(query("AT+FREQ?"));
+	}
+
+	public int sx127x_lora_set_bandwidth(long bw) {
+		return sendRequestWithCode("AT+LBW=" + bw);
+	}
+
+	public long sx127x_lora_get_bandwidth() {
+		return Long.valueOf(query("AT+LBW?"));
+	}
+
+	public int sx127x_lora_set_implicit_header(sx127x_implicit_header_t header) {
+		if (header == null) {
+			return sendRequestWithCode("AT+IMPLHDR=");
+		}
+		return sendRequestWithCode("AT+IMPLHDR=" + header.getLength() + "," + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
+	}
+
+	public sx127x_implicit_header_t sx127x_lora_get_implicit_header() {
+		String param = query("AT+IMPLHDR?");
+		if (param.equalsIgnoreCase("DISABLED")) {
+			return null;
+		}
+		String[] parts = COMMA.split(param);
+		sx127x_implicit_header_t result = new sx127x_implicit_header_t();
+		result.setLength(Integer.valueOf(parts[0]));
+		result.setEnable_crc(Boolean.valueOf(parts[1].toLowerCase()));
+		result.setCoding_rate(sx127x_cr_t.valueOf(parts[2]));
+		return result;
+	}
+
+	public int sx127x_lora_set_spreading_factor(int sf) {
+		return sendRequestWithCode("AT+SF=" + sf);
+	}
+
+	public int sx127x_lora_get_spreading_factor() {
+		return Integer.valueOf(query("AT+SF?"));
+	}
+
+	public int sx127x_lora_set_syncword(int syncword) {
+		return sendRequestWithCode("AT+LORASW=" + syncword);
+	}
+
+	public int sx127x_lora_get_syncword() {
+		return Integer.valueOf(query("AT+LORASW?"));
+	}
+
+	private String query(String request) {
+		List<String> params;
+		try {
+			params = sendRequest(request);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		if (params.size() != 1) {
+			throw new RuntimeException("cant get response for: " + request);
+		}
+		return params.get(0);
+	}
+
+	public int sx127x_set_preamble_length(int length) {
+		return sendRequestWithCode("AT+PLEN=" + length);
+	}
+
+	public int sx127x_get_preamble_length() {
+		return Integer.valueOf(query("AT+PLEN?"));
+	}
+
+	public int sx127x_lora_set_low_datarate_optimization(boolean enable) {
+		return sendRequestWithCode("AT+LDO=" + String.valueOf(enable).toUpperCase());
+	}
+
+	public boolean sx127x_lora_get_low_datarate_optimization() {
+		return Boolean.parseBoolean(query("AT+LDO?").toLowerCase());
+	}
+
+	public int sx127x_rx_set_lna_boost_hf(boolean enable) {
+		return sendRequestWithCode("AT+LNABOOST=" + String.valueOf(enable).toUpperCase());
+	}
+
+	public boolean sx127x_rx_get_lna_boost_hf() {
+		return Boolean.parseBoolean(query("AT+LNABOOST?").toLowerCase());
+	}
+
+	public int sx127x_rx_set_lna_gain(int gain) {
+		return sendRequestWithCode("AT+GAIN=" + gain);
+	}
+
+	public int sx127x_rx_get_lna_gain() {
+		return Integer.valueOf(query("AT+GAIN?"));
+	}
+
+	public int sx127x_tx_set_pa_config(PaConfig config) {
+		return sendRequestWithCode("AT+PA=" + config.getPin() + "," + config.getPower());
+	}
+
+	public int sx127x_dump_registers() {
+		return sendRequestWithCode("AT+DUMPREG?");
+	}
+
+	public int sx127x_tx_set_ocp(Integer milliamps) {
+		if (milliamps == null) {
+			return sendRequestWithCode("AT+OCP=");
+		}
+		return sendRequestWithCode("AT+OCP=" + milliamps);
+	}
+
+	public int reset() {
+		return sendRequestWithCode("AT+RESET=");
+	}
+
+	public Integer sx127x_tx_get_ocp() {
+		String param = query("AT+OCP?");
+		if (param.equalsIgnoreCase("DISABLED")) {
+			return null;
+		}
+		return Integer.parseInt(param);
+	}
+
+	public PaConfig sx127x_tx_get_pa_config() {
+		String[] parts = COMMA.split(query("AT+PA?"));
+		PaConfig result = new PaConfig();
+		result.setPin(sx127x_pa_pin_t.valueOf(parts[0]));
+		result.setPower(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public int sx127x_lora_tx_set_explicit_header(sx127x_tx_header_t header) {
+		return sendRequestWithCode("AT+TXHDR=" + String.valueOf(header.isEnable_crc()).toUpperCase() + "," + header.getCoding_rate());
+	}
+
+	public sx127x_tx_header_t sx127x_lora_tx_get_explicit_header() {
+		String param = query("AT+TXHDR?");
+		if (param.equalsIgnoreCase("DISABLED")) {
+			return null;
+		}
+		String[] parts = COMMA.split(param);
+		sx127x_tx_header_t result = new sx127x_tx_header_t();
+		result.setEnable_crc(Boolean.parseBoolean(parts[0].toLowerCase()));
+		result.setCoding_rate(sx127x_cr_t.valueOf(parts[1]));
+		return result;
+	}
+
+	public int sx127x_lora_set_ppm_offset(int offset) {
+		return sendRequestWithCode("AT+PPM=" + offset);
+	}
+
+	public int sx127x_lora_get_ppm_offset() {
+		return Integer.parseInt(query("AT+PPM?"));
+	}
+
+	public int sx127x_lora_tx_set_for_transmission(String hexBytes) {
+		return sendRequestWithCode("AT+LORATX=" + hexBytes);
+	}
+
+	public int tx(sx127x_modulation_t modulation) {
+		return sendRequestWithCode("AT+TX=" + modulation);
+	}
+
+	public int sx127x_lora_reset_fifo() {
+		return sendRequestWithCode("AT+RSTFIFO=");
+	}
+
+	public int sx127x_lora_set_frequency_hopping(FhssConfig config) {
+		StringBuilder req = new StringBuilder();
+		for (int i = 0; i < config.getFrequencies().length; i++) {
+			if (i != 0) {
+				req.append(",");
+			}
+			req.append(config.getFrequencies()[i]);
+		}
+		return sendRequestWithCode("AT+FREQHOP=" + config.getPeriod() + "," + req.toString());
+	}
+
+	public FhssConfig sx127x_lora_get_frequency_hopping() {
+		String param = query("AT+FREQHOP?");
+		String[] parts = COMMA.split(param);
+		FhssConfig result = new FhssConfig();
+		result.setPeriod(Integer.parseInt(parts[0]));
+		if (parts.length > 1) {
+			long[] frequencies = new long[parts.length - 1];
+			for (int i = 0; i < frequencies.length; i++) {
+				frequencies[i] = Long.valueOf(parts[i + 1]);
+			}
+			result.setFrequencies(frequencies);
+		}
+		return result;
+	}
+
+	public int sx127x_read_register(int reg) {
+		return Integer.parseInt(query("AT+REG?=" + reg));
+	}
+
+	public int sx127x_write_register(int reg, int value) {
+		return sendRequestWithCode("AT+REG=" + reg + "," + value);
+	}
+
+	public int sx127x_handle_interrupt() {
+		return sendRequestWithCode("AT+IRQ=");
+	}
+
+	public int deepSleep() {
+		return sendRequestWithCode("AT+DEEPSLEEP=");
+	}
+
+	public int sx127x_fsk_ook_set_bitrate(float bitrate) {
+		return sendRequestWithCode("AT+BITRATE=" + bitrate);
+	}
+
+	public float sx127x_fsk_ook_get_bitrate() {
+		return Float.parseFloat(query("AT+BITRATE?"));
+	}
+
+	public int sx127x_fsk_set_fdev(float fdev) {
+		return sendRequestWithCode("AT+FDEV=" + fdev);
+	}
+
+	public float sx127x_fsk_get_fdev() {
+		return Float.parseFloat(query("AT+FDEV?"));
+	}
+
+	public int sx127x_fsk_ook_set_syncword(String syncword) {
+		return sendRequestWithCode("AT+FSKSW=" + syncword);
+	}
+
+	public String sx127x_fsk_ook_get_syncword() {
+		return query("AT+FSKSW?");
+	}
+
+	public int sx127x_fsk_ook_set_packet_encoding(sx127x_packet_encoding_t encoding) {
+		return sendRequestWithCode("AT+FSKENC=" + encoding);
+	}
+
+	public sx127x_packet_encoding_t sx127x_fsk_ook_get_packet_encoding() {
+		return sx127x_packet_encoding_t.valueOf(query("AT+FSKENC?"));
+	}
+
+	public int sx127x_fsk_ook_set_crc(sx127x_crc_type_t crc) {
+		return sendRequestWithCode("AT+FSKCRC=" + crc);
+	}
+
+	public sx127x_crc_type_t sx127x_fsk_ook_get_crc() {
+		return sx127x_crc_type_t.valueOf(query("AT+FSKCRC?"));
+	}
+
+	public int sx127x_fsk_ook_set_address_filtering(AddressConfig config) {
+		return sendRequestWithCode("AT+FSKADDR=" + config.getType() + "," + config.getNode_address() + "," + config.getBroadcast_address());
+	}
+
+	public AddressConfig sx127x_fsk_ook_get_address_filtering() {
+		String[] parts = COMMA.split(query("AT+FSKADDR?"));
+		AddressConfig result = new AddressConfig();
+		result.setType(sx127x_address_filtering_t.valueOf(parts[0]));
+		result.setNode_address(Integer.parseInt(parts[1]));
+		result.setBroadcast_address(Integer.valueOf(parts[2]));
+		return result;
+	}
+
+	public int sx127x_fsk_ook_set_packet_format(PacketFormat format) {
+		return sendRequestWithCode("AT+FSKPKT=" + format.getFormat() + "," + format.getMax_payload_length());
+	}
+
+	public PacketFormat sx127x_fsk_ook_get_packet_format() {
+		String[] parts = COMMA.split(query("AT+FSKPKT?"));
+		PacketFormat result = new PacketFormat();
+		result.setFormat(sx127x_packet_format_t.valueOf(parts[0]));
+		result.setMax_payload_length(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public int sx127x_fsk_set_data_shaping(FskDataShaping shaping) {
+		return sendRequestWithCode("AT+FSKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
+	}
+
+	public FskDataShaping sx127x_fsk_get_data_shaping() {
+		String[] parts = COMMA.split(query("AT+FSKSHAPING?"));
+		FskDataShaping result = new FskDataShaping();
+		result.setShaping(sx127x_fsk_data_shaping_t.valueOf(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOf(parts[1]));
+		return result;
+	}
+
+	public int sx127x_fsk_ook_set_preamble_type(sx127x_preamble_type_t type) {
+		return sendRequestWithCode("AT+PTYPE=" + type);
+	}
+
+	public sx127x_preamble_type_t sx127x_fsk_ook_get_preamble_type() {
+		return sx127x_preamble_type_t.valueOf(query("AT+PTYPE?"));
+	}
+
+	public int sx127x_fsk_ook_rx_set_afc_auto(boolean enable) {
+		return sendRequestWithCode("AT+AFC=" + String.valueOf(enable).toUpperCase());
+	}
+
+	public boolean sx127x_fsk_ook_rx_get_afc_auto() {
+		return Boolean.valueOf(query("AT+AFC?").toLowerCase());
+	}
+
+	public int sx127x_fsk_ook_rx_set_afc_bandwidth(float bandwidth) {
+		return sendRequestWithCode("AT+AFCBW=" + bandwidth);
+	}
+
+	public float sx127x_fsk_ook_rx_get_afc_bandwidth() {
+		return Float.parseFloat(query("AT+AFCBW?"));
+	}
+
+	public int sx127x_fsk_ook_rx_set_bandwidth(float bandwidth) {
+		return sendRequestWithCode("AT+FSKBW=" + bandwidth);
+	}
+
+	public float sx127x_fsk_ook_rx_get_bandwidth() {
+		return Float.parseFloat(query("AT+FSKBW?"));
+	}
+
+	public int sx127x_fsk_ook_rx_set_rssi_config(RssiConfig config) {
+		return sendRequestWithCode("AT+RSSI=" + config.getSmoothing() + "," + config.getOffset());
+	}
+
+	public int sx127x_fsk_ook_rx_set_collision_restart(CollisionConfig config) {
+		return sendRequestWithCode("AT+COLLISION=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getThreshold());
+	}
+
+	public CollisionConfig sx127x_fsk_ook_rx_get_collision_restart() {
+		String[] parts = COMMA.split(query("AT+COLLISION?"));
+		CollisionConfig result = new CollisionConfig();
+		result.setEnable(Boolean.valueOf(parts[0].toLowerCase()));
+		result.setThreshold(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public RssiConfig sx127x_fsk_ook_rx_get_rssi_config() {
+		String[] parts = COMMA.split(query("AT+RSSI?"));
+		RssiConfig result = new RssiConfig();
+		result.setSmoothing(sx127x_rssi_smoothing_t.valueOf(parts[0]));
+		result.setOffset(Integer.parseInt(parts[1]));
+		return result;
+	}
+
+	public int sx127x_fsk_ook_rx_set_trigger(sx127x_rx_trigger_t trigger) {
+		return sendRequestWithCode("AT+TRIGGER=" + trigger);
+	}
+
+	public sx127x_rx_trigger_t sx127x_fsk_ook_rx_get_trigger() {
+		return sx127x_rx_trigger_t.valueOf(query("AT+TRIGGER?"));
+	}
+
+	public int sx127x_fsk_ook_rx_set_preamble_detector(PreambleConfig config) {
+		return sendRequestWithCode("AT+PCONF=" + String.valueOf(config.isEnable()).toUpperCase() + "," + config.getDetector_size() + "," + config.getDetector_tolerance());
+	}
+
+	public int sx127x_fsk_ook_tx_set_for_transmission(String hexBytes) {
+		return sendRequestWithCode("AT+FSKTX=" + hexBytes);
+	}
+
+	public int sx127x_fsk_ook_tx_set_for_transmission_with_address(String hexBytes, int address) {
+		return sendRequestWithCode("AT+FSKTX=" + hexBytes + "," + address);
+	}
+
+	public PreambleConfig sx127x_fsk_ook_rx_get_preamble_detector() {
+		String[] parts = COMMA.split(query("AT+PCONF?"));
+		PreambleConfig result = new PreambleConfig();
+		result.setEnable(Boolean.valueOf(parts[0].toLowerCase()));
+		result.setDetector_size(Integer.parseInt(parts[1]));
+		result.setDetector_tolerance(Integer.parseInt(parts[2]));
+		return result;
+	}
+
+	public int sx127x_fsk_ook_tx_start_beacon(String message, int interval) {
+		return sendRequestWithCode("AT+FSKBCN=" + message + "," + interval);
+	}
+
+	public int sx127x_fsk_ook_tx_stop_beacon() {
+		return sendRequestWithCode("AT+FSKBCN=");
+	}
+
+	public int sx127x_ook_rx_set_peak_mode(PeakMode mode) {
+		return sendRequestWithCode("AT+PEAKMODE=" + mode.getStep() + "," + mode.getFloor_threshold() + "," + mode.getDecrement());
+	}
+
+	public PeakMode sx127x_ook_rx_get_peak_mode() {
+		String[] parts = COMMA.split(query("AT+PEAKMODE?"));
+		PeakMode result = new PeakMode();
+		result.setStep(sx127x_ook_peak_thresh_step_t.valueOf(parts[0]));
+		result.setFloor_threshold(Integer.parseInt(parts[1]));
+		result.setDecrement(sx127x_ook_peak_thresh_dec_t.valueOf(parts[2]));
+		return result;
+	}
+
+	public sx127x_ook_thresh_type_t sx127x_ook_get_ook_thresh_type() {
+		return sx127x_ook_thresh_type_t.valueOf(query("AT+OOKTYPE?"));
+	}
+
+	public int sx127x_ook_set_data_shaping(OokDataShaping shaping) {
+		return sendRequestWithCode("AT+OOKSHAPING=" + shaping.getShaping() + "," + shaping.getPa_ramp());
+	}
+
+	public OokDataShaping sx127x_ook_get_data_shaping() {
+		String[] parts = COMMA.split(query("AT+OOKSHAPING?"));
+		OokDataShaping result = new OokDataShaping();
+		result.setShaping(sx127x_ook_data_shaping_t.valueOf(parts[0]));
+		result.setPa_ramp(sx127x_pa_ramp_t.valueOf(parts[1]));
+		return result;
+	}
+
+	public int sx127x_ook_rx_set_fixed_mode(int threshold) {
+		return sendRequestWithCode("AT+FIXEDMODE=" + threshold);
+	}
+
+	public int sx127x_ook_rx_get_fixed_mode() {
+		return Integer.valueOf(query("AT+FIXEDMODE?"));
+	}
+
+	public int sx127x_ook_rx_set_avg_mode(AvgMode mode) {
+		return sendRequestWithCode("AT+AVGMODE=" + mode.getValue() + "," + mode.getThresh());
+	}
+
+	public AvgMode sx127x_ook_rx_get_avg_mode() {
+		String[] parts = COMMA.split(query("AT+AVGMODE?"));
+		AvgMode result = new AvgMode();
+		result.setValue(sx127x_ook_avg_offset_t.valueOf(parts[0]));
+		result.setThresh(sx127x_ook_avg_thresh_t.valueOf(parts[1]));
+		return result;
+	}
+
+	private int sendRequestWithCode(String request) {
+		try {
+			sendRequest(request);
+			return 0;
+		} catch (Exception e) {
+			LOG.error("unable to send request: ", e);
+			return 1;
+		}
+	}
+
+	private synchronized List<String> sendRequest(String request) throws Exception {
+		request = request + "\r\n";
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("[{}] {}", id, request.trim());
+		}
+		try {
+			OutputStream out = port.getOutputStream();
+			out.write(request.getBytes(StandardCharsets.ISO_8859_1));
+			out.flush();
+		} catch (IOException e) {
+			if (!port.closePort()) {
+				LOG.info("can't close the port");
+			}
+			throw new Exception("unable to get status: ", e);
+		}
+		long started = System.currentTimeMillis();
+		long remaining = timeout;
+		while (syncResponse == null && remaining > 0) {
+			this.wait(timeout);
+			remaining = System.currentTimeMillis() - started;
+		}
+		if (syncResponse == null) {
+			throw new Exception("timeout waiting for response");
+		}
+		if (syncResponse.getStatusCode() != 0) {
+			throw new Exception(syncResponse.getFailureMessage());
+		}
+		List<String> result = syncResponse.getResponse();
+		syncResponse = null;
+		return result;
+	}
+
+	public void resetUart() {
+		InputStream inputStream = port.getInputStream();
+		byte[] buf = new byte[1024];
+		try {
+			while (inputStream.available() > 0) {
+				inputStream.read(buf);
+			}
+		} catch (IOException e) {
+			// do nothing
+		}
+	}
+
+	private static Sx127xResponse convert(String errorMessage) {
+		Sx127xResponse result = new Sx127xResponse();
+		int comma = errorMessage.indexOf(',');
+		if (comma == -1) {
+			result.setFailureMessage(errorMessage);
+			result.setStatusCode(1);
+			return result;
+		}
+		try {
+			result.setStatusCode(Integer.parseInt(errorMessage.substring(0, comma)));
+		} catch (NumberFormatException e) {
+			result.setStatusCode(1);
+		}
+		result.setFailureMessage(errorMessage.substring(comma + 1));
+		return result;
+	}
+
+	private static sx127x_frame_t convertFrame(String str) {
+		String[] parts = COMMA.split(str);
+		sx127x_frame_t frame = new sx127x_frame_t();
+		frame.setMessage(parts[0].substring(ASYNC_MESSAGE_PREFIX.length()));
+		frame.setRssi(Integer.parseInt(parts[1]));
+		frame.setSnr(Float.parseFloat(parts[2]));
+		frame.setFrequency_error(Integer.parseInt(parts[3]));
+		frame.setTimestamp(Long.valueOf(parts[4]));
+		return frame;
+	}
+}
