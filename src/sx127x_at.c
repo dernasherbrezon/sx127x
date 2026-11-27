@@ -1357,13 +1357,13 @@ static int sx127x_at_handler_impl(sx127x *device, char *input, char *output, siz
 int sx127x_at_handler(sx127x *device, char *input, char *output, size_t output_len) {
   int result = sx127x_at_handler_impl(device, input, output, output_len);
   if (result == SX127X_ERR_INVALID_ARG) {
-    snprintf(output, output_len, "invalid argument\r\nERROR\r\n");
+    snprintf(output, output_len, "%d,invalid argument\r\nERROR\r\n", SX127X_ERR_INVALID_ARG);
   } else if (result == SX127X_CONTINUE) {
     // do nothing
   } else if (result == SX127X_OK) {
     snprintf(output + strlen(output), output_len - strlen(output), "OK\r\n");
   } else {
-    snprintf(output, output_len, "operation failed %d\r\nERROR\r\n", result);
+    snprintf(output, output_len, "%d,operation failed\r\nERROR\r\n", result);
   }
   return result;
 }

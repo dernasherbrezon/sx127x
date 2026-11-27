@@ -21,15 +21,25 @@
 #define MAX_PARAM_COUNT 10
 
 // TTGO lora32 v2.1 1.6.1
-#define SCK 5
+// #define SCK 5
+// #define MISO 19
+// #define MOSI 27
+// #define SS 18
+// #define DIO0 26
+// #define RST 23
+// // older versions of TTGO require manual wiring of pins below
+// #define DIO1 33
+// #define DIO2 32
+
+// custom
+#define SCK 18
 #define MISO 19
-#define MOSI 27
-#define SS 18
-#define DIO0 26
-#define RST 23
-// older versions of TTGO require manual wiring of pins below
+#define MOSI 23
+#define SS 5
+#define DIO0 32
+#define RST 22
 #define DIO1 33
-#define DIO2 32
+#define DIO2 21
 
 #define ERROR_CHECK(x)           \
   do {                           \
@@ -47,7 +57,12 @@ const UBaseType_t xArrayIndex = 0;
 TaskHandle_t handle_interrupt;
 SemaphoreHandle_t tx_done;
 bool message_sent = false;
+bool async_rx = false;
 TickType_t TIMEOUT = pdMS_TO_TICKS(10000);
+
+static bool parse_bool(const char *str) {
+  return (strcmp(str, "1") == 0 || strcmp(str, "TRUE") == 0);
+}
 
 static void uart_rx_task(void *arg) {
   uart_at_handler_process(handler);
@@ -85,7 +100,36 @@ void cad_callback(void *ctx, int cad_detected) {
   ESP_ERROR_CHECK(sx127x_set_opmod(SX127X_MODE_RX_CONT, SX127X_MODULATION_LORA, device));
 }
 
-void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
+// output async into uart
+static void rx_callback_async(void *ctx, uint8_t *data, uint16_t data_length) {
+  sx127x *device = (sx127x *) ctx;
+  int32_t frequency_error;
+  esp_err_t code = sx127x_rx_get_frequency_error(device, &frequency_error);
+  if (code != ESP_OK) {
+    ESP_LOGE(TAG, "unable to get frequency error: %s", esp_err_to_name(code));
+    frequency_error = 0;
+  }
+  int16_t rssi;
+  code = sx127x_rx_get_packet_rssi(device, &rssi);
+  if (code != ESP_OK) {
+    ESP_LOGE(TAG, "unable to get rssi: %s", esp_err_to_name(code));
+    // No room for proper "NULL". -255 should look suspicious
+    rssi = -255;
+  }
+  static char message[(MAX_PACKET_SIZE_FSK_FIXED + 1) * 2];
+  at_util_hex2string(data, data_length, message);
+  // not supported yet
+  float snr = 0;
+  // not supported yet
+  uint64_t timestamp = 0;
+  static char formatted[(MAX_PACKET_SIZE_FSK_FIXED + 512) * 2];
+  size_t formatted_length = (MAX_PACKET_SIZE_FSK_FIXED + 512) * 2;
+  snprintf(formatted, formatted_length, "+RX:%s,%d,%.2f,%" PRId32 ",%" PRIu64 "\r\n", message, rssi, snr, frequency_error, timestamp);
+  uart_at_handler_send(formatted, strlen(formatted), handler);
+}
+
+// store frame in the internal list for sync-pull
+static void rx_callback_sync(void *ctx, uint8_t *data, uint16_t data_length) {
   sx127x *device = (sx127x *) ctx;
   sx127x_frame_t *result = malloc(sizeof(sx127x_frame_t));
   if (result == NULL) {
@@ -120,6 +164,14 @@ void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
   // do not supported yet
   result->timestamp = 0;
   at_util_vector_add(result, frames);
+}
+
+void rx_callback(void *ctx, uint8_t *data, uint16_t data_length) {
+  if (async_rx) {
+    rx_callback_async(ctx, data, data_length);
+  } else {
+    rx_callback_sync(ctx, data, data_length);
+  }
 }
 
 void tx_callback(void *ctx) {
@@ -200,6 +252,16 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     return SX127X_OK;
   }
 
+  if (strcmp(cmd_name, "ASYNC") == 0) {
+    if (is_query) {
+      snprintf(output, output_len, "%s\r\nOK\r\n", async_rx ? "TRUE" : "FALSE");
+      return SX127X_OK;
+    }
+    async_rx = parse_bool(params[0]);
+    snprintf(output, output_len, "OK\r\n");
+    return SX127X_OK;
+  }
+
   if (strcmp(cmd_name, "TX") == 0) {
     if (is_query || param_count != 1) {
       return SX127X_ERR_INVALID_ARG;
@@ -219,7 +281,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
     if (message_sent) {
       snprintf(output, output_len, "OK\r\n");
     } else {
-      snprintf(output, output_len, "timeout while sending message\r\nERROR\r\n");
+      snprintf(output, output_len, "%d,timeout while sending message\r\nERROR\r\n", SX127X_ERR_TIMEOUT);
     }
     message_sent = false;
     return SX127X_OK;
@@ -267,11 +329,11 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
 static int extra_at_handler(sx127x *device, const char *input, char *output, size_t output_len) {
   int result = extra_at_handler_impl(device, input, output, output_len);
   if (result == SX127X_ERR_INVALID_ARG) {
-    snprintf(output, output_len, "invalid argument\r\nERROR\r\n");
+    snprintf(output, output_len, "%d,invalid argument\r\nERROR\r\n", SX127X_ERR_INVALID_ARG);
   } else if (result == SX127X_CONTINUE || result == SX127X_OK) {
     // do nothing
   } else {
-    snprintf(output, output_len, "operation failed %d\r\nERROR\r\n", result);
+    snprintf(output, output_len, "%d,operation failed\r\nERROR\r\n", result);
   }
   return result;
 }
@@ -280,22 +342,23 @@ void app_main(void) {
   ESP_ERROR_CHECK(at_util_vector_create(&frames));
   tx_done = xSemaphoreCreateBinary();
   spi_bus_config_t bus_config = {
-      .mosi_io_num = MOSI,
-      .miso_io_num = MISO,
-      .sclk_io_num = SCK,
-      .quadwp_io_num = -1,
-      .quadhd_io_num = -1,
-      .max_transfer_sz = 0,
+    .mosi_io_num = MOSI,
+    .miso_io_num = MISO,
+    .sclk_io_num = SCK,
+    .quadwp_io_num = -1,
+    .quadhd_io_num = -1,
+    .max_transfer_sz = 0,
   };
   ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus_config, 1));
   spi_device_interface_config_t dev_config = {
-      .clock_speed_hz = 3000000,
-      .spics_io_num = SS,
-      .queue_size = 16,
-      .command_bits = 0,
-      .address_bits = 8,
-      .dummy_bits = 0,
-      .mode = 0};
+    .clock_speed_hz = 3000000,
+    .spics_io_num = SS,
+    .queue_size = 16,
+    .command_bits = 0,
+    .address_bits = 8,
+    .dummy_bits = 0,
+    .mode = 0
+  };
   device = malloc(sizeof(struct sx127x_t));
   if (device == NULL) {
     return;

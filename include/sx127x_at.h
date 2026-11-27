@@ -5,7 +5,8 @@
 #include <stddef.h>
 
 #define SX127X_CONTINUE 1
-
+#define SX127X_ERR_NOT_SUPPORTED 0x106
+#define SX127X_ERR_TIMEOUT       0x107
 /**
  * @brief AT command interface to control the chip. All public functions can be controlled through this interface. For exact naming please refer to the source code.
  *

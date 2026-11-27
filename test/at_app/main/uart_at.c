@@ -15,7 +15,7 @@
 #endif
 
 #ifndef CONFIG_AT_UART_BUFFER_LENGTH
-#define CONFIG_AT_UART_BUFFER_LENGTH 1024
+#define CONFIG_AT_UART_BUFFER_LENGTH MAX_PACKET_SIZE_FSK_FIXED * 2 * 2 // x2 for hex representation of byte, another x2 for extra room under heavy load. needed for async send
 #endif
 
 #ifndef CONFIG_AT_UART_RX_PIN
@@ -156,7 +156,7 @@ void uart_at_handler_process(uart_at_handler_t *handler) {
           code = handler->extra_callback(handler->device, handler->temp_buffer, handler->output, handler->output_length);
         }
         if (code == SX127X_CONTINUE) {
-          snprintf(handler->output, handler->output_length, "unsupported command\r\nERROR\r\n");
+          snprintf(handler->output, handler->output_length, "%d,unsupported command\r\nERROR\r\n", SX127X_ERR_NOT_SUPPORTED);
         }
         size_t actual_output = strlen(handler->output);
         if (actual_output > 0) {
