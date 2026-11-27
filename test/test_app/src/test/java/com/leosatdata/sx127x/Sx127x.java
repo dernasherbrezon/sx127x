@@ -246,7 +246,7 @@ public class Sx127x {
 	public List<sx127x_frame_t> pull() {
 		List<String> data;
 		try {
-			data = sendRequest("AT+PULL?", false);
+			data = sendRequest("AT+PULL?");
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -536,14 +536,10 @@ public class Sx127x {
 		}
 	}
 
-	private List<String> sendRequest(String request) throws Exception {
-		return sendRequest(request, true);
-	}
-
-	private synchronized List<String> sendRequest(String request, boolean log) throws Exception {
+	private synchronized List<String> sendRequest(String request) throws Exception {
 		request = request + "\r\n";
-		if (log) {
-			LOG.info("[{}] {}", id, request.trim());
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("[{}] {}", id, request.trim());
 		}
 		try {
 			port.getOutputStream().write(request.getBytes(StandardCharsets.ISO_8859_1));
@@ -554,13 +550,13 @@ public class Sx127x {
 			throw new Exception("unable to get status: ", e);
 		}
 		try {
-			return readResponse(log);
+			return readResponse();
 		} catch (IOException e) {
 			throw new Exception("unable to read status", e);
 		}
 	}
 
-	private List<String> readResponse(boolean log) throws IOException {
+	private List<String> readResponse() throws IOException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(port.getInputStream(), StandardCharsets.ISO_8859_1))) {
 			String curLine = null;
 			List<String> result = new ArrayList<>();
@@ -574,8 +570,8 @@ public class Sx127x {
 				if (curLine.contains("[E]")) {
 					LOG.error("[{}] {}", id, curLine);
 				} else {
-					if (log) {
-						LOG.info("[{}] {}", id, curLine);
+					if (LOG.isDebugEnabled()) {
+						LOG.debug("[{}] {}", id, curLine);
 					}
 				}
 				// skip logging

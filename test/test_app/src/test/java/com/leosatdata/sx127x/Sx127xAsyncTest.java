@@ -20,10 +20,8 @@ public class Sx127xAsyncTest {
 	public static void init() {
 		rx = new Sx127xAsync(System.getProperty("rx"), 10000, "rx", rxCallback);
 		rx.start();
-		rx.setAsync(true);
 		tx = new Sx127xAsync(System.getProperty("tx"), 10000, "tx", txCallback);
 		tx.start();
-		tx.setAsync(true);
 
 		String freqStr = System.getProperty("freq");
 		if (freqStr == null) {

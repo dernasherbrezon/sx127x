@@ -128,6 +128,7 @@ public class Sx127xAsync {
 		}, "sx127x-reader");
 		thread.setDaemon(true);
 		thread.start();
+		setAsync(true);
 	}
 
 	public void stop() {
@@ -146,7 +147,7 @@ public class Sx127xAsync {
 		}
 	}
 
-	public int setAsync(boolean async) {
+	private int setAsync(boolean async) {
 		return sendRequestWithCode("AT+ASYNC=" + String.valueOf(async).toUpperCase());
 	}
 
