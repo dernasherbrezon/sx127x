@@ -590,14 +590,11 @@ int sx127x_create(void *spi_device, sx127x *result) {
   if (result->chip_version != SX1276_VERSION && result->chip_version != SX1272_VERSION) {
     return SX127X_ERR_INVALID_VERSION;
   }
+  sx127x_reset(result);
   // read current modem state
   // there is no way for application to determine it's state on startup or after deep sleep
-  code = sx127x_get_opmod(result, &result->opmod, &result->active_modem);
-  if (code != SX127X_OK) {
-    return code;
-  }
-  sx127x_reset(result);
-  return SX127X_OK;
+  // must be after sx127x_reset, which assumes the chip was just powered on
+  return sx127x_get_opmod(result, &result->opmod, &result->active_modem);
 }
 
 int sx127x_set_opmod(sx127x_mode_t opmod, sx127x_modulation_t modulation, sx127x *device) {

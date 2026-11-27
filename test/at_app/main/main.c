@@ -248,6 +248,7 @@ static int extra_at_handler_impl(sx127x *device, const char *input, char *output
       sx127x_util_frame_destroy(cur_frame);
     }
     at_util_vector_clear(frames);
+    async_rx = false;
     snprintf(output, output_len, "OK\r\n");
     return SX127X_OK;
   }

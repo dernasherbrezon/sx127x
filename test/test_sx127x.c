@@ -464,6 +464,14 @@ void test_lora() {
   TEST_ASSERT_EQUAL_INT(-2, frequency_error);
 }
 
+void test_init_restores_chip_state() {
+  // chip keeps receiving while MCU is in deep sleep
+  registers[0x01] = SX127X_MODULATION_LORA | SX127X_MODE_RX_CONT;
+  TEST_ASSERT_EQUAL_INT(SX127X_OK, sx127x_create(NULL, device));
+  TEST_ASSERT_EQUAL_INT(SX127X_MODULATION_LORA, device->active_modem);
+  TEST_ASSERT_EQUAL_INT(SX127X_MODE_RX_CONT, device->opmod);
+}
+
 void test_init_failure() {
   spi_mock_registers(registers, SX127X_ERR_INVALID_ARG);
   TEST_ASSERT_EQUAL_INT(SX127X_ERR_INVALID_ARG, sx127x_create(NULL, device));
@@ -501,6 +509,7 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_lora);
   RUN_TEST(test_init_failure);
+  RUN_TEST(test_init_restores_chip_state);
   RUN_TEST(test_fsk_ook);
   RUN_TEST(test_fsk_ook_rssi);
   RUN_TEST(test_lora_tx);
