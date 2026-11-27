@@ -586,6 +586,7 @@ int sx127x_create(void *spi_device, sx127x *result) {
   if (code != SX127X_OK) {
     return code;
   }
+
   if (result->chip_version != SX1276_VERSION && result->chip_version != SX1272_VERSION) {
     return SX127X_ERR_INVALID_VERSION;
   }
@@ -989,6 +990,8 @@ void sx127x_reset(sx127x *device) {
   device->fsk_crc_type = SX127X_CRC_CCITT;
   device->use_implicit_header = false;
   device->expected_packet_length = 0;
+  device->active_modem = SX127X_MODULATION_FSK;
+  device->opmod = SX127X_MODE_STANDBY;
 
 #ifndef CONFIG_SX127X_DISABLE_SPI_CACHE
   for (size_t i = 0; i < MAX_NUMBER_OF_REGISTERS; i++) {
