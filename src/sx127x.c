@@ -369,6 +369,13 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
     }
   }
 
+  // packet doesn't fit into the packet buffer: clear FIFO, sx127x_fsk_ook_handle_interrupt drops it
+  if (device->expected_packet_length > CONFIG_SX127X_MAX_PACKET_SIZE) {
+    uint8_t value = SX127X_FSK_IRQ_FIFO_OVERRUN;
+    sx127x_shadow_spi_write_register(REGIRQFLAGS2, &value, 1, &device->spi_device);
+    return;
+  }
+
   // safe check
   if (device->expected_packet_length == device->fsk_ook_packet_sent_received) {
     return;
@@ -404,7 +411,7 @@ void sx127x_fsk_ook_read_payload_batch(bool read_batch, sx127x *device) {
         if (code != SX127X_OK) {
           return;
         }
-      } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0);
+      } while ((irq & SX127X_FSK_IRQ_FIFO_EMPTY) == 0 && device->fsk_ook_packet_sent_received < device->expected_packet_length);
     }
   }
 }
@@ -435,7 +442,7 @@ void sx127x_fsk_ook_handle_interrupt(sx127x *device) {
     } else {
       // read remaining of FIFO into the packet
       sx127x_fsk_ook_read_payload_batch(false, device);
-      if (device->rx_callback != NULL) {
+      if (device->rx_callback != NULL && device->expected_packet_length <= CONFIG_SX127X_MAX_PACKET_SIZE) {
         device->rx_callback(device->rx_callback_ctx, device->packet, device->expected_packet_length);
       }
     }
@@ -504,6 +511,10 @@ int sx127x_lora_rx_read_payload(sx127x *device) {
     length = (uint8_t) device->expected_packet_length;
   }
   device->expected_packet_length = length;
+  // packet doesn't fit into the packet buffer
+  if (device->expected_packet_length > CONFIG_SX127X_MAX_PACKET_SIZE) {
+    return SX127X_ERR_INVALID_ARG;
+  }
 
   uint8_t current;
   ERROR_CHECK(sx127x_read_register(REGFIFORXCURRENTADDR, &device->spi_device, &current));
@@ -526,8 +537,7 @@ void sx127x_lora_handle_interrupt(sx127x *device) {
     return;
   }
   if ((value & SX127X_IRQ_FLAG_RXDONE) != 0) {
-    ERROR_CHECK_NOCODE(sx127x_lora_rx_read_payload(device));
-    if (device->rx_callback != NULL) {
+    if (sx127x_lora_rx_read_payload(device) == SX127X_OK && device->rx_callback != NULL) {
       device->rx_callback(device->rx_callback_ctx, device->packet, device->expected_packet_length);
     }
     device->expected_packet_length = 0;
@@ -1195,6 +1205,10 @@ int sx127x_fsk_ook_tx_set_for_transmission(const uint8_t *data, uint16_t data_le
   if (device->fsk_ook_format == SX127X_FIXED && data_length > MAX_PACKET_SIZE_FSK_FIXED) {
     return SX127X_ERR_INVALID_ARG;
   }
+  // length byte (variable format) and data are stored in the packet buffer
+  if (data_length + (device->fsk_ook_format == SX127X_VARIABLE ? 1 : 0) > CONFIG_SX127X_MAX_PACKET_SIZE) {
+    return SX127X_ERR_INVALID_ARG;
+  }
   if (device->fsk_ook_format == SX127X_VARIABLE) {
     device->packet[0] = (uint8_t) data_length;
     // packet length is always more than 255
@@ -1212,6 +1226,10 @@ int sx127x_fsk_ook_tx_set_for_transmission_with_address(const uint8_t *data, uin
     return SX127X_ERR_INVALID_ARG;
   }
   if (device->fsk_ook_format == SX127X_FIXED && data_length > (MAX_PACKET_SIZE_FSK_FIXED - 1)) {
+    return SX127X_ERR_INVALID_ARG;
+  }
+  // length byte (variable format), address and data are stored in the packet buffer
+  if (data_length + (device->fsk_ook_format == SX127X_VARIABLE ? 2 : 1) > CONFIG_SX127X_MAX_PACKET_SIZE) {
     return SX127X_ERR_INVALID_ARG;
   }
   uint16_t offset = 0;
